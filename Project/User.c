@@ -8,31 +8,59 @@
 #include <netdb.h>
 #include <string.h>
 
-void parseArguments(int argc, char *argv[]){
-    int count_n = 0;
-    int count_p = 0;
+// Group Number
+#define GN 27
 
-    for(int i = 1; i<argc; i++){
-        if(strcmp(argv[i],"-n")==0){
-            count_n++;
-        }
-        if(strcmp(argv[i],"-p")==0){
-            count_p++;
-        }
+// Default Port and IP address if none is given
+int port = 5800+GN;
+char* ipAddress = "guadiana";
+
+// TODO: DOCUMENT
+void parseArguments(int argc, char *argv[]){
+
+    char opt;
+    int nCounter = 0;
+    int pCounter = 0;
+
+    if(argc%2 == 0){
+        printf("Invalid number of arguments\n");
+        return;
     }
-    if(count_n != 1 || count_p != 1){
-        fprintf(stderr, "Invalid format\n");
-        exit(1);
+    
+    //TODO: PLS DOCUMENT
+    // Edge cases: (ask teacher)
+    // ./User -n -p  -> Port: 5806 IP Address: -p
+    // ./User -p -n  -> Port: 0    IP Address: guadiana
+    // if you want to learn more there is always google at hand
+    while((opt = getopt(argc, argv, "n:p:")) != -1) 
+    { 
+        switch(opt) 
+        { 
+            case 'n': 
+                if(optarg[0] != '-'){
+                    ipAddress = optarg;
+                }
+                nCounter++;
+                break; 
+            case 'p': 
+                if(optarg[0] != '-'){
+                    port = atoi(optarg);
+                }
+                pCounter++;
+                break;  
+            default: 
+                fprintf(stderr, "Wrong arguments\n");
+                exit(1); 
+        }
+        if(nCounter > 1 || pCounter > 1){ 
+            fprintf(stderr, "Repeated arguments\n");
+            exit(1);
+        } 
     }
+    printf("Port:%d\nIP Address:%s\n",port,ipAddress);
 }
 
 int main(int argc, char *argv[]){
-
-    /*
-    arg0 -> nome
-    arg1/3 -> -n / -p
-    arg2/4 -> se -n inteiro, se -p char*
-    */
 
     parseArguments(argc,argv);
 
