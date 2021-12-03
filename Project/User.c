@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <math.h>
 
 // Group Number
 #define GN 27
@@ -41,11 +42,15 @@ void parseArguments(int argc, char *argv[]){
                     ipAddress = optarg;
                 }
                 nCounter++;
-                break; 
-            case 'p': 
-                if(optarg[0] != '-'){
-                    port = atoi(optarg);
+                break;
+            case 'p':
+                for(int i=0;i<strlen(optarg);i++){
+                    if(optarg[i] < '0' || optarg[i] > '9'){
+                        fprintf(stderr, "Port name must be an integer greater than 0\n");
+                        exit(1);
+                    }
                 }
+                port = atoi(optarg);
                 pCounter++;
                 break;  
             default: 
