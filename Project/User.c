@@ -97,9 +97,23 @@ void parseArguments(int argc, char *argv[]){
 }
 
 
+void processInputs(){
+
+    int fd, errcode;
+    ssize_t n;
+    socklen_t addrlen;
+    struct addrinfo hints, *res;
+    struct sockaddr_in addr;
+    char buffer[128];
+
+    
+}
+
 int main(int argc, char *argv[]){
 
     parseArguments(argc,argv);
+
+    processInputs();
 
     return 1;
 }
