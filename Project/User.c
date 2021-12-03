@@ -11,12 +11,32 @@
 
 // Group Number
 #define GN 27
+// Booleans
+#define TRUE 1
+#define FALSE 0
 
 // Global Variables
 // Default Port
 int port = 5800+GN;
 // Default IP address
 char* ipAddress = "guadiana";
+
+
+/**
+ * Check if String is a number
+ * @param[in] value String to be checked
+ * @param[out] IsNumber TRUE if is number else FALSE
+*/
+int checkStringIsNumber(char* value){
+    int IsNumber = TRUE;
+    for(int i = 0; i<strlen(value); i++){
+        if(!isdigit(value[i])){
+            IsNumber = FALSE;
+            break;
+        }
+    } 
+    return IsNumber;
+}
 
 
 /**
@@ -38,11 +58,14 @@ void parseArguments(int argc, char *argv[]){
         return;
     }
     
-    //TODO: PLS DOCUMENT
     // Edge cases: (ask teacher)
     // ./User -n -p  -> Port: 5806 IP Address: -p
     // ./User -p -n  -> Port: 0    IP Address: guadiana
-    // if you want to learn more there is always google at hand
+
+    // the getopt function parses command-line arguments
+    // and returns the flag , eg: "-n" -> opt = 'n'
+    // also has external variables such as optarg that stores
+    // the flag argument, eg: "-n guadiana" -> optarg = "guadiana"
     while((opt = getopt(argc, argv, "n:p:")) != -1) 
     { 
         switch(opt) 
@@ -54,12 +77,10 @@ void parseArguments(int argc, char *argv[]){
                 nCounter++;
                 break;
             case 'p':
-                for(int i = 0; i<strlen(optarg); i++){
-                    if(!isdigit(optarg[i])){
-                        fprintf(stderr, "Port number should be a number.\n");
-                        exit(1);
-                    }
-                } 
+                if(!checkStringIsNumber(optarg)){
+                    fprintf(stderr, "Port value should be a number.\n");
+                    exit(1);
+                }
                 port = atoi(optarg);
                 pCounter++;
                 break;  
