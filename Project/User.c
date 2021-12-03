@@ -7,15 +7,26 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <ctype.h>
 
 // Group Number
 #define GN 27
 
-// Default Port and IP address if none is given
+// Global Variables
+// Default Port
 int port = 5800+GN;
+// Default IP address
 char* ipAddress = "guadiana";
 
-// TODO: DOCUMENT
+
+/**
+ * Parse command-line arguments
+ * Only two available arguments:
+ *  -n DSIP where DSIP is the IP address of the machine where the server runs
+ *  -p DSport where DSport is the well-known port where server accepts requests
+ * @param[in] argc Number of elements in argv
+ * @param[in] argv Array of command-line arguments
+*/
 void parseArguments(int argc, char *argv[]){
 
     char opt;
@@ -43,12 +54,12 @@ void parseArguments(int argc, char *argv[]){
                 nCounter++;
                 break;
             case 'p':
-                for(int i=0;i<strlen(optarg);i++){
-                    if(optarg[i] < '0' || optarg[i] > '9'){
-                        fprintf(stderr, "Port name must be an integer\n");
+                for(int i = 0; i<strlen(optarg); i++){
+                    if(!isdigit(optarg[i])){
+                        fprintf(stderr, "Port number should be a number.\n");
                         exit(1);
                     }
-                }
+                } 
                 port = atoi(optarg);
                 pCounter++;
                 break;  
@@ -63,6 +74,7 @@ void parseArguments(int argc, char *argv[]){
     }
     printf("Port:%d\nIP Address:%s\n",port,ipAddress);
 }
+
 
 int main(int argc, char *argv[]){
 
