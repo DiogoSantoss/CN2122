@@ -7,7 +7,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
-#include <math.h>
 
 // Group Number
 #define GN 27
@@ -46,7 +45,7 @@ void parseArguments(int argc, char *argv[]){
             case 'p':
                 for(int i=0;i<strlen(optarg);i++){
                     if(optarg[i] < '0' || optarg[i] > '9'){
-                        fprintf(stderr, "Port name must be an integer greater than 0\n");
+                        fprintf(stderr, "Port name must be an integer\n");
                         exit(1);
                     }
                 }
