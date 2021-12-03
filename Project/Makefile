@@ -2,8 +2,8 @@ CC = gcc
 
 all: user
 
-user: user.c 
-	$(CC) -o user user.c
+user: User.c 
+	$(CC) -o User User.c
 
 clean:
-	rm user
+	rm User
