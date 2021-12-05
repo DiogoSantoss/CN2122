@@ -1,9 +1,7 @@
-CC = gcc
+all: User
 
-all: user
-
-user: User.c 
-	$(CC) -o User User.c
+User: User.o log.o
+	gcc -o User User.o log.o
 
 clean:
-	rm User
+	rm -f User.o log.o User
