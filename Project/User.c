@@ -18,9 +18,9 @@
 
 // Global Variables
 // Default Port
-char* port = "5827";
+char* port = "58027";
 // Default IP address
-char* ipAddress = "guadiana";
+char* ipAddress = "guadiana.tecnico.ulisboa.pt";
 
 
 /**
@@ -102,7 +102,7 @@ void parseArguments(int argc, char *argv[]){
  * @param[in] fd File descriptor of UDP socket
  * @param[in] res Information about server 
 */
-void UDPconnect(int* fd, struct addrinfo* res){
+void UDPconnect(int* fd, struct addrinfo** res){
     int errcode;
     struct addrinfo hints;
 
@@ -116,7 +116,7 @@ void UDPconnect(int* fd, struct addrinfo* res){
     hints.ai_family=AF_INET;
     hints.ai_socktype=SOCK_DGRAM;
 
-    errcode=getaddrinfo(ipAddress,port,&hints,&res) ;
+    errcode=getaddrinfo(ipAddress,port,&hints,res);
     if(errcode!=0){
         logError("Couldn't get server info.");
         exit(1);
@@ -132,13 +132,20 @@ void UDPconnect(int* fd, struct addrinfo* res){
 */
 void UDPsendMessage(int fd, struct addrinfo* res, char* message, int messageLen){
     int n;
+    socklen_t addrlen;
+    struct sockaddr_in addr;
 
     n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
     if(n==-1){
         logError("Couldn't send message via UDP socket");
         exit(1);
-    }
-
+    }   
+    /*
+    char buffer[128];
+    addrlen = sizeof(addr);
+    n = recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen);
+    if(n==-1) exit(1);
+    */
 }
 
 /**
@@ -171,7 +178,6 @@ void TCPconnect(int* fd, struct addrinfo* res){
         logError("Couldn't connect to server.");
         exit(1);
     }
-
 }
 
 /**
@@ -188,7 +194,6 @@ void TCPsendMessage(int fd, char* message, int messageLen){
         logError("Couldn't send message via TCP socket");
         exit(1);
     }
-
 }
 
 void processInputs(){
@@ -198,10 +203,10 @@ void processInputs(){
     // verify size buffer
     char buffer[128];
 
-    UDPconnect(&fd, res);
-    UDPsendMessage(fd,res,"Hello!\n",7);
-    TCPconnect(&fd,res);
-    TCPsendMessage(fd,"Hello!\n",7);
+    UDPconnect(&fd, &res);
+    UDPsendMessage(fd,res,"REG 12345 password\n",19);
+    //TCPconnect(&fd,res);
+    //TCPsendMessage(fd,"Hello!\n",7);
     
 }
 
