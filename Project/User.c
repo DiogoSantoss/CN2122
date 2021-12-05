@@ -9,9 +9,11 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "log.h"
+
 
 // Booleans
-#define TRUE 1
+#define TRUE  1
 #define FALSE 0
 
 // Global Variables
@@ -53,7 +55,7 @@ void parseArguments(int argc, char *argv[]){
     int pCounter = 0;
 
     if(argc%2 == 0){
-        printf("Invalid number of arguments\n");
+        logError("Invalid number of command-line arguments.");
         return;
     }
     
@@ -77,31 +79,36 @@ void parseArguments(int argc, char *argv[]){
                 break;
             case 'p':
                 if(!checkStringIsNumber(optarg)){
-                    fprintf(stderr, "Port value should be a number.\n");
+                    logError("Port value should be a positive integer.");
                     exit(1);
                 }
                 port = optarg;
                 pCounter++;
                 break;  
             default: 
-                fprintf(stderr, "Wrong arguments\n");
+                logError("Wrong arguments.");
                 exit(1);
         }
         if(nCounter > 1 || pCounter > 1){ 
-            fprintf(stderr, "Repeated arguments\n");
+            logError("Repeated command-line arguments.");
             exit(1);
         }
     }
-    printf("Port:%s\nIP Address:%s\n",port,ipAddress);
+    printf("DEBUG: Port:%s IP Address:%s\n",port,ipAddress);
 }
 
-void UDPconnect(int* fd, struct addrinfo *res){
+/**
+ * Connect via UDP socket to server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] res Information about server 
+*/
+void UDPconnect(int* fd, struct addrinfo* res){
     int errcode;
     struct addrinfo hints;
 
     *fd = socket(AF_INET, SOCK_DGRAM, 0);
     if(*fd==-1){
-        fprintf(stderr, "Couldn't create socket\n");
+        logError("Couldn't create UDP socket.");
         exit(1);
     }
 
@@ -111,18 +118,41 @@ void UDPconnect(int* fd, struct addrinfo *res){
 
     errcode=getaddrinfo(ipAddress,port,&hints,&res) ;
     if(errcode!=0){
-        fprintf(stderr, "Couldn't get server IP\n");
+        logError("Couldn't get server info.");
         exit(1);
     }
 }
 
-void TCPconnect(int* fd, struct addrinfo *res){
-    int errcode;
+/**
+ * Send message via UDP socket to server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] res Information about server 
+ * @param[in] message Message to be sent
+ * @param[in] messageLen Message length
+*/
+void UDPsendMessage(int fd, struct addrinfo* res, char* message, int messageLen){
+    int n;
+
+    n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
+    if(n==-1){
+        logError("Couldn't send message via UDP socket");
+        exit(1);
+    }
+
+}
+
+/**
+ * Connect via TCP socket to server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] res Information about server 
+*/
+void TCPconnect(int* fd, struct addrinfo* res){
+    int errcode,n;
     struct addrinfo hints;
 
     *fd = socket(AF_INET, SOCK_STREAM, 0);
     if(*fd==-1){
-        fprintf(stderr, "Couldn't create socket\n");
+        logError("Couldn't create TCP socket.");
         exit(1);
     }
 
@@ -132,28 +162,53 @@ void TCPconnect(int* fd, struct addrinfo *res){
 
     errcode=getaddrinfo(ipAddress,port,&hints,&res) ;
     if(errcode!=0){
-        fprintf(stderr, "Couldn't get server IP\n");
+        logError("Couldn't get server info.");
         exit(1);
     }
+
+    n = connect(*fd,res->ai_addr,res->ai_addrlen);
+    if(n==-1){
+        logError("Couldn't connect to server.");
+        exit(1);
+    }
+
+}
+
+/**
+ * Send message via TCP socket to server.
+ * @param[in] fd File descriptor of TCP socket
+ * @param[in] message Message to be sent
+ * @param[in] messageLen Message length
+*/
+void TCPsendMessage(int fd, char* message, int messageLen){
+    int n;
+
+    n = write(fd, message,messageLen);
+    if(n==-1){
+        logError("Couldn't send message via TCP socket");
+        exit(1);
+    }
+
 }
 
 void processInputs(){
 
     int fd;
-    ssize_t n;
-    socklen_t addrlen;
     struct addrinfo *res;
-    struct sockaddr_in addr;
+    // verify size buffer
     char buffer[128];
 
     UDPconnect(&fd, res);
+    UDPsendMessage(fd,res,"Hello!\n",7);
+    TCPconnect(&fd,res);
+    TCPsendMessage(fd,"Hello!\n",7);
     
 }
+
 
 int main(int argc, char *argv[]){
 
     parseArguments(argc,argv);
-
     processInputs();
 
     return 1;
