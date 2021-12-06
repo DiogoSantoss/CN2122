@@ -140,12 +140,12 @@ void UDPsendMessage(int fd, struct addrinfo* res, char* message, int messageLen)
         logError("Couldn't send message via UDP socket");
         exit(1);
     }   
-    /*
+    
     char buffer[128];
     addrlen = sizeof(addr);
     n = recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen);
     if(n==-1) exit(1);
-    */
+    printf("%s\n", buffer);
 }
 
 /**
@@ -196,25 +196,81 @@ void TCPsendMessage(int fd, char* message, int messageLen){
     }
 }
 
-void processInputs(){
+void processRegister(){
+    //parse()
+    //connect()
+    //send()
+    //disconnect()
+}
 
-    int fd;
-    struct addrinfo *res;
-    // verify size buffer
-    char buffer[128];
+void handleRequests(){
 
-    UDPconnect(&fd, &res);
-    UDPsendMessage(fd,res,"REG 12345 password\n",19);
-    //TCPconnect(&fd,res);
-    //TCPsendMessage(fd,"Hello!\n",7);
-    
+    // Max input size is defined by the biggest post message possible
+    // 4+1+240+2+1+24+1+1 = 274
+    char buffer[274];
+    char* p;
+
+    while(1){
+        fgets(buffer,274,stdin);
+        p = strtok(buffer," ");
+
+        if(!strcmp(p,"reg")){
+            processRegister();
+            
+        } else if(!strcmp(p,"unregister") || !strcmp(p,"unr")){
+            processUnregister();
+            
+        } else if(!strcmp(p,"login")){
+            processLogin();
+
+        } else if(!strcmp(p,"logout")){
+            processLogout();
+            
+        } else if(!strcmp(p,"showuid") || !strcmp(p,"su")){
+            processShowUID();
+
+        } else if(!strcmp(p,"exit")){
+            break;
+
+        } else if(!strcmp(p,"groups") || !strcmp(p,"gl")){
+            processGroups();
+
+        } else if(!strcmp(p,"subscribe") || !strcmp(p,"s")){
+            processSubscribe();
+
+        } else if(!strcmp(p,"unsubscribe") || !strcmp(p,"u")){
+            processUnsubscribe();
+
+        } else if(!strcmp(p,"my_groups") || !strcmp(p,"mgl")){
+            processMyGroups();
+
+        } else if(!strcmp(p,"select") || !strcmp(p,"sag")){
+            processSelect();
+        
+        } else if(!strcmp(p,"showgid") || !strcmp(p,"sg")){
+            processShowGID();
+
+        } else if(!strcmp(p,"ulist") || !strcmp(p,"ul")){
+            processUList();
+
+        } else if(!strcmp(p,"post")){
+            processPost();
+
+        } else if(!strcmp(p,"retrieve") || !strcmp(p,"r")){
+            processRetrieve();
+
+        } else {
+            printf("ERR\n");
+        }
+    }
 }
 
 
 int main(int argc, char *argv[]){
 
     parseArguments(argc,argv);
-    processInputs();
+    handleRequests();
+    //disconnect() gracefully;
 
     return 1;
 }
