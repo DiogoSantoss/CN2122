@@ -18,9 +18,9 @@
 
 // Global Variables
 // Default Port
-char* port = "58027";
+char* port = "58011";
 // Default IP address
-char* ipAddress = "guadiana.tecnico.ulisboa.pt";
+char* ipAddress = "tejo.tecnico.ulisboa.pt";
 
 
 /**
@@ -37,6 +37,23 @@ int checkStringIsNumber(char* value){
         }
     } 
     return IsNumber;
+}
+
+/**
+ * Check if String is a number
+ * @param[in] value String to be checked
+ * @param[out] IsNumber TRUE if is number else FALSE
+*/
+int checkStringIsAlphaNum(char* value){
+    int IsAlphaNumeric = TRUE;
+    for(int i = 0; i<strlen(value)-1; i++){
+        if(!isdigit(value[i]) && !isalpha(value[i])){
+            printf("value => %c",value[i]);
+            IsAlphaNumeric = FALSE;
+            break;
+        }
+    } 
+    return IsAlphaNumeric;
 }
 
 
@@ -135,17 +152,29 @@ void UDPsendMessage(int fd, struct addrinfo* res, char* message, int messageLen)
     socklen_t addrlen;
     struct sockaddr_in addr;
 
+    printf("DEBUG USER MESSAGE:%s",message);
     n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
     if(n==-1){
         logError("Couldn't send message via UDP socket");
         exit(1);
     }   
-    /*
-    char buffer[128];
+}
+
+char* UDPreceiveMessage(int fd){
+    int n;
+    socklen_t addrlen;
+    struct sockaddr_in addr;
+    char* buffer = malloc(sizeof(char)*128);
+
     addrlen = sizeof(addr);
     n = recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen);
-    if(n==-1) exit(1);
-    */
+    if(n==-1){
+        logError("Couldn't receive message via UDP socket");
+        exit(1);
+    } 
+
+    printf("DEBUG SERVER MESSAGE:%s",buffer);
+    return buffer;
 }
 
 /**
@@ -196,25 +225,160 @@ void TCPsendMessage(int fd, char* message, int messageLen){
     }
 }
 
-void processInputs(){
+char* parseRegister(char* input){
+
+    char* message;
+    char command[274],UID[274],pass[274],extra[274];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
+
+    if((strlen(extra) != 0) || (strlen(input) != 19) || (strlen(UID) != 5) || (strlen(pass) != 8)){
+        logREG("Wrong size parameters.");
+        return NULL;
+
+    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
+        logREG("Forbidden character in parameters.");
+        return NULL;
+    }
+
+    message = malloc(sizeof(char)*18);
+    sprintf(message,"REG %s %s\n",UID,pass);
+
+    return message;
+}
+
+void processRegister(char* input){
 
     int fd;
+    int msgSize = 19;
     struct addrinfo *res;
-    // verify size buffer
-    char buffer[128];
+    char *message, *response;
 
-    UDPconnect(&fd, &res);
-    UDPsendMessage(fd,res,"REG 12345 password\n",19);
-    //TCPconnect(&fd,res);
-    //TCPsendMessage(fd,"Hello!\n",7);
-    
+    message = parseRegister(input);
+    if(message == NULL) return;
+
+    UDPconnect(&fd,&res);
+    UDPsendMessage(fd,res,message,msgSize);
+    response = UDPreceiveMessage(fd); 
+
+    logREG(response);
+
+    free(message);
+    free(response);
+}
+
+char* parseLogin(char* input){
+
+    char* message;
+    char command[274],UID[274],pass[274],extra[274];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
+
+    if((strlen(extra) != 0) || (strlen(input) != 21) || (strlen(UID) != 5) || (strlen(pass) != 8)){
+        logREG("Wrong size parameters.");
+        return NULL;
+
+    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
+        logREG("Forbidden character in parameters.");
+        return NULL;
+    }
+
+    message = malloc(sizeof(char)*18);
+    sprintf(message,"LOG %s %s\n",UID,pass);
+
+    return message;
+}
+
+void processLogin(char* input){
+
+    int fd;
+    int msgSize;
+    struct addrinfo *res;
+    char *message, *response;
+
+    message = parseLogin(input);
+    if(message == NULL) return;
+
+    UDPconnect(&fd,&res);
+    UDPsendMessage(fd,res,message,19);
+    response = UDPreceiveMessage(fd); 
+
+    logLOG(response);
+
+    free(message);
+    free(response);
+}
+
+void handleRequests(){
+
+    // Max input size is defined by the biggest post message possible
+    // 4+1+240+2+1+24+1+1 = 274
+    char input[274],command[274],extra[274];
+
+    while(TRUE){
+
+        fgets(input, 274, stdin);
+        sscanf(input,"%s %s\n",command,extra);
+
+        if(!strcmp(command,"reg")){
+            processRegister(input);
+            
+        } else if(!strcmp(command,"unregister") || !strcmp(command,"unr")){
+            //processUnregister();
+            
+        } else if(!strcmp(command,"login")){
+            processLogin(input);
+
+        } else if(!strcmp(command,"logout")){
+            //processLogout();
+            
+        } else if(!strcmp(command,"showuid") || !strcmp(command,"su")){
+            //processShowUID();
+
+        } else if(!strcmp(command,"exit")){
+            break;
+
+        } else if(!strcmp(command,"groups") || !strcmp(command,"gl")){
+            //processGroups();
+
+        } else if(!strcmp(command,"subscribe") || !strcmp(command,"s")){
+            //processSubscribe();
+
+        } else if(!strcmp(command,"unsubscribe") || !strcmp(command,"u")){
+            //processUnsubscribe();
+
+        } else if(!strcmp(command,"my_groups") || !strcmp(command,"mgl")){
+            //processMyGroups();
+
+        } else if(!strcmp(command,"select") || !strcmp(command,"sag")){
+            //processSelect();
+        
+        } else if(!strcmp(command,"showgid") || !strcmp(command,"sg")){
+            //processShowGID();
+
+        } else if(!strcmp(command,"ulist") || !strcmp(command,"ul")){
+            //processUList();
+
+        } else if(!strcmp(command,"post")){
+            //processPost();
+
+        } else if(!strcmp(command,"retrieve") || !strcmp(command,"r")){
+            //processRetrieve();
+
+        } else {
+            printf("ERROR\n");
+        }
+    }
 }
 
 
 int main(int argc, char *argv[]){
 
     parseArguments(argc,argv);
-    processInputs();
+    handleRequests();
+    //disconnect() gracefully;
 
     return 1;
 }

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 /**
  * Types of messages (in user):
@@ -23,39 +24,57 @@
  * 
 */
 
-void logREG(int success){
-    if(success)
-        printf("User successfully registered.\n");
-    else    
-        printf("User failled to registered.\n");
+// should be stderr ?
+void logError(char* message){
+    printf("%s\n", message);
 }
 
-void logLOG(int success){
-    if(success)
+void logREG(char* message){
+    if(!strcmp(message,"RRG OK\n")){
+        printf("User successfully registered.\n");
+
+    } else if (!strcmp(message,"RRG DUP\n")){
+        printf("User failled to registered because it's a duplicate.\n");
+
+    } else if (!strcmp(message,"RRG NOK\n")){
+        printf("User failed to register.\n");
+
+    } else {
+        logError(message);
+    }
+}
+
+void logLOG(char* message){
+    if(!strcmp(message,"RLO OK\n")){
         printf("You are now logged in.\n");
-    else    
-        printf("Failled login.\n");
+
+    } else if (!strcmp(message,"RLO NOK\n")){
+        printf("Failed to login.\n");
+
+    } else {
+        logError(message);
+    }
 }
 
 void logGSR(int success, char* groupNumber, char* groupName){
     if(success)
         printf("New group created and subscribed: %s – “%s”.\n",groupNumber,groupName);
     else    
-        printf("Failled to create new group: %s – “%s”.\n",groupNumber,groupName);
+        printf("Failed to create new group: %s – “%s”.\n",groupNumber,groupName);
 }
 
 void logSLT(int success, char* groupNumber, char* groupName){
     if(success)
         printf("Group %s – “%s” is now the active group.\n",groupNumber,groupName);
     else    
-        printf("Failled to select Group %s – “%s”.\n",groupNumber,groupName);
+        printf("Failed to select Group %s – “%s”.\n",groupNumber,groupName);
 }
 
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber){
     if(success)
-        printf("posted message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);
+        printf("Posted message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);
     else    
-        printf("Failled to post message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);
+        printf("Failed to post message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);
 }
 
 void logRTV(int success, int amountMessages, char** messages){
@@ -65,10 +84,6 @@ void logRTV(int success, int amountMessages, char** messages){
             printf("%s",messages[i]);
         }
     } else {
-        printf("Failled to retreive messages.\n");
+        printf("Failed to retreive messages.\n");
     }
-}
-
-void logError(char* message){
-    fprintf(stderr, "ERROR: %s\n", message);
 }

@@ -1,8 +1,8 @@
 #ifndef LOG_DOT_H
 #define LOG_DOT_H
 
-void logREG(int success);
-void logLOG(int success);
+void logREG(char* message);
+void logLOG(char* message);
 void logGSR(int success, char* groupNumber, char* groupName);
 void logSLT(int success, char* groupNumber, char* groupName);
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber);
