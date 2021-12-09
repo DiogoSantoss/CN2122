@@ -19,14 +19,13 @@
 //Constants
 #define MAXSIZE 274
 
-// TODO - Let's be careful allocating space 
 // Global Variables
 // Default Port
-char* port = "58011";
+char port[5] = "58011";
 // Default IP address
-char* ipAddress = "tejo.tecnico.ulisboa.pt";// input can be IP or Name
+char ipAddress[512] = "tejo.tecnico.ulisboa.pt";// input can be IP or Name
 //User ID
-char* UserID = NULL;
+char UserID[5] = "";
 
 
 /**
@@ -54,7 +53,6 @@ int checkStringIsAlphaNum(char* value){
     int IsAlphaNumeric = TRUE;
     for(int i = 0; i<strlen(value)-1; i++){
         if(!isdigit(value[i]) && !isalpha(value[i])){
-            printf("value => %c",value[i]);
             IsAlphaNumeric = FALSE;
             break;
         }
@@ -96,7 +94,7 @@ void parseArguments(int argc, char *argv[]){
         { 
             case 'n': 
                 if(optarg[0] != '-'){
-                    ipAddress = optarg;
+                    strcpy(ipAddress,optarg);
                 }
                 nCounter++;
                 break;
@@ -105,7 +103,7 @@ void parseArguments(int argc, char *argv[]){
                     logError("Port value should be a positive integer.");
                     exit(1);
                 }
-                port = optarg;
+                strcpy(port,optarg);
                 pCounter++;
                 break;  
             default: 
@@ -286,12 +284,20 @@ char* parseLogin(char* input){
     sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
 
     if((strlen(extra) != 0) || (strlen(input) != 21) || (strlen(UID) != 5) || (strlen(pass) != 8)){
-        logREG("Wrong size parameters.");
+        logLOG("Wrong size parameters.");
         return NULL;
 
     } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
-        logREG("Forbidden character in parameters.");
+        logLOG("Forbidden character in parameters.");
         return NULL;
+    }
+
+    if(strcmp(UserID,"")){
+        logLOG("A user is already logged in.");
+        return NULL;
+
+    } else {
+        strcpy(UserID,UID);
     }
 
     message = malloc(sizeof(char)*18);
@@ -331,23 +337,12 @@ void processLogin(char* input, int size, char* (*parser)(char*), void (*logger)(
     message = (*parser)(input);
     if(message == NULL) return;
 
-    printf("Before: %s\n", UserID);
-
-    if(UserID != NULL){ 
-        logLOG("User already logged in. Please logout.");
-        return;
-    }
-
-    printf("After: %s\n", UserID);
-
     UDPconnect(&fd,&res);
     UDPsendMessage(fd,res,message,size);
     response = UDPreceiveMessage(fd);
 
-    if(!strcmp(response, "RLO OK\n")){
-        sscanf(input,"%s %s %s\n",extra,UID,extra);
-        printf("%s",UID);
-        strcpy(UserID,UID);
+    if(!strcmp(response,"RLO NOK\n")){
+        strcpy(UserID,"");
     }
 
     (*logger)(response);
