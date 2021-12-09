@@ -4,6 +4,7 @@
 void logREG(char* message);
 void logUNR(char* message);
 void logLOG(char* message);
+void logOUT(char* message);
 void logGSR(int success, char* groupNumber, char* groupName);
 void logSLT(int success, char* groupNumber, char* groupName);
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber);

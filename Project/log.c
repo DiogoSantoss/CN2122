@@ -69,6 +69,18 @@ void logLOG(char* message){
     }
 }
 
+void logOUT(char* message){
+    if(!strcmp(message,"ROU OK\n")){
+        printf("You are now logged out.\n");
+
+    } else if (!strcmp(message,"RLO NOK\n")){
+        printf("Failed to logout.\n");
+
+    } else {
+        logError(message);
+    }
+}
+
 void logGSR(int success, char* groupNumber, char* groupName){
     if(success)
         printf("New group created and subscribed: %s - “%s”.\n",groupNumber,groupName);

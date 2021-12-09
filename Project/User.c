@@ -306,43 +306,90 @@ char* parseLogin(char* input){
     return message;
 }
 
-void processRequest(char* input, int size, char* (*parser)(char*), void (*logger)(char*)){
-
-    int fd;
-    int msgSize;
-    struct addrinfo *res;
-    char *message, *response;
-
-    message = (*parser)(input);
-    if(message == NULL) return;
-
-    UDPconnect(&fd,&res);
-    UDPsendMessage(fd,res,message,size);
-    response = UDPreceiveMessage(fd);
-
-    (*logger)(response);
-
-    free(message);
-    free(response);
-}
-
-void processLogin(char* input, int size, char* (*parser)(char*), void (*logger)(char*)){
-
-    int fd;
-    int msgSize;
-    char UID[5],extra[MAXSIZE];
-    struct addrinfo *res;
-    char *message, *response;
-
-    message = (*parser)(input);
-    if(message == NULL) return;
-
-    UDPconnect(&fd,&res);
-    UDPsendMessage(fd,res,message,size);
-    response = UDPreceiveMessage(fd);
-
+void helperLogin(char* response){
     if(!strcmp(response,"RLO NOK\n")){
         strcpy(UserID,"");
+    }
+}
+
+char* parseLogout(char* input){
+
+    char* message;
+    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
+
+    if((strlen(extra) != 0) || (strlen(input) != 22) || (strlen(UID) != 5) || (strlen(pass) != 8)){
+        logOUT("Wrong size parameters.");
+        return NULL;
+
+    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
+        logOUT("Forbidden character in parameters.");
+        return NULL;
+    }
+
+    if(!strcmp(UserID,"")){
+        logOUT("No user is logged in.");
+        return NULL;
+
+    } else if (strcmp(UserID,UID)){
+        logOUT("This user is not logged in.");
+        return NULL;
+    }
+
+    message = malloc(sizeof(char)*18);
+    sprintf(message,"OUT %s %s\n",UID,pass);
+
+    return message;
+}
+
+void helperLogout(char* response){
+    if(!strcmp(response,"ROU OK\n")){
+        strcpy(UserID,"");
+    }
+}
+
+void processShowUID(char* input){
+
+    char* message;
+    char command[MAXSIZE],extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s\n",command,extra);
+
+    if(strlen(extra) != 0){
+        logOUT("Wrong size parameters.");
+        return;
+    }
+
+    if(!strcmp(UserID,"")){
+        logOUT("No user is logged in.");
+        return;
+
+    }
+
+    printf("Current UID:%s\n",UserID);
+}
+
+
+
+void processRequest(char* input, int size, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
+
+    int fd;
+    int msgSize;
+    struct addrinfo *res;
+    char *message, *response;
+
+    message = (*parser)(input);
+    if(message == NULL) return;
+
+    UDPconnect(&fd,&res);
+    UDPsendMessage(fd,res,message,size);
+    response = UDPreceiveMessage(fd);
+
+    if(helper != NULL){
+        (*helper)(response);
     }
 
     (*logger)(response);
@@ -363,19 +410,19 @@ void handleRequests(){
         sscanf(input,"%s %s\n",command,extra);
 
         if(!strcmp(command,"reg")){
-            processRequest(input, 19, parseRegister, logREG);
+            processRequest(input, 19, parseRegister, logREG, NULL);
             
         } else if(!strcmp(command,"unregister") || !strcmp(command,"unr")){
-            processRequest(input, 19, parseUnregister, logUNR);
+            processRequest(input, 19, parseUnregister, logUNR, NULL);
             
         } else if(!strcmp(command,"login")){
-            processLogin(input, 19, parseLogin, logLOG);
+            processRequest(input, 19, parseLogin, logLOG, helperLogin);
 
         } else if(!strcmp(command,"logout")){
-            //processLogout();
+            processRequest(input, 19, parseLogout, logOUT, helperLogout);
             
         } else if(!strcmp(command,"showuid") || !strcmp(command,"su")){
-            //processShowUID();
+            processShowUID(input);
 
         } else if(!strcmp(command,"exit")){
             break;
