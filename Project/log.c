@@ -6,11 +6,11 @@
  * 
  * User successfully registered
  * You are now logged in
- * New group created and subscribed: GROUP_NUMBER – “GROUP_NAME”
- * Group GROUP_NUMBER – “GROUP_NAME” is now the active group
+ * New group created and subscribed: GROUP_NUMBER - “GROUP_NAME”
+ * Group GROUP_NUMBER - “GROUP_NAME” is now the active group
  * posted message number MESSAGE_NUMBER to group GROUP_NUMBER - “GROUP_NAME”
  * NUMBER_OF_MESSAGES message(s) retrieved:
- *  MESSAGE_NUMBER – “MESSAGE_CONTENT”; file stored: FILE_NAME
+ *  MESSAGE_NUMBER - “MESSAGE_CONTENT”; file stored: FILE_NAME
  * 
  * Types of messages (in server):
  * 
@@ -71,16 +71,16 @@ void logLOG(char* message){
 
 void logGSR(int success, char* groupNumber, char* groupName){
     if(success)
-        printf("New group created and subscribed: %s – “%s”.\n",groupNumber,groupName);
+        printf("New group created and subscribed: %s - “%s”.\n",groupNumber,groupName);
     else    
-        printf("Failed to create new group: %s – “%s”.\n",groupNumber,groupName);
+        printf("Failed to create new group: %s - “%s”.\n",groupNumber,groupName);
 }
 
 void logSLT(int success, char* groupNumber, char* groupName){
     if(success)
-        printf("Group %s – “%s” is now the active group.\n",groupNumber,groupName);
+        printf("Group %s - “%s” is now the active group.\n",groupNumber,groupName);
     else    
-        printf("Failed to select Group %s – “%s”.\n",groupNumber,groupName);
+        printf("Failed to select Group %s - “%s”.\n",groupNumber,groupName);
 }
 
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber){
