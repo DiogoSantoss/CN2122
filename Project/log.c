@@ -44,6 +44,19 @@ void logREG(char* message){
     }
 }
 
+void logUNR(char* message){
+    if(!strcmp(message,"RUN OK\n")){
+        printf("User successfully unregistered.\n");
+
+    } else if (!strcmp(message,"RUN NOK\n")){
+        printf("User failed to unregister.\n");
+
+    } else {
+        logError(message);
+    }
+}
+
+
 void logLOG(char* message){
     if(!strcmp(message,"RLO OK\n")){
         printf("You are now logged in.\n");

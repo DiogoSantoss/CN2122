@@ -16,11 +16,17 @@
 #define TRUE  1
 #define FALSE 0
 
+//Constants
+#define MAXSIZE 274
+
+// TODO - Let's be careful allocating space 
 // Global Variables
 // Default Port
 char* port = "58011";
 // Default IP address
-char* ipAddress = "tejo.tecnico.ulisboa.pt";
+char* ipAddress = "tejo.tecnico.ulisboa.pt";// input can be IP or Name
+//User ID
+char* UserID = NULL;
 
 
 /**
@@ -228,7 +234,7 @@ void TCPsendMessage(int fd, char* message, int messageLen){
 char* parseRegister(char* input){
 
     char* message;
-    char command[274],UID[274],pass[274],extra[274];
+    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
 
     memset(extra,0,sizeof extra);
     sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
@@ -248,30 +254,33 @@ char* parseRegister(char* input){
     return message;
 }
 
-void processRegister(char* input){
+char* parseUnregister(char* input){
 
-    int fd;
-    int msgSize = 19;
-    struct addrinfo *res;
-    char *message, *response;
+    char* message;
+    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
 
-    message = parseRegister(input);
-    if(message == NULL) return;
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
 
-    UDPconnect(&fd,&res);
-    UDPsendMessage(fd,res,message,msgSize);
-    response = UDPreceiveMessage(fd); 
+    if((strlen(extra) != 0) || ((strlen(input) != 19) && (strlen(input) != 26)) || (strlen(UID) != 5) || (strlen(pass) != 8)){
+        logREG("Wrong size parameters.");
+        return NULL;
 
-    logREG(response);
+    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
+        logREG("Forbidden character in parameters.");
+        return NULL;
+    }
 
-    free(message);
-    free(response);
-}
+    message = malloc(sizeof(char)*18);
+    sprintf(message,"UNR %s %s\n",UID,pass);
+
+    return message;
+} 
 
 char* parseLogin(char* input){
 
     char* message;
-    char command[274],UID[274],pass[274],extra[274];
+    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
 
     memset(extra,0,sizeof extra);
     sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
@@ -291,21 +300,57 @@ char* parseLogin(char* input){
     return message;
 }
 
-void processLogin(char* input){
+void processRequest(char* input, int size, char* (*parser)(char*), void (*logger)(char*)){
 
     int fd;
     int msgSize;
     struct addrinfo *res;
     char *message, *response;
 
-    message = parseLogin(input);
+    message = (*parser)(input);
     if(message == NULL) return;
 
     UDPconnect(&fd,&res);
-    UDPsendMessage(fd,res,message,19);
-    response = UDPreceiveMessage(fd); 
+    UDPsendMessage(fd,res,message,size);
+    response = UDPreceiveMessage(fd);
 
-    logLOG(response);
+    (*logger)(response);
+
+    free(message);
+    free(response);
+}
+
+void processLogin(char* input, int size, char* (*parser)(char*), void (*logger)(char*)){
+
+    int fd;
+    int msgSize;
+    char UID[5],extra[MAXSIZE];
+    struct addrinfo *res;
+    char *message, *response;
+
+    message = (*parser)(input);
+    if(message == NULL) return;
+
+    printf("Before: %s\n", UserID);
+
+    if(UserID != NULL){ 
+        logLOG("User already logged in. Please logout.");
+        return;
+    }
+
+    printf("After: %s\n", UserID);
+
+    UDPconnect(&fd,&res);
+    UDPsendMessage(fd,res,message,size);
+    response = UDPreceiveMessage(fd);
+
+    if(!strcmp(response, "RLO OK\n")){
+        sscanf(input,"%s %s %s\n",extra,UID,extra);
+        printf("%s",UID);
+        strcpy(UserID,UID);
+    }
+
+    (*logger)(response);
 
     free(message);
     free(response);
@@ -314,22 +359,22 @@ void processLogin(char* input){
 void handleRequests(){
 
     // Max input size is defined by the biggest post message possible
-    // 4+1+240+2+1+24+1+1 = 274
-    char input[274],command[274],extra[274];
+    // 4+1+240+2+1+24+1+1 = MAXSIZE
+    char input[MAXSIZE],command[MAXSIZE],extra[MAXSIZE];
 
     while(TRUE){
 
-        fgets(input, 274, stdin);
+        fgets(input, MAXSIZE, stdin);
         sscanf(input,"%s %s\n",command,extra);
 
         if(!strcmp(command,"reg")){
-            processRegister(input);
+            processRequest(input, 19, parseRegister, logREG);
             
         } else if(!strcmp(command,"unregister") || !strcmp(command,"unr")){
-            //processUnregister();
+            processRequest(input, 19, parseUnregister, logUNR);
             
         } else if(!strcmp(command,"login")){
-            processLogin(input);
+            processLogin(input, 19, parseLogin, logLOG);
 
         } else if(!strcmp(command,"logout")){
             //processLogout();
