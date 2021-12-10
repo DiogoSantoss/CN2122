@@ -366,12 +366,12 @@ char* parseSubscribe(char* input){
 
     //TODO GName can be alphanumerical PLUS "-" and "_"
     } else if(!checkStringIsNumber(GID) || !checkStringIsAlphaNum(GName)){
-        logOUT("Forbidden character in parameters.");
+        logGSR("Forbidden character in parameters.");
         return NULL;
     }
 
     if(!strcmp(UserID,"")){
-        logOUT("No user is logged in.");
+        logGSR("No user is logged in.");
         return NULL;
     }
 
