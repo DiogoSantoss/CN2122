@@ -431,7 +431,7 @@ void processShowGID(char* input){
 
 void processRequest(char* input, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
 
-    int fd, size;
+    int fd;
     int msgSize;
     struct addrinfo *res;
     char *message, *response;
