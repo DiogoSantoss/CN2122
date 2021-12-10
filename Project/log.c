@@ -24,6 +24,9 @@
  * 
 */
 
+//Constants
+#define MAXSIZE 274
+
 // should be stderr ?
 void logError(char* message){
     printf("%s\n", message);
@@ -81,11 +84,36 @@ void logOUT(char* message){
     }
 }
 
-void logGSR(int success, char* groupNumber, char* groupName){
-    if(success)
-        printf("New group created and subscribed: %s - “%s”.\n",groupNumber,groupName);
-    else    
-        printf("Failed to create new group: %s - “%s”.\n",groupNumber,groupName);
+void logGSR(char* message){
+
+    //The fact that any message can be an argument implies that any variable can be full with that message
+    char rgs[MAXSIZE], status[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
+    char string[MAXSIZE + 9];
+    sscanf(message, "%s %s %s %s", rgs, status, GID, extra);
+
+    sprintf(string, "RGS NEW %s\n", GID);
+
+    if(!strcmp(message,"RGS OK\n")){
+        printf("A group was subscribed.\n");
+    } 
+    else if (!strcmp(message,string)){
+        printf("New group %s was created and subscribed.\n", GID);
+    } 
+    else if (!strcmp(message, "RGS E_USR\n")){
+        printf("Invalid UID.\n");
+    }
+    else if (!strcmp(message, "RGS E_GRP\n")){
+        printf("Invalid GID.\n");
+    }
+    else if (!strcmp(message, "RGS E_GNAME\n")){
+        printf("Invalid Group Name.\n");
+    }
+    else if (!strcmp(message, "RGS E_FULL\n")){
+        printf("New group could not be created - Group limit exceded).\n");
+    }
+    else {
+        logError(message);
+    }
 }
 
 void logSLT(int success, char* groupNumber, char* groupName){

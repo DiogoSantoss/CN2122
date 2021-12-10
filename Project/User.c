@@ -304,7 +304,7 @@ char* parseLogin(char* input){
 
     message = malloc(sizeof(char)*18);
     sprintf(message,"LOG %s %s\n",UID,pass);
-
+    
     return message;
 }
 
@@ -343,6 +343,42 @@ char* parseLogout(char* input){
     message = malloc(sizeof(char)*18);
     sprintf(message,"OUT %s %s\n",UID,pass);
 
+    return message;
+}
+
+/* 
+    GID -> 2 digits
+    GName -> max 24 characters
+*/
+char* parseSubscribe(char* input){
+
+    char* message;
+    char command[MAXSIZE], GID[MAXSIZE], GName[MAXSIZE], extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s %s %s\n", command, GID, GName, extra);
+
+    //TODO if GID = 0, it must be converted to 00
+
+    if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(GID) != 2) || (strlen(GName) > 24)){
+        logGSR("Wrong size parameters.");
+        return NULL;
+
+    //TODO GName can be alphanumerical PLUS "-" and "_"
+    } else if(!checkStringIsNumber(GID) || !checkStringIsAlphaNum(GName)){
+        logOUT("Forbidden character in parameters.");
+        return NULL;
+    }
+
+    if(!strcmp(UserID,"")){
+        logOUT("No user is logged in.");
+        return NULL;
+    }
+
+    // 3 + 5 + 2 + 24 + 3 (spaces) = 37 
+    message = malloc(sizeof(char)*37);
+    sprintf(message,"GSR %s %s %s\n", UserID, GID, GName);
+    printf("%s\n", message);
     return message;
 }
 
@@ -451,7 +487,7 @@ void handleRequests(){
             //processGroups();
 
         } else if(!strcmp(command,"subscribe") || !strcmp(command,"s")){
-            //processSubscribe();
+            processRequest(input, 38, parseSubscribe, logGSR, NULL);
 
         } else if(!strcmp(command,"unsubscribe") || !strcmp(command,"u")){
             //processUnsubscribe();
