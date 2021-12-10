@@ -73,7 +73,7 @@ void logOUT(char* message){
     if(!strcmp(message,"ROU OK\n")){
         printf("You are now logged out.\n");
 
-    } else if (!strcmp(message,"RLO NOK\n")){
+    } else if (!strcmp(message,"ROU NOK\n")){
         printf("Failed to logout.\n");
 
     } else {

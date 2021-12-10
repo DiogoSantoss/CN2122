@@ -24,8 +24,10 @@
 char port[5] = "58011";
 // Default IP address
 char ipAddress[512] = "tejo.tecnico.ulisboa.pt";// input can be IP or Name
-//User ID
+// User ID
 char UserID[5] = "";
+// Group ID
+char GroupID[2] = "";
 
 
 /**
@@ -156,7 +158,7 @@ void UDPsendMessage(int fd, struct addrinfo* res, char* message, int messageLen)
     socklen_t addrlen;
     struct sockaddr_in addr;
 
-    printf("DEBUG USER MESSAGE:%s",message);
+    //printf("DEBUG USER MESSAGE:%s",message);
     n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
     if(n==-1){
         logError("Couldn't send message via UDP socket");
@@ -177,7 +179,7 @@ char* UDPreceiveMessage(int fd){
         exit(1);
     } 
 
-    printf("DEBUG SERVER MESSAGE:%s",buffer);
+    //printf("DEBUG SERVER MESSAGE:%s",buffer);
     return buffer;
 }
 
@@ -366,13 +368,31 @@ void processShowUID(char* input){
     if(!strcmp(UserID,"")){
         logOUT("No user is logged in.");
         return;
-
     }
 
     printf("Current UID:%s\n",UserID);
 }
 
+void processShowGID(char* input){
 
+    char* message;
+    char command[MAXSIZE],extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s\n",command,extra);
+
+    if(strlen(extra) != 0){
+        logOUT("Wrong size parameters.");
+        return;
+    }
+
+    if(!strcmp(GroupID,"")){
+        logOUT("No group is selected.");
+        return;
+    }
+
+    printf("Current UID:%s\n",GroupID);
+}
 
 void processRequest(char* input, int size, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
 
@@ -443,7 +463,7 @@ void handleRequests(){
             //processSelect();
         
         } else if(!strcmp(command,"showgid") || !strcmp(command,"sg")){
-            //processShowGID();
+            processShowGID(input);
 
         } else if(!strcmp(command,"ulist") || !strcmp(command,"ul")){
             //processUList();
