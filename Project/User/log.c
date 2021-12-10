@@ -164,13 +164,6 @@ void logGLM(char* message){
     }
 }
 
-void logSLT(int success, char* groupNumber, char* groupName){
-    if(success)
-        printf("Group %s - “%s” is now the active group.\n",groupNumber,groupName);
-    else    
-        printf("Failed to select Group %s - “%s”.\n",groupNumber,groupName);
-}
-
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber){
     if(success)
         printf("Posted message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);

@@ -354,6 +354,7 @@ char* parseLogout(char* input){
 
     message = malloc(sizeof(char)*18);
     sprintf(message,"OUT %s %s\n",userID,userPassword);
+    printf("%ld\n", strlen(userPassword));
 
     return message;
 }
@@ -394,7 +395,7 @@ char* parseSubscribe(char* input){
     memset(extra,0,sizeof extra);
     sscanf(input,"%s %s %s %s\n", command, GID, GName, extra);
 
-    if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(GID) > 3) || (strlen(GName) > 25)){
+    if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(GID) > 2) || (strlen(GName) > 25)){
         logGSR("Wrong size parameters.");
         return NULL;
 
@@ -423,7 +424,7 @@ char* parseUnsubscribe(char* input){
     memset(extra,0,sizeof extra);
     sscanf(input,"%s %s %s\n", command, GID, extra);
 
-    if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(GID) > 3)){
+    if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(GID) > 2)){
         logGSR("Wrong size parameters.");
         return NULL;
 
@@ -467,6 +468,35 @@ char* parseMyGroups(char* input){
     return message;
 }
 
+void processSelect(char* input){
+
+    char* message;
+    char command[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s %s\n", command, GID, extra);
+
+    if((strlen(extra) != 0) || ((strlen(command) != 6) && (strlen(command) != 3)) || (strlen(GID) > 2)){
+        logOUT("Wrong size parameters.");
+        return;
+
+    } else if(!checkStringIsNumber(GID)){
+        logOUT("Forbidden character in parameters.");
+        return;
+    } else if(!strcmp(GID, "0") || !strcmp(GID, "00")){
+        logOUT("Group 0 doesn't exist");
+        return;
+    }
+
+    if(!strcmp(userID,"")){
+        logOUT("No user is logged in.");
+        return;
+    }
+
+    strcpy(groupID, GID);
+    printf("Current group selected: %s\n", groupID);
+}
+
 void processShowGID(char* input){
 
     char* message;
@@ -480,12 +510,17 @@ void processShowGID(char* input){
         return;
     }
 
+    if(!strcmp(userID,"")){
+        logOUT("No user is logged in.");
+        return;
+    }
+
     if(!strcmp(groupID,"")){
         logOUT("No group is selected.");
         return;
     }
 
-    printf("Current UID:%s\n",groupID);
+    printf("Current GID:%s\n",groupID);
 }
 
 
@@ -568,7 +603,7 @@ void handleRequests(){
             processRequest(input, parseMyGroups, logGLM, NULL);
 
         } else if(!strcmp(command,"select") || !strcmp(command,"sag")){
-            //processSelect();
+            processSelect(input);
         
         } else if(!strcmp(command,"showgid") || !strcmp(command,"sg")){
             processShowGID(input);
