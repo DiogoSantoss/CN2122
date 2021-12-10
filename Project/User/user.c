@@ -22,15 +22,15 @@
 
 // Global Variables
 // Default Port
-char port[5] = "58011";
+char port[6] = "58011";
 // Default IP address
-char ipAddress[512] = "tejo.tecnico.ulisboa.pt";
+char ipAddress[513] = "tejo.tecnico.ulisboa.pt";
 // User ID
-char userID[5] = "";
+char userID[6] = "";
 // User Password
-char userPassword[8] = "";
+char userPassword[9] = "";
 // Group ID
-char groupID[2] = "";
+char groupID[3] = "";
 
 
 /**
