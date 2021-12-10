@@ -378,7 +378,6 @@ char* parseSubscribe(char* input){
     // 3 + 5 + 2 + 24 + 3 (spaces) = 37 
     message = malloc(sizeof(char)*37);
     sprintf(message,"GSR %s %s %s\n", UserID, GID, GName);
-    printf("%s\n", message);
     return message;
 }
 
@@ -430,9 +429,9 @@ void processShowGID(char* input){
     printf("Current UID:%s\n",GroupID);
 }
 
-void processRequest(char* input, int size, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
+void processRequest(char* input, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
 
-    int fd;
+    int fd, size;
     int msgSize;
     struct addrinfo *res;
     char *message, *response;
@@ -440,8 +439,10 @@ void processRequest(char* input, int size, char* (*parser)(char*), void (*logger
     message = (*parser)(input);
     if(message == NULL) return;
 
+    printf("%s", message);
+
     UDPconnect(&fd,&res);
-    UDPsendMessage(fd,res,message,size);
+    UDPsendMessage(fd,res,message,strlen(message));
     response = UDPreceiveMessage(fd);
 
     if(helper != NULL){
@@ -466,16 +467,16 @@ void handleRequests(){
         sscanf(input,"%s %s\n",command,extra);
 
         if(!strcmp(command,"reg")){
-            processRequest(input, 19, parseRegister, logREG, NULL);
+            processRequest(input, parseRegister, logREG, NULL);
             
         } else if(!strcmp(command,"unregister") || !strcmp(command,"unr")){
-            processRequest(input, 19, parseUnregister, logUNR, NULL);
+            processRequest(input, parseUnregister, logUNR, NULL);
             
         } else if(!strcmp(command,"login")){
-            processRequest(input, 19, parseLogin, logLOG, helperLogin);
+            processRequest(input, parseLogin, logLOG, helperLogin);
 
         } else if(!strcmp(command,"logout")){
-            processRequest(input, 19, parseLogout, logOUT, helperLogout);
+            processRequest(input, parseLogout, logOUT, helperLogout);
             
         } else if(!strcmp(command,"showuid") || !strcmp(command,"su")){
             processShowUID(input);
@@ -487,7 +488,7 @@ void handleRequests(){
             //processGroups();
 
         } else if(!strcmp(command,"subscribe") || !strcmp(command,"s")){
-            processRequest(input, 38, parseSubscribe, logGSR, NULL);
+            processRequest(input, parseSubscribe, logGSR, NULL);
 
         } else if(!strcmp(command,"unsubscribe") || !strcmp(command,"u")){
             //processUnsubscribe();
