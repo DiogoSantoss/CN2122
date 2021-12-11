@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "colors.h"
+
 /**
  * Types of messages (in user):
  * 
@@ -27,14 +29,21 @@
 
 //Constants
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3169
+#define EXTRAMAXSIZE 3268
+
+//Boolean
+#define TRUE 1
+#define FALSE 0
 
 // should be stderr ?
 void logError(char* message){
+    red();
     printf("%s\n", message);
+    reset();
 }
 
 void logREG(char* message){
+    green();
     if(!strcmp(message,"RRG OK\n")){
         printf("User successfully registered.\n");
 
@@ -47,9 +56,11 @@ void logREG(char* message){
     } else {
         logError(message);
     }
+    reset();
 }
 
 void logUNR(char* message){
+    green();
     if(!strcmp(message,"RUN OK\n")){
         printf("User successfully unregistered.\n");
 
@@ -59,9 +70,11 @@ void logUNR(char* message){
     } else {
         logError(message);
     }
+    reset();
 }
 
 void logLOG(char* message){
+    green();
     if(!strcmp(message,"RLO OK\n")){
         printf("You are now logged in.\n");
 
@@ -71,9 +84,11 @@ void logLOG(char* message){
     } else {
         logError(message);
     }
+    reset();
 }
 
 void logOUT(char* message){
+    green();
     if(!strcmp(message,"ROU OK\n")){
         printf("You are now logged out.\n");
 
@@ -82,6 +97,37 @@ void logOUT(char* message){
 
     } else {
         logError(message);
+    }
+    reset();
+}
+
+void logGLS(char* message){
+
+    // WARNING: logError cant be here anymore
+    // (5 + 4 + 24) * 99 = 3267
+    char prefix[MAXSIZE], nGroups[3], sufix[EXTRAMAXSIZE];
+    char GID[3], GName[25], MID[5];
+
+    sscanf(message, "%s %s %[^\n]s", prefix, nGroups, sufix);
+
+    if(!strcmp(message, "RGL 0")){
+        printf("No groups available to list.\n");
+    }
+    else if(!strcmp(message, "ERR") && !strcmp(message, "ERROR")){
+        printf("Groups - A fatal error has ocurred.\n");
+    }
+    else{
+        for (int i = 0; i < atoi(nGroups); i++){
+            // Coloring pointless stuff
+            if (i % 2 == 0){
+                cyan();
+            }else{
+                white();
+            }
+            sscanf(sufix, "%s %s %s %[^\n]s", GID, GName, MID, sufix);
+            printf("Group ID: %s\nGroup Name: %s\nLast Message ID: %s\n\n", GID, GName, MID);
+        }
+        reset(); // color reset
     }
 }
 
@@ -139,7 +185,8 @@ void logGUR(char* message){
     }
 }
 
-void logGLM(char* message){
+// Replaced by logGLS (they do the exact same thing)
+/*void logGLM(char* message){
 
     int numberOfGroups;
     char rgm[MAXSIZE], n[MAXSIZE], extra[EXTRAMAXSIZE], temp[EXTRAMAXSIZE];
@@ -162,7 +209,8 @@ void logGLM(char* message){
             strcpy(extra,temp);
         }
     }
-}
+    
+}*/
 
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber){
     if(success)

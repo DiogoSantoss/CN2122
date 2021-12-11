@@ -10,7 +10,7 @@
 #include <ctype.h>
 
 #include "log.h"
-
+#include "colors.h"
 
 // Booleans
 #define TRUE  1
@@ -18,6 +18,7 @@
 
 //Constants
 #define MAXSIZE 274
+#define EXTRAMAXSIZE 3268
 
 
 // Global Variables
@@ -31,7 +32,6 @@ char userID[6] = "";
 char userPassword[9] = "";
 // Group ID
 char groupID[3] = "";
-
 
 /**
  * Check if String is a number
@@ -185,10 +185,12 @@ char* UDPreceiveMessage(int fd){
     int n;
     socklen_t addrlen;
     struct sockaddr_in addr;
-    char* message = malloc(sizeof(char)*128);
+    // TODO - 1024 is a great compromise between not exploting the server's memory and not receiving enough information from GLS
+    // However, this has to be fixed, as the wanted malloc size is EXTRAMAXSIZE
+    char* message = malloc(sizeof(char)*1024);
 
     addrlen = sizeof(addr);
-    n = recvfrom(fd,message,128,0,(struct sockaddr*)&addr,&addrlen);
+    n = recvfrom(fd,message,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
     if(n==-1){
         logError("Couldn't receive message via UDP socket");
         exit(1);
@@ -354,7 +356,6 @@ char* parseLogout(char* input){
 
     message = malloc(sizeof(char)*18);
     sprintf(message,"OUT %s %s\n",userID,userPassword);
-    printf("%ld\n", strlen(userPassword));
 
     return message;
 }
@@ -444,6 +445,25 @@ char* parseUnsubscribe(char* input){
     return message;
 }
 
+char* parseGroups(char* input){
+    char* message;
+    char command[MAXSIZE], extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s\n",command,extra);
+
+    if((strlen(extra) != 0) || ((strlen(command) != 2) && (strlen(command) != 6))){
+        logOUT("Wrong size parameters.");
+        return NULL;
+    }
+
+    message = malloc(sizeof(char)*4);
+    sprintf(message,"GLS\n");
+
+    return message;
+
+}
+
 char* parseMyGroups(char* input){
 
     char* message;
@@ -523,7 +543,6 @@ void processShowGID(char* input){
     printf("Current GID:%s\n",groupID);
 }
 
-
 /**
  * Generic function to proccess commands that access the server via UDP protocol.
  * This function receives the user input and a set of function specific for each
@@ -544,13 +563,13 @@ void processRequest(char* input, char* (*parser)(char*), void (*logger)(char*), 
     message = (*parser)(input);
     if(message == NULL) return;
 
-    printf("MESSAGE SENT:%s",message);
+    //printf("MESSAGE SENT:%s\n",message);
 
     UDPconnect(&fd,&res);
     UDPsendMessage(fd,res,message,strlen(message));
     response = UDPreceiveMessage(fd);
 
-    printf("RESPONSE GIVEN:%s",response);
+    //printf("RESPONSE GIVEN:%s\n",response);
 
     if(helper != NULL){
         (*helper)(response);
@@ -591,7 +610,7 @@ void handleRequests(){
             break;
 
         } else if(!strcmp(command,"groups") || !strcmp(command,"gl")){
-            //processGroups();
+            processRequest(input, parseGroups, logGLS, NULL);
 
         } else if(!strcmp(command,"subscribe") || !strcmp(command,"s")){
             processRequest(input, parseSubscribe, logGSR, NULL);
@@ -600,7 +619,7 @@ void handleRequests(){
             processRequest(input, parseUnsubscribe, logGUR, NULL);
 
         } else if(!strcmp(command,"my_groups") || !strcmp(command,"mgl")){
-            processRequest(input, parseMyGroups, logGLM, NULL);
+            processRequest(input, parseMyGroups, logGLS, NULL);
 
         } else if(!strcmp(command,"select") || !strcmp(command,"sag")){
             processSelect(input);
