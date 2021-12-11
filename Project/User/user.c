@@ -247,6 +247,25 @@ void TCPsendMessage(int fd, char* message, int messageLen){
 }
 
 /**
+ * Receive message via UDP socket from server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[out] message Message from server
+*/
+char* TCPreceiveMessage(int fd){
+    int n;
+    // TODO - 1024 is a great compromise between not exploting the server's memory and not receiving enough information from GLS
+    // However, this has to be fixed, as the wanted malloc size is EXTRAMAXSIZE
+    char* message = malloc(sizeof(char)*1024);
+
+    n = read(fd, message, EXTRAMAXSIZE);
+    if(n==-1){
+        logError("Couldn't receive message via UDP socket");
+        exit(1);
+    } 
+    return message;
+}
+
+/**
  * Parse register command.
  * @param[in] input User input to be parsed
  * @param[out] message Formarted message to send to server
@@ -553,7 +572,7 @@ void processShowGID(char* input){
  * @param[in] helper "Optional" function when processRequest needs to do additional tasks
  * 
 */
-void processRequest(char* input, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
+void processRequestUDP(char* input, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
 
     int fd;
     int msgSize;
@@ -581,6 +600,44 @@ void processRequest(char* input, char* (*parser)(char*), void (*logger)(char*), 
     free(response);
 }
 
+/**
+ * Generic function to proccess commands that access the server via TCP protocol.
+ * This function receives the user input and a set of function specific for each
+ * command.
+ * @param[in] input User input
+ * @param[in] parser Function to parse the command
+ * @param[in] logger Function to log the messages related to the command
+ * @param[in] helper "Optional" function when processRequest needs to do additional tasks
+ * 
+*/
+void processRequestTCP(char* input, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
+
+    int fd;
+    int msgSize;
+    struct addrinfo *res;
+    char *message, *response;
+
+    message = (*parser)(input);
+    if(message == NULL) return;
+
+    //printf("MESSAGE SENT:%s\n",message);
+
+    TCPconnect(&fd,res);
+    TCPsendMessage(fd,message,strlen(message));
+    response = TCPreceiveMessage(fd);
+
+    //printf("RESPONSE GIVEN:%s\n",response);
+
+    if(helper != NULL){
+        (*helper)(response);
+    }
+
+    (*logger)(response);
+
+    free(message);
+    free(response);
+}
+
 // Main Loop
 void handleRequests(){
 
@@ -592,16 +649,16 @@ void handleRequests(){
         sscanf(input,"%s %s\n",command,extra);
 
         if(!strcmp(command,"reg")){
-            processRequest(input, parseRegister, logREG, NULL);
+            processRequestUDP(input, parseRegister, logREG, NULL);
             
         } else if(!strcmp(command,"unregister") || !strcmp(command,"unr")){
-            processRequest(input, parseUnregister, logUNR, NULL);
+            processRequestUDP(input, parseUnregister, logUNR, NULL);
             
         } else if(!strcmp(command,"login")){
-            processRequest(input, parseLogin, logLOG, helperLogin);
+            processRequestUDP(input, parseLogin, logLOG, helperLogin);
 
         } else if(!strcmp(command,"logout")){
-            processRequest(input, parseLogout, logOUT, helperLogout);
+            processRequestUDP(input, parseLogout, logOUT, helperLogout);
             
         } else if(!strcmp(command,"showuid") || !strcmp(command,"su")){
             processShowUID(input);
@@ -610,16 +667,16 @@ void handleRequests(){
             break;
 
         } else if(!strcmp(command,"groups") || !strcmp(command,"gl")){
-            processRequest(input, parseGroups, logGLS, NULL);
+            processRequestUDP(input, parseGroups, logGLS, NULL);
 
         } else if(!strcmp(command,"subscribe") || !strcmp(command,"s")){
-            processRequest(input, parseSubscribe, logGSR, NULL);
+            processRequestUDP(input, parseSubscribe, logGSR, NULL);
 
         } else if(!strcmp(command,"unsubscribe") || !strcmp(command,"u")){
-            processRequest(input, parseUnsubscribe, logGUR, NULL);
+            processRequestUDP(input, parseUnsubscribe, logGUR, NULL);
 
         } else if(!strcmp(command,"my_groups") || !strcmp(command,"mgl")){
-            processRequest(input, parseMyGroups, logGLS, NULL);
+            processRequestUDP(input, parseMyGroups, logGLS, NULL);
 
         } else if(!strcmp(command,"select") || !strcmp(command,"sag")){
             processSelect(input);
