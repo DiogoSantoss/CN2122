@@ -1,81 +1,36 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <string.h>
-#include <ctype.h>
+#include <netdb.h>
 
 #include "log.h"
 #include "colors.h"
+#include "common.h"
+#include "structs.h"
+#include "requestsUDP.h"
+#include "requestsTCP.h"
 
 // Booleans
 #define TRUE  1
 #define FALSE 0
 
-//Constants
+// Constants
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3268
-
-
-// Global Variables
-// Default Port
-char port[6] = "58011";
-// Default IP address
-char ipAddress[513] = "tejo.tecnico.ulisboa.pt";
-// User ID
-char userID[6] = "";
-// User Password
-char userPassword[9] = "";
-// Group ID
-char groupID[3] = "";
 
 /**
- * Check if String is a number
- * @param[in] value String to be checked
- * @param[out] IsNumber TRUE if is number else FALSE
+ * Initialize data about user and server
+ * @param[in] user Pointer to user
+ * @param[in] data Pointer to server
 */
-int checkStringIsNumber(char* value){
-    int IsNumber = TRUE;
-    for(int i = 0; i<strlen(value); i++){
-        if(!isdigit(value[i])){
-            IsNumber = FALSE;
-            break;
-        }
-    } 
-    return IsNumber;
-}
+void initializeData(userData *user, serverData *server){
+    strcpy((*user).ID,"");
+    strcpy((*user).password,"");
+    strcpy((*user).groupID,"");
 
-/**
- * Check if String is alphanumeric
- * @param[in] value String to be checked
- * @param[out] IsNumber TRUE if is alphanumeric else FALSE
-*/
-int checkStringIsAlphaNum(char* value){
-    int IsAlphaNumeric = TRUE;
-    for(int i = 0; i<strlen(value)-1; i++){
-        if(!isdigit(value[i]) && !isalpha(value[i])){
-            IsAlphaNumeric = FALSE;
-            break;
-        }
-    } 
-    return IsAlphaNumeric;
+    strcpy((*server).ipAddress,"tejo.tecnico.ulisboa.pt");
+    strcpy((*server).port,"58011");
 }
-
-int checkStringIsGroupName(char* value){
-    int IsGroupName = TRUE;
-    for(int i = 0; i<strlen(value)-1; i++){
-        if(!isdigit(value[i]) && !isalpha(value[i]) && value[i] != '-' && value[i] != '_'){
-            IsGroupName = FALSE;
-            break;
-        }
-    } 
-    return IsGroupName;
-}
-
 
 /**
  * Parse command-line arguments
@@ -85,7 +40,7 @@ int checkStringIsGroupName(char* value){
  * @param[in] argc Number of elements in argv
  * @param[in] argv Array of command-line arguments
 */
-void parseArguments(int argc, char *argv[]){
+void parseArguments(serverData *server, int argc, char *argv[]){
 
     char opt;
     int nCounter = 0;
@@ -106,7 +61,7 @@ void parseArguments(int argc, char *argv[]){
         { 
             case 'n': 
                 if(optarg[0] != '-'){
-                    strcpy(ipAddress,optarg);
+                    strcpy((*server).ipAddress,optarg);
                 }
                 nCounter++;
                 break;
@@ -115,7 +70,7 @@ void parseArguments(int argc, char *argv[]){
                     logError("Port value should be a positive integer.");
                     exit(1);
                 }
-                strcpy(port,optarg);
+                strcpy((*server).port,optarg);
                 pCounter++;
                 break;  
             default: 
@@ -127,519 +82,14 @@ void parseArguments(int argc, char *argv[]){
             exit(1);
         }
     }
-    printf("DEBUG: Port:%s IP Address:%s\n",port,ipAddress);
 }
 
 /**
- * Connect via UDP socket to server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
+ * Main loop where user's commands are processed
+ * @param[in] user User data
+ * @param[in] server Server data
 */
-void UDPconnect(int* fd, struct addrinfo** res){
-    int errcode;
-    struct addrinfo hints;
-
-    *fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(*fd==-1){
-        logError("Couldn't create UDP socket.");
-        exit(1);
-    }
-
-    memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET;
-    hints.ai_socktype=SOCK_DGRAM;
-
-    errcode=getaddrinfo(ipAddress,port,&hints,res);
-    if(errcode!=0){
-        logError("Couldn't get server info.");
-        exit(1);
-    }
-}
-
-/**
- * Send message via UDP socket to server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
- * @param[in] message Message to be sent
- * @param[in] messageLen Message length
-*/
-void UDPsendMessage(int fd, struct addrinfo* res, char* message, int messageLen){
-    int n;
-    socklen_t addrlen;
-    struct sockaddr_in addr;
-
-    //printf("DEBUG USER MESSAGE:%s",message);
-    n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
-    if(n==-1){
-        logError("Couldn't send message via UDP socket");
-        exit(1);
-    }   
-}
-
-/**
- * Receive message via UDP socket from server.
- * @param[in] fd File descriptor of UDP socket
- * @param[out] message Message from server
-*/
-char* UDPreceiveMessage(int fd){
-    int n;
-    socklen_t addrlen;
-    struct sockaddr_in addr;
-    // TODO - 1024 is a great compromise between not exploting the server's memory and not receiving enough information from GLS
-    // However, this has to be fixed, as the wanted malloc size is EXTRAMAXSIZE
-    char* message = malloc(sizeof(char)*1024);
-
-    addrlen = sizeof(addr);
-    n = recvfrom(fd,message,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
-    if(n==-1){
-        logError("Couldn't receive message via UDP socket");
-        exit(1);
-    } 
-    return message;
-}
-
-/**
- * Connect via TCP socket to server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
-*/
-void TCPconnect(int* fd, struct addrinfo* res){
-    int errcode,n;
-    struct addrinfo hints;
-
-    *fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(*fd==-1){
-        logError("Couldn't create TCP socket.");
-        exit(1);
-    }
-
-    memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET;
-    hints.ai_socktype=SOCK_STREAM;
-
-    errcode=getaddrinfo(ipAddress,port,&hints,&res) ;
-    if(errcode!=0){
-        logError("Couldn't get server info.");
-        exit(1);
-    }
-
-    n = connect(*fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1){
-        logError("Couldn't connect to server.");
-        exit(1);
-    }
-}
-
-/**
- * Send message via TCP socket to server.
- * @param[in] fd File descriptor of TCP socket
- * @param[in] message Message to be sent
- * @param[in] messageLen Message length
-*/
-void TCPsendMessage(int fd, char* message, int messageLen){
-    int n;
-
-    n = write(fd, message,messageLen);
-    if(n==-1){
-        logError("Couldn't send message via TCP socket");
-        exit(1);
-    }
-}
-
-/**
- * Receive message via UDP socket from server.
- * @param[in] fd File descriptor of UDP socket
- * @param[out] message Message from server
-*/
-char* TCPreceiveMessage(int fd){
-    int n;
-    // TODO - 1024 is a great compromise between not exploting the server's memory and not receiving enough information from GLS
-    // However, this has to be fixed, as the wanted malloc size is EXTRAMAXSIZE
-    char* message = malloc(sizeof(char)*1024);
-
-    n = read(fd, message, EXTRAMAXSIZE);
-    if(n==-1){
-        logError("Couldn't receive message via UDP socket");
-        exit(1);
-    } 
-    return message;
-}
-
-/**
- * Parse register command.
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
-*/
-char* parseRegister(char* input){
-
-    char* message;
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
-
-    if((strlen(extra) != 0) || (strlen(input) != 19) || (strlen(UID) != 5) || (strlen(pass) != 8)){
-        logREG("Wrong size parameters.");
-        return NULL;
-
-    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
-        logREG("Forbidden character in parameters.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*18);
-    sprintf(message,"REG %s %s\n",UID,pass);
-
-    return message;
-}
-
-char* parseUnregister(char* input){
-
-    char* message;
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
-
-    if((strlen(extra) != 0) || ((strlen(input) != 19) && (strlen(input) != 26)) || (strlen(UID) != 5) || (strlen(pass) != 8)){
-        logREG("Wrong size parameters.");
-        return NULL;
-
-    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
-        logREG("Forbidden character in parameters.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*18);
-    sprintf(message,"UNR %s %s\n",UID,pass);
-
-    return message;
-} 
-
-char* parseLogin(char* input){
-
-    char* message;
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
-
-    if((strlen(extra) != 0) || (strlen(input) != 21) || (strlen(UID) != 5) || (strlen(pass) != 8)){
-        logLOG("Wrong size parameters.");
-        return NULL;
-
-    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
-        logLOG("Forbidden character in parameters.");
-        return NULL;
-    }
-
-    if(strcmp(userID,"")){
-        logLOG("A user is already logged in.");
-        return NULL;
-
-    } else {
-        strcpy(userID,UID);
-        strcpy(userPassword,pass);
-    }
-
-    message = malloc(sizeof(char)*18);
-    sprintf(message,"LOG %s %s\n",UID,pass);
-    
-    return message;
-}
-
-void helperLogin(char* response){
-    if(!strcmp(response,"RLO NOK\n")){
-        strcpy(userID,"");
-    }
-}
-
-char* parseLogout(char* input){
-
-    char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s\n",command,extra);
-
-    if((strlen(extra) != 0) || (strlen(input) != 7)){
-        logOUT("Wrong size parameters.");
-        return NULL;
-
-    }
-
-    if(!strcmp(userID,"")){
-        logOUT("No user is logged in.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*18);
-    sprintf(message,"OUT %s %s\n",userID,userPassword);
-
-    return message;
-}
-
-void helperLogout(char* response){
-    if(!strcmp(response,"ROU OK\n")){
-        strcpy(userID,"");
-        strcpy(userPassword,"");
-    }
-}
-
-void processShowUID(char* input){
-
-    char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s\n",command,extra);
-
-    if(strlen(extra) != 0){
-        logOUT("Wrong size parameters.");
-        return;
-    }
-
-    if(!strcmp(userID,"")){
-        logOUT("No user is logged in.");
-        return;
-    }
-
-    printf("Current UID:%s\n",userID);
-}
-
-char* parseSubscribe(char* input){
-
-    char* message;
-    char command[MAXSIZE], GID[MAXSIZE], GName[MAXSIZE], extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s %s\n", command, GID, GName, extra);
-
-    if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(GID) > 2) || (strlen(GName) > 25)){
-        logGSR("Wrong size parameters.");
-        return NULL;
-
-    } else if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName)){
-        logGSR("Forbidden character in parameters.");
-        return NULL;
-    }
-
-    if(!strcmp(userID,"")){
-        logGSR("No user is logged in.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*37);
-    sprintf(message,"GSR %s %02d %s\n", userID, atoi(GID), GName);
-    printf("%s",message);
-
-    return message;
-}
-
-char* parseUnsubscribe(char* input){
-
-    char* message;
-    char command[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s\n", command, GID, extra);
-
-    if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(GID) > 2)){
-        logGSR("Wrong size parameters.");
-        return NULL;
-
-    } else if(!checkStringIsNumber(GID)){
-        logGSR("Forbidden character in parameters.");
-        return NULL;
-    }
-
-    if(!strcmp(userID,"")){
-        logGSR("No user is logged in.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*37);
-    sprintf(message,"GUR %s %02d\n", userID, atoi(GID));
-
-    return message;
-}
-
-char* parseGroups(char* input){
-    char* message;
-    char command[MAXSIZE], extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s\n",command,extra);
-
-    if((strlen(extra) != 0) || ((strlen(command) != 2) && (strlen(command) != 6))){
-        logOUT("Wrong size parameters.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*4);
-    sprintf(message,"GLS\n");
-
-    return message;
-
-}
-
-char* parseMyGroups(char* input){
-
-    char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s\n",command,extra);
-
-    if((strlen(extra) != 0) || ((strlen(input) != 4) && (strlen(input) != 10))){
-        logOUT("Wrong size parameters.");
-        return NULL;
-    }
-
-    if(!strcmp(userID,"")){
-        logGSR("No user is logged in.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*10);
-    sprintf(message,"GLM %s\n", userID);
-
-    return message;
-}
-
-void processSelect(char* input){
-
-    char* message;
-    char command[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s\n", command, GID, extra);
-
-    if((strlen(extra) != 0) || ((strlen(command) != 6) && (strlen(command) != 3)) || (strlen(GID) > 2)){
-        logOUT("Wrong size parameters.");
-        return;
-
-    } else if(!checkStringIsNumber(GID)){
-        logOUT("Forbidden character in parameters.");
-        return;
-    } else if(!strcmp(GID, "0") || !strcmp(GID, "00")){
-        logOUT("Group 0 doesn't exist");
-        return;
-    }
-
-    if(!strcmp(userID,"")){
-        logOUT("No user is logged in.");
-        return;
-    }
-
-    strcpy(groupID, GID);
-    printf("Current group selected: %s\n", groupID);
-}
-
-void processShowGID(char* input){
-
-    char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s\n",command,extra);
-
-    if(strlen(extra) != 0){
-        logOUT("Wrong size parameters.");
-        return;
-    }
-
-    if(!strcmp(userID,"")){
-        logOUT("No user is logged in.");
-        return;
-    }
-
-    if(!strcmp(groupID,"")){
-        logOUT("No group is selected.");
-        return;
-    }
-
-    printf("Current GID:%s\n",groupID);
-}
-
-/**
- * Generic function to proccess commands that access the server via UDP protocol.
- * This function receives the user input and a set of function specific for each
- * command.
- * @param[in] input User input
- * @param[in] parser Function to parse the command
- * @param[in] logger Function to log the messages related to the command
- * @param[in] helper "Optional" function when processRequest needs to do additional tasks
- * 
-*/
-void processRequestUDP(char* input, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
-
-    int fd;
-    int msgSize;
-    struct addrinfo *res;
-    char *message, *response;
-
-    message = (*parser)(input);
-    if(message == NULL) return;
-
-    //printf("MESSAGE SENT:%s\n",message);
-
-    UDPconnect(&fd,&res);
-    UDPsendMessage(fd,res,message,strlen(message));
-    response = UDPreceiveMessage(fd);
-
-    //printf("RESPONSE GIVEN:%s\n",response);
-
-    if(helper != NULL){
-        (*helper)(response);
-    }
-
-    (*logger)(response);
-
-    free(message);
-    free(response);
-}
-
-/**
- * Generic function to proccess commands that access the server via TCP protocol.
- * This function receives the user input and a set of function specific for each
- * command.
- * @param[in] input User input
- * @param[in] parser Function to parse the command
- * @param[in] logger Function to log the messages related to the command
- * @param[in] helper "Optional" function when processRequest needs to do additional tasks
- * 
-*/
-void processRequestTCP(char* input, char* (*parser)(char*), void (*logger)(char*), void(*helper)(char*)){
-
-    int fd;
-    int msgSize;
-    struct addrinfo *res;
-    char *message, *response;
-
-    message = (*parser)(input);
-    if(message == NULL) return;
-
-    //printf("MESSAGE SENT:%s\n",message);
-
-    TCPconnect(&fd,res);
-    TCPsendMessage(fd,message,strlen(message));
-    response = TCPreceiveMessage(fd);
-
-    //printf("RESPONSE GIVEN:%s\n",response);
-
-    if(helper != NULL){
-        (*helper)(response);
-    }
-
-    (*logger)(response);
-
-    free(message);
-    free(response);
-}
-
-// Main Loop
-void handleRequests(){
+void handleRequests(userData *user, serverData *server){
 
     char input[MAXSIZE],command[MAXSIZE],extra[MAXSIZE];
 
@@ -649,40 +99,40 @@ void handleRequests(){
         sscanf(input,"%s %s\n",command,extra);
 
         if(!strcmp(command,"reg")){
-            processRequestUDP(input, parseRegister, logREG, NULL);
+            processRequestUDP(user, server, input, parseRegister, logREG, NULL);
             
         } else if(!strcmp(command,"unregister") || !strcmp(command,"unr")){
-            processRequestUDP(input, parseUnregister, logUNR, NULL);
+            processRequestUDP(user, server, input, parseUnregister, logUNR, NULL);
             
         } else if(!strcmp(command,"login")){
-            processRequestUDP(input, parseLogin, logLOG, helperLogin);
+            processRequestUDP(user, server, input, parseLogin, logLOG, helperLogin);
 
         } else if(!strcmp(command,"logout")){
-            processRequestUDP(input, parseLogout, logOUT, helperLogout);
+            processRequestUDP(user, server, input, parseLogout, logOUT, helperLogout);
             
         } else if(!strcmp(command,"showuid") || !strcmp(command,"su")){
-            processShowUID(input);
+            processShowUID(user, input);
 
         } else if(!strcmp(command,"exit")){
             break;
 
         } else if(!strcmp(command,"groups") || !strcmp(command,"gl")){
-            processRequestUDP(input, parseGroups, logGLS, NULL);
+            processRequestUDP(user, server, input, parseGroups, logGLS, NULL);
 
         } else if(!strcmp(command,"subscribe") || !strcmp(command,"s")){
-            processRequestUDP(input, parseSubscribe, logGSR, NULL);
+            processRequestUDP(user, server, input, parseSubscribe, logGSR, NULL);
 
         } else if(!strcmp(command,"unsubscribe") || !strcmp(command,"u")){
-            processRequestUDP(input, parseUnsubscribe, logGUR, NULL);
+            processRequestUDP(user, server, input, parseUnsubscribe, logGUR, NULL);
 
         } else if(!strcmp(command,"my_groups") || !strcmp(command,"mgl")){
-            processRequestUDP(input, parseMyGroups, logGLS, NULL);
+            processRequestUDP(user, server, input, parseMyGroups, logGLS, NULL);
 
         } else if(!strcmp(command,"select") || !strcmp(command,"sag")){
-            processSelect(input);
+            processSelect(user, input);
         
         } else if(!strcmp(command,"showgid") || !strcmp(command,"sg")){
-            processShowGID(input);
+            processShowGID(user, input);
 
         } else if(!strcmp(command,"ulist") || !strcmp(command,"ul")){
             //processUList();
@@ -699,11 +149,14 @@ void handleRequests(){
     }
 }
 
-// Main
 int main(int argc, char *argv[]){
     
-    parseArguments(argc,argv);
-    handleRequests();
+    userData user;
+    serverData server;
+
+    initializeData(&user, &server);
+    parseArguments(&server, argc, argv);
+    handleRequests(&user, &server);
     //disconnect() gracefully;
 
     return 1;

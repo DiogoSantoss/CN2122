@@ -103,14 +103,12 @@ void logOUT(char* message){
 
 void logGLS(char* message){
 
-    // WARNING: logError cant be here anymore
-    // (5 + 4 + 24) * 99 = 3267
-    char prefix[MAXSIZE], nGroups[3], sufix[EXTRAMAXSIZE];
+    char prefix[MAXSIZE], nGroups[3], suffix[EXTRAMAXSIZE];
     char GID[3], GName[25], MID[5];
 
-    sscanf(message, "%s %s %[^\n]s", prefix, nGroups, sufix);
-
-    if(!strcmp(message, "RGL 0")){
+    sscanf(message, "%s %s %[^\n]s", prefix, nGroups, suffix);
+    
+    if(!strcmp(message, "RGM 0\n")){
         printf("No groups available to list.\n");
     }
     else if(!strcmp(message, "ERR") && !strcmp(message, "ERROR")){
@@ -124,7 +122,7 @@ void logGLS(char* message){
             }else{
                 white();
             }
-            sscanf(sufix, "%s %s %s %[^\n]s", GID, GName, MID, sufix);
+            sscanf(suffix, "%s %s %s %[^\n]s", GID, GName, MID, suffix);
             printf("Group ID: %s\nGroup Name: %s\nLast Message ID: %s\n\n", GID, GName, MID);
         }
         reset(); // color reset
