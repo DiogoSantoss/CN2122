@@ -178,6 +178,13 @@ void logGUR(char* message){
     }
 }
 
+void logULS(char* message){
+
+    char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE];
+    
+    printf("MESSAGE: %s\n", message);
+}
+
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber){
     if(success)
         printf("post: Posted message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);

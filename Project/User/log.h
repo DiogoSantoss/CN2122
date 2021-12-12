@@ -10,8 +10,11 @@ void logOUT(char* message);
 void logGLS(char* message);
 void logGSR(char* message);
 void logGUR(char* message);
+
+void logULS(char* message);
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber);
 void logRTV(int success, int amountMessages, char** messages);
+
 void logError(char* message);
 
 #endif

@@ -16,6 +16,28 @@
 #define MAXSIZE 274
 #define EXTRAMAXSIZE 3268
 
+char* parseUlist(userData* user, char* input){
+    char* message;
+    char command[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s %s\n",command, GID, extra);
+
+    if((strlen(extra) != 0) || (strlen(command) != 5) || (strlen(GID) > 2)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+    if(!checkStringIsNumber(GID)){
+        logError("Forbidden character in parameters.");
+        return NULL;
+    }
+
+    message = malloc(sizeof(char)*7);
+    sprintf(message, "ULS %02d\n", atoi(GID));
+
+    return message;
+}
+
 /**
  * Connect via TCP socket to server.
  * @param[in] fd File descriptor of UDP socket
@@ -119,13 +141,16 @@ void processRequestTCP(
     message = (*parser)(user,input);
     if(message == NULL) return;
 
-    TCPconnect(server,&fd,res);
-    TCPsendMessage(fd,message,strlen(message));
-    response = TCPreceiveMessage(fd);
+    connectTCP(server,&fd,res);
+    printf("%s\n", message);
+    sendMessageTCP(fd,message,strlen(message));
+    response = receiveMessageTCP(fd);
 
     if(helper != NULL){
         (*helper)(user,response);
     }
+
+    printf("RESPONSE: %s\n", response);
 
     (*logger)(response);
 

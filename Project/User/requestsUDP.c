@@ -116,7 +116,6 @@ char* parseLogout(userData* user, char* input){
     if((strlen(extra) != 0) || (strlen(input) != 7)){
         logError("Wrong size parameters.");
         return NULL;
-
     }
 
     if(!strcmp((*user).ID,"")){
@@ -182,7 +181,6 @@ char* parseSubscribe(userData* user, char* input){
 
     message = malloc(sizeof(char)*37);
     sprintf(message,"GSR %s %02d %s\n", (*user).ID, atoi(GID), GName);
-    printf("%s",message);
 
     return message;
 }

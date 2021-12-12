@@ -135,7 +135,7 @@ void handleRequests(userData *user, serverData *server){
             processShowGID(user, input);
 
         } else if(!strcmp(command,"ulist") || !strcmp(command,"ul")){
-            //processUList();
+            processRequestTCP(user, server, input, parseUlist, logULS, NULL);
 
         } else if(!strcmp(command,"post")){
             //processPost();
