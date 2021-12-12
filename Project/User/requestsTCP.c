@@ -148,7 +148,7 @@ void processRequestTCP(
     if(message == NULL) return;
 
     connectTCP(server,&fd,res);
-    printf("%s\n", message);
+    //printf("%s\n", message);
     sendMessageTCP(fd,message,strlen(message));
     response = receiveMessageTCP(fd);
 

@@ -410,7 +410,7 @@ void processRequestUDP(
     sendMessageUDP(fd,res,message,strlen(message));
     response = receiveMessageUDP(fd);
 
-    printf("%s",response);
+    //printf("%s",response);
 
     if(helper != NULL){
         (*helper)(user,response);

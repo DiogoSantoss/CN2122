@@ -181,6 +181,8 @@ void logGUR(char* message){
 void logULS(char* message){
 
     char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE];
+    char userIDTemp[6];
+    int lenght;
     
     sscanf(message, "%s %s %s %[^\n]s", prefix, status, GName, suffix);
 
@@ -191,8 +193,16 @@ void logULS(char* message){
         logError("reply: A fatal error has ocurred.");
     }
     else{
-        //Better formating todo latter
-        printf("%s\n", message);
+        purple();
+        printf("Group name: %s\n\n", GName);
+        sscanf(suffix, "%[^\n]s", suffix);
+        lenght = (strlen(suffix) + 1) / 6;
+        for (int i = 0; i < lenght; i++){
+            i % 2 == 0 ? cyan() : white(); // coloring
+            sscanf(suffix, "%s %[^\n]s", userIDTemp, suffix);
+            printf("%s\n", userIDTemp);
+        }   
+        reset(); // coloring reset
     }
 }
 

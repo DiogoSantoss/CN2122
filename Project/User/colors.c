@@ -14,7 +14,7 @@ void blue() {
 }
 
 void purple() {
-  printf("\033[0;34m");
+  printf("\033[0;35m");
 }
 
 void cyan() {
