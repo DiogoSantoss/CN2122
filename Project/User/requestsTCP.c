@@ -17,23 +17,25 @@
 #define EXTRAMAXSIZE 3268
 
 char* parseUlist(userData* user, char* input){
+    // TODO: Need to check if the group is selected before doing ulist
+    // For now, you can do ulist without the group being selected
     char* message;
-    char command[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
+    char command[MAXSIZE], extra[MAXSIZE];
 
     memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s\n",command, GID, extra);
+    sscanf(input,"%s %s\n",command, extra);
 
-    if((strlen(extra) != 0) || (strlen(command) != 5) || (strlen(GID) > 2)){
-        logError("Wrong size parameters.");
+    if (!strcmp(user->groupID,"")){
+        logError("No group is selected");
         return NULL;
     }
-    if(!checkStringIsNumber(GID)){
-        logError("Forbidden character in parameters.");
+    else if((strlen(extra) != 0) || (strlen(command) != 5)){
+        logError("Wrong size parameters.");
         return NULL;
     }
 
     message = malloc(sizeof(char)*7);
-    sprintf(message, "ULS %02d\n", atoi(GID));
+    sprintf(message, "ULS %02d\n", atoi(user->groupID));
 
     return message;
 }
@@ -84,8 +86,8 @@ void sendMessageTCP(int fd, char* message, int messageLen){
     ptr = message;
 
     while (nLeft > 0){
-        nLeft = write(fd, ptr, messageLen);
-        if(nLeft <= 0){
+        nWritten = write(fd, ptr, nLeft);
+        if(nWritten <= 0){
             logError("Couldn't send message via TCP socket");
             exit(1);
         }
@@ -102,13 +104,17 @@ void sendMessageTCP(int fd, char* message, int messageLen){
 char* receiveMessageTCP(int fd){
     int nRead;
     char* message = calloc(EXTRAMAXSIZE,sizeof(char));
+    char* ptr;
+
+    ptr = message;
 
     while (nRead != 0){
-        nRead = read(fd, message, EXTRAMAXSIZE);
+        nRead = read(fd, ptr, EXTRAMAXSIZE);
         if(nRead == -1){
             logError("Couldn't receive message via TCP socket");
             exit(1);
         }
+        ptr += nRead;
     }
      
     return message;
@@ -149,8 +155,6 @@ void processRequestTCP(
     if(helper != NULL){
         (*helper)(user,response);
     }
-
-    printf("RESPONSE: %s\n", response);
 
     (*logger)(response);
 

@@ -182,7 +182,18 @@ void logULS(char* message){
 
     char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE];
     
-    printf("MESSAGE: %s\n", message);
+    sscanf(message, "%s %s %s %[^\n]s", prefix, status, GName, suffix);
+
+    if(!strcmp(message, "RUL\n")){
+        printf("ulist: This group does not exist.\n");
+    }
+    else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
+        logError("reply: A fatal error has ocurred.");
+    }
+    else{
+        //Better formating todo latter
+        printf("%s\n", message);
+    }
 }
 
 void logPST(int success, char* groupNumber, char* groupName, int messageNumber){
