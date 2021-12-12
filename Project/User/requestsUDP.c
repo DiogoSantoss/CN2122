@@ -30,11 +30,11 @@ char* parseRegister(userData* user, char* input){
     sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
 
     if((strlen(extra) != 0) || (strlen(input) != 19) || (strlen(UID) != 5) || (strlen(pass) != 8)){
-        logREG("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
 
     } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
-        logREG("Forbidden character in parameters.");
+        logError("Forbidden character in parameters.");
         return NULL;
     }
 
@@ -53,11 +53,11 @@ char* parseUnregister(userData* user, char* input){
     sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
 
     if((strlen(extra) != 0) || ((strlen(input) != 19) && (strlen(input) != 26)) || (strlen(UID) != 5) || (strlen(pass) != 8)){
-        logREG("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
 
     } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
-        logREG("Forbidden character in parameters.");
+        logError("Forbidden character in parameters.");
         return NULL;
     }
 
@@ -76,16 +76,16 @@ char* parseLogin(userData* user, char* input){
     sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
 
     if((strlen(extra) != 0) || (strlen(input) != 21) || (strlen(UID) != 5) || (strlen(pass) != 8)){
-        logLOG("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
 
     } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
-        logLOG("Forbidden character in parameters.");
+        logError("Forbidden character in parameters.");
         return NULL;
     }
 
     if(strcmp((*user).ID,"")){
-        logLOG("A user is already logged in.");
+        logError("A user is already logged in.");
         return NULL;
 
     } else {
@@ -114,13 +114,13 @@ char* parseLogout(userData* user, char* input){
     sscanf(input,"%s %s\n",command,extra);
 
     if((strlen(extra) != 0) || (strlen(input) != 7)){
-        logOUT("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
 
     }
 
     if(!strcmp((*user).ID,"")){
-        logOUT("No user is logged in.");
+        logError("No user is logged in.");
         return NULL;
     }
 
@@ -146,12 +146,12 @@ void processShowUID(userData* user, char* input){
     sscanf(input,"%s %s\n",command,extra);
 
     if(strlen(extra) != 0){
-        logOUT("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return;
     }
 
     if(!strcmp((*user).ID,"")){
-        logOUT("No user is logged in.");
+        logError("No user is logged in.");
         return;
     }
 
@@ -167,16 +167,16 @@ char* parseSubscribe(userData* user, char* input){
     sscanf(input,"%s %s %s %s\n", command, GID, GName, extra);
 
     if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(GID) > 2) || (strlen(GName) > 25)){
-        logGSR("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
 
     } else if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName)){
-        logGSR("Forbidden character in parameters.");
+        logError("Forbidden character in parameters.");
         return NULL;
     }
 
     if(!strcmp((*user).ID,"")){
-        logGSR("No user is logged in.");
+        logError("No user is logged in.");
         return NULL;
     }
 
@@ -196,16 +196,16 @@ char* parseUnsubscribe(userData* user, char* input){
     sscanf(input,"%s %s %s\n", command, GID, extra);
 
     if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(GID) > 2)){
-        logGSR("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
 
     } else if(!checkStringIsNumber(GID)){
-        logGSR("Forbidden character in parameters.");
+        logError("Forbidden character in parameters.");
         return NULL;
     }
 
     if(!strcmp((*user).ID,"")){
-        logGSR("No user is logged in.");
+        logError("No user is logged in.");
         return NULL;
     }
 
@@ -223,7 +223,7 @@ char* parseGroups(userData* user, char* input){
     sscanf(input,"%s %s\n",command,extra);
 
     if((strlen(extra) != 0) || ((strlen(command) != 2) && (strlen(command) != 6))){
-        logOUT("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
     }
 
@@ -242,12 +242,12 @@ char* parseMyGroups(userData* user, char* input){
     sscanf(input,"%s %s\n",command,extra);
 
     if((strlen(extra) != 0) || ((strlen(input) != 4) && (strlen(input) != 10))){
-        logOUT("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return NULL;
     }
 
     if(!strcmp((*user).ID,"")){
-        logGSR("No user is logged in.");
+        logError("No user is logged in.");
         return NULL;
     }
 
@@ -266,19 +266,19 @@ void processSelect(userData* user, char* input){
     sscanf(input,"%s %s %s\n", command, GID, extra);
 
     if((strlen(extra) != 0) || ((strlen(command) != 6) && (strlen(command) != 3)) || (strlen(GID) > 2)){
-        logOUT("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return;
 
     } else if(!checkStringIsNumber(GID)){
-        logOUT("Forbidden character in parameters.");
+        logError("Forbidden character in parameters.");
         return;
     } else if(!strcmp(GID, "0") || !strcmp(GID, "00")){
-        logOUT("Group 0 doesn't exist");
+        logError("Group 0 doesn't exist");
         return;
     }
 
     if(!strcmp((*user).ID,"")){
-        logOUT("No user is logged in.");
+        logError("No user is logged in.");
         return;
     }
 
@@ -295,17 +295,17 @@ void processShowGID(userData* user, char* input){
     sscanf(input,"%s %s\n",command,extra);
 
     if(strlen(extra) != 0){
-        logOUT("Wrong size parameters.");
+        logError("Wrong size parameters.");
         return;
     }
 
     if(!strcmp((*user).ID,"")){
-        logOUT("No user is logged in.");
+        logError("No user is logged in.");
         return;
     }
 
     if(!strcmp((*user).groupID,"")){
-        logOUT("No group is selected.");
+        logError("No group is selected.");
         return;
     }
 
