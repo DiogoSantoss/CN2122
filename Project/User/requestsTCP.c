@@ -21,7 +21,7 @@
  * @param[in] fd File descriptor of UDP socket
  * @param[in] res Information about server 
 */
-void TCPconnect(serverData *server, int* fd, struct addrinfo* res){
+void connectTCP(serverData *server, int* fd, struct addrinfo* res){
     int errcode,n;
     struct addrinfo hints;
 
@@ -54,13 +54,21 @@ void TCPconnect(serverData *server, int* fd, struct addrinfo* res){
  * @param[in] message Message to be sent
  * @param[in] messageLen Message length
 */
-void TCPsendMessage(int fd, char* message, int messageLen){
-    int n;
+void sendMessageTCP(int fd, char* message, int messageLen){
+    int nLeft = messageLen;
+    int nWritten;
+    char* ptr;
 
-    n = write(fd, message,messageLen);
-    if(n==-1){
-        logError("Couldn't send message via TCP socket");
-        exit(1);
+    ptr = message;
+
+    while (nLeft > 0){
+        nLeft = write(fd, ptr, messageLen);
+        if(nLeft <= 0){
+            logError("Couldn't send message via TCP socket");
+            exit(1);
+        }
+        nLeft -= nWritten;
+        ptr += nWritten;
     }
 }
 
@@ -69,15 +77,18 @@ void TCPsendMessage(int fd, char* message, int messageLen){
  * @param[in] fd File descriptor of UDP socket
  * @param[out] message Message from server
 */
-char* TCPreceiveMessage(int fd){
-    int n;
+char* receiveMessageTCP(int fd){
+    int nRead;
     char* message = calloc(EXTRAMAXSIZE,sizeof(char));
 
-    n = read(fd, message, EXTRAMAXSIZE);
-    if(n==-1){
-        logError("Couldn't receive message via UDP socket");
-        exit(1);
-    } 
+    while (nRead != 0){
+        nRead = read(fd, message, EXTRAMAXSIZE);
+        if(nRead == -1){
+            logError("Couldn't receive message via TCP socket");
+            exit(1);
+        }
+    }
+     
     return message;
 }
 
