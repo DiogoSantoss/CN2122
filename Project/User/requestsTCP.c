@@ -15,27 +15,118 @@
 // Constants
 #define MAXSIZE 274
 #define EXTRAMAXSIZE 3268
+#define TEXTSIZE 240
+#define FILESIZE 24
+#define MAXBYTES 8000
 
 char* parseUlist(userData* user, char* input){
-    // TODO: Need to check if the group is selected before doing ulist
-    // For now, you can do ulist without the group being selected
+    
     char* message;
     char command[MAXSIZE], extra[MAXSIZE];
 
     memset(extra,0,sizeof extra);
     sscanf(input,"%s %s\n",command, extra);
 
-    if (!strcmp(user->groupID,"")){
-        logError("No group is selected");
+    if(!strcmp(user->ID,"")){
+        logError("No user is logged in.");
         return NULL;
     }
-    else if((strlen(extra) != 0) || (strlen(command) != 5)){
+
+    else if (!strcmp(user->groupID,"")){
+        logError("No group is selected.");
+        return NULL;
+    }
+
+    else if((strlen(extra) != 0) || (strlen(command) != 5 && strlen(command) != 2)){
         logError("Wrong size parameters.");
         return NULL;
     }
 
     message = malloc(sizeof(char)*7);
     sprintf(message, "ULS %02d\n", atoi(user->groupID));
+
+    return message;
+}
+
+/*
+TODO
+-do files from post come only from our dir or can come from outside
+better parse to handle  <post "a b"> the spaces between the message
+-test if filename is correct  (Ex:  test.txt is good but test is not)
+*/
+
+char* parsePost(userData* user, char* input){
+
+    char *message, *buffer;
+    char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
+    long int fsize;
+
+    memset(extra,0,sizeof extra);
+    memset(filename,0,sizeof extra);
+    sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
+    //printf("%s\n",command);
+    //printf("%s\n",text);
+    //printf("%s\n",filename);
+    //printf("%s\n",extra);
+
+    if(!strcmp(user->ID,"")){
+        logError("No user is logged in.");
+        return NULL;
+    }
+    else if (!strcmp(user->groupID,"")){
+        logError("No group is selected.");
+        return NULL;
+    }
+    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || (strlen(filename) > FILESIZE)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+
+    /* Open the file, check if it exists, move pointer to EOF and find its position,
+    *  which is the size in bytes.
+    */
+    if(strlen(filename) > 4){
+        FILE* fp = fopen(filename, "r");
+        if(fp == NULL){
+            logError("File not found");
+            return NULL;
+        }
+        fseek(fp, 0L, SEEK_END);
+        fsize = ftell(fp);
+        if(fsize == -1){
+            logError("Invalid file size.");
+            fclose(fp);
+            return NULL;
+        }
+        if(fsize >= MAXBYTES){
+            logError("File too big.");
+            fclose(fp);
+            return NULL;
+        }
+        rewind(fp);
+
+        printf("AQUI!\n");
+
+        buffer = malloc(fsize + 1);
+        fread(buffer, sizeof(char), fsize, fp);
+        buffer[fsize] = '\0';
+
+        printf("file size: %ld\n",fsize);
+
+        message = malloc(sizeof(char)*(fsize + 295));
+        sprintf(message, "PST %s %02d %ld %s %s %ld %s\n", user->ID, atoi(user->groupID),
+                strlen(text), text, filename, fsize, buffer);
+
+        printf("message: %s\n",message);
+        
+        free(buffer);
+        fclose(fp);
+    }
+
+    else{
+        message = malloc(sizeof(char)*(MAXSIZE));
+        sprintf(message, "PST %s %02d %ld %s\n", user->ID, atoi(user->groupID), strlen(text), text);
+    }
 
     return message;
 }

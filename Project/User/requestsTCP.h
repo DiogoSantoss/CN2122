@@ -2,6 +2,7 @@
 #define REQUESTSTCP_DOT_H
 
 char* parseUlist(userData* user, char* input);
+char* parsePost(userData* user, char* input);
 
 void connectTCP(serverData *server, int* fd, struct addrinfo* res);
 void sendMessageTCP(int fd, char* message, int messageLen);

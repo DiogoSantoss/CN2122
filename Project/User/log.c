@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "colors.h"
+#include "common.h"
 
 /**
  * Types of messages (in user):
@@ -206,11 +207,23 @@ void logULS(char* message){
     }
 }
 
-void logPST(int success, char* groupNumber, char* groupName, int messageNumber){
-    if(success)
-        printf("post: Posted message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);
-    else    
-        printf("post: Failed to post message number %d to group %s - “%s”.\n",messageNumber,groupNumber,groupName);
+void logPST(char* message){
+
+    char rpt[4], status[8], extra[MAXSIZE];
+    sscanf(message, "%s %s %s\n", rpt, status, extra);
+
+    if(!strcmp(message, "RPT NOK\n")){
+        printf("post: Failed to post the message.\n");
+    }
+    else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
+        logError("reply: A fatal error has ocurred.");
+    }
+    else if(strlen(status) != 4 || !checkStringIsNumber(status)){
+        logError("reply: A fatal error has ocurred with the message number.");
+    }
+    else{
+        printf("post: Message with number %s was successfully posted.\n", status);
+    }
 }
 
 void logRTV(int success, int amountMessages, char** messages){
