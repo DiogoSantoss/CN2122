@@ -193,7 +193,7 @@ void sendMessageTCP(int fd, char* message, int messageLen){
  * @param[out] message Message from server
 */
 char* receiveMessageTCP(int fd){
-    int nRead;
+    int nRead = 1; // This can't be initialized as 0
     char* message = calloc(EXTRAMAXSIZE,sizeof(char));
     char* ptr;
 
