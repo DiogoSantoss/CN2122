@@ -84,13 +84,13 @@ char* parseLogin(userData* user, char* input){
         return NULL;
     }
 
-    if(strcmp((*user).ID,"")){
+    if(strcmp(user->ID,"")){
         logError("A user is already logged in.");
         return NULL;
 
     } else {
-        strcpy((*user).ID,UID);
-        strcpy((*user).password,pass);
+        strcpy(user->ID,UID);
+        strcpy(user->password,pass);
     }
 
     message = malloc(sizeof(char)*18);
@@ -101,7 +101,7 @@ char* parseLogin(userData* user, char* input){
 
 void helperLogin(userData *user, char *response){
     if(!strcmp(response,"RLO NOK\n")){
-        strcpy((*user).ID,"");
+        strcpy(user->ID,"");
     }
 }
 
@@ -118,21 +118,21 @@ char* parseLogout(userData* user, char* input){
         return NULL;
     }
 
-    if(!strcmp((*user).ID,"")){
+    if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
         return NULL;
     }
 
     message = malloc(sizeof(char)*18);
-    sprintf(message,"OUT %s %s\n",(*user).ID,(*user).password);
+    sprintf(message,"OUT %s %s\n",user->ID,user->password);
 
     return message;
 }
 
 void helperLogout(userData* user, char* response){
     if(!strcmp(response,"ROU OK\n")){
-        strcpy((*user).ID,"");
-        strcpy((*user).password,"");
+        strcpy(user->ID,"");
+        strcpy(user->password,"");
     }
 }
 
@@ -149,12 +149,12 @@ void processShowUID(userData* user, char* input){
         return;
     }
 
-    if(!strcmp((*user).ID,"")){
+    if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
         return;
     }
 
-    printf("Current UID:%s\n",(*user).ID);
+    printf("Current UID:%s\n",user->ID);
 }
 
 char* parseSubscribe(userData* user, char* input){
@@ -174,13 +174,13 @@ char* parseSubscribe(userData* user, char* input){
         return NULL;
     }
 
-    if(!strcmp((*user).ID,"")){
+    if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
         return NULL;
     }
 
     message = malloc(sizeof(char)*37);
-    sprintf(message,"GSR %s %02d %s\n", (*user).ID, atoi(GID), GName);
+    sprintf(message,"GSR %s %02d %s\n", user->ID, atoi(GID), GName);
 
     return message;
 }
@@ -202,13 +202,13 @@ char* parseUnsubscribe(userData* user, char* input){
         return NULL;
     }
 
-    if(!strcmp((*user).ID,"")){
+    if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
         return NULL;
     }
 
     message = malloc(sizeof(char)*37);
-    sprintf(message,"GUR %s %02d\n", (*user).ID, atoi(GID));
+    sprintf(message,"GUR %s %02d\n", user->ID, atoi(GID));
 
     return message;
 }
@@ -244,13 +244,13 @@ char* parseMyGroups(userData* user, char* input){
         return NULL;
     }
 
-    if(!strcmp((*user).ID,"")){
+    if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
         return NULL;
     }
 
     message = malloc(sizeof(char)*10);
-    sprintf(message,"GLM %s\n", (*user).ID);
+    sprintf(message,"GLM %s\n", user->ID);
 
     return message;
 }
@@ -275,13 +275,13 @@ void processSelect(userData* user, char* input){
         return;
     }
 
-    if(!strcmp((*user).ID,"")){
+    if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
         return;
     }
 
-    strcpy((*user).groupID, GID);
-    printf("Current group selected: %s\n", (*user).groupID);
+    strcpy(user->groupID, GID);
+    printf("Current group selected: %s\n", user->groupID);
 }
 
 void processShowGID(userData* user, char* input){
@@ -297,17 +297,17 @@ void processShowGID(userData* user, char* input){
         return;
     }
 
-    if(!strcmp((*user).ID,"")){
+    if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
         return;
     }
 
-    if(!strcmp((*user).groupID,"")){
+    if(!strcmp(user->groupID,"")){
         logError("No group is selected.");
         return;
     }
 
-    printf("Current GID:%s\n",(*user).groupID);
+    printf("Current GID:%s\n",user->groupID);
 }
 
 /**
@@ -330,7 +330,7 @@ void connectUDP(serverData *server, int* fd, struct addrinfo** res){
     hints.ai_family=AF_INET;
     hints.ai_socktype=SOCK_DGRAM;
 
-    errcode=getaddrinfo((*server).ipAddress,(*server).port,&hints,res);
+    errcode=getaddrinfo(server->ipAddress,server->port,&hints,res);
     if(errcode!=0){
         logError("Couldn't get server info.");
         exit(1);
@@ -409,8 +409,6 @@ void processRequestUDP(
     connectUDP(server,&fd,&res);
     sendMessageUDP(fd,res,message,strlen(message));
     response = receiveMessageUDP(fd);
-
-    //printf("%s",response);
 
     if(helper != NULL){
         (*helper)(user,response);

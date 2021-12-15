@@ -48,6 +48,8 @@ char* parseUlist(userData* user, char* input){
     return message;
 }
 
+
+
 /*
 TODO
 -do files from post come only from our dir or can come from outside
@@ -64,10 +66,6 @@ char* parsePost(userData* user, char* input){
     memset(extra,0,sizeof extra);
     memset(filename,0,sizeof extra);
     sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
-    //printf("%s\n",command);
-    //printf("%s\n",text);
-    //printf("%s\n",filename);
-    //printf("%s\n",extra);
 
     if(!strcmp(user->ID,"")){
         logError("No user is logged in.");
@@ -82,9 +80,7 @@ char* parsePost(userData* user, char* input){
         return NULL;
     }
 
-    /* Open the file, check if it exists, move pointer to EOF and find its position,
-    *  which is the size in bytes.
-    */
+
     if(strlen(filename) > 4){
         FILE* fp = fopen(filename, "r");
         if(fp == NULL){
@@ -104,8 +100,6 @@ char* parsePost(userData* user, char* input){
             return NULL;
         }
         rewind(fp);
-
-        printf("AQUI!\n");
 
         buffer = malloc(fsize + 1);
         fread(buffer, sizeof(char), fsize, fp);
@@ -150,7 +144,7 @@ void connectTCP(serverData *server, int* fd, struct addrinfo* res){
     hints.ai_family=AF_INET;
     hints.ai_socktype=SOCK_STREAM;
 
-    errcode=getaddrinfo((*server).ipAddress,(*server).port,&hints,&res) ;
+    errcode=getaddrinfo(server->ipAddress,server->port,&hints,&res) ;
     if(errcode!=0){
         logError("Couldn't get server info.");
         exit(1);
@@ -239,7 +233,6 @@ void processRequestTCP(
     if(message == NULL) return;
 
     connectTCP(server,&fd,res);
-    //printf("%s\n", message);
     sendMessageTCP(fd,message,strlen(message));
     response = receiveMessageTCP(fd);
 
@@ -251,4 +244,93 @@ void processRequestTCP(
 
     free(message);
     free(response);
+}
+
+void processPost(userData* user, serverData* server, char* input){
+    int fd;
+    int msgSize;
+    struct addrinfo *res;
+
+    /**
+     * All verifications:
+     *  User logged in
+     *  User belongs to a group
+     *  Text message max 240 chars
+     *  Check if file exists
+     *  Filename max 24 alphanumeric chars(and - _ .)
+     *  Fsize field at max has 10 digits
+     * 
+    */
+
+    FILE* fp;
+    long int fsize;
+    char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    memset(filename,0,sizeof extra);
+    sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
+
+    printf("DEBUG:\n");
+    printf("Command:%s\nText:%s\nFilename:%s\n",command,text,filename);
+
+    if(!strcmp(user->ID,"")){
+        logError("No user logged in.");
+        return;
+    }
+    else if (!strcmp(user->groupID,"")){
+        logError("No group is selected.");
+        return;
+    }
+    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || (strlen(filename) > FILESIZE)){
+        logError("Wrong size parameters.");
+        return;
+    }
+    else if(filename[strlen(filename)-4] != '.'){
+        logError("Wrong file format.");
+        return;
+    }
+    else if(!(fp = fopen(filename, "rb"))){
+        logError("File doesn't exist");
+        return;
+    }
+
+    fseek(fp,0L,SEEK_END);
+    fsize = ftell(fp);
+    rewind(fp);
+
+    connectTCP(server,&fd,res);
+
+    char message[295];
+
+    sprintf(
+        message,"PST %s %02d %ld %s %s %ld ",
+        user->ID,atoi(user->groupID),strlen(text),text,filename, fsize
+    );
+
+    sendMessageTCP(fd,message,295);
+    //printf("%s",message);
+
+    int sent = 0;
+    char buffer[500];   
+
+    int i = 0;
+    int actuallyRead = 0;
+    while(sent <= fsize){
+        memset(buffer,0,500);
+        actuallyRead = fread(buffer,sizeof(char),500,fp);
+        sendMessageTCP(fd,buffer,actuallyRead);
+        //printf("%s",buffer);
+        sent += actuallyRead;
+        i ++;
+    }
+    sendMessageTCP(fd,"\n",1);
+    // no fim de enviar o ficheiro falta mandar o \n ?
+
+    printf("Sent file in %d messages\n",i);
+
+    char* response;
+    response = receiveMessageTCP(fd);
+    printf("%s",response);
+
+    
 }

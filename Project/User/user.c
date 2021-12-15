@@ -138,7 +138,8 @@ void handleRequests(userData *user, serverData *server){
             processRequestTCP(user, server, input, parseUlist, logULS, NULL);
 
         } else if(!strcmp(command,"post")){
-            processRequestTCP(user, server, input, parsePost, logPST, NULL);
+            processPost(user,server,input);
+            //processRequestTCP(user, server, input, parsePost, logPST, NULL);
 
         } else if(!strcmp(command,"retrieve") || !strcmp(command,"r")){
             //processRetrieve();
