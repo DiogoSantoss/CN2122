@@ -267,11 +267,11 @@ void processPost(userData* user, serverData* server, char* input){
     char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
 
     memset(extra,0,sizeof extra);
-    memset(filename,0,sizeof extra);
+    memset(filename,0,sizeof filename);
     sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
 
-    printf("DEBUG:\n");
     printf("Command:%s\nText:%s\nFilename:%s\n",command,text,filename);
+
 
     if(!strcmp(user->ID,"")){
         logError("No user logged in.");
@@ -285,52 +285,60 @@ void processPost(userData* user, serverData* server, char* input){
         logError("Wrong size parameters.");
         return;
     }
-    else if(filename[strlen(filename)-4] != '.'){
-        logError("Wrong file format.");
-        return;
+    else if(strlen(filename)){
+        if(filename[strlen(filename)-4] != '.'){
+            logError("Wrong file format.");
+            return;
+        }
+        else if(!(fp = fopen(filename, "rb"))){
+            logError("File doesn't exist");
+            return;
+        }
     }
-    else if(!(fp = fopen(filename, "rb"))){
-        logError("File doesn't exist");
-        return;
-    }
-
-    fseek(fp,0L,SEEK_END);
-    fsize = ftell(fp);
-    rewind(fp);
 
     connectTCP(server,&fd,res);
 
     char message[295];
 
-    sprintf(
-        message,"PST %s %02d %ld %s %s %ld ",
-        user->ID,atoi(user->groupID),strlen(text),text,filename, fsize
-    );
+    if(strlen(filename)){
+        fseek(fp,0L,SEEK_END);
+        fsize = ftell(fp);
+        rewind(fp);
 
-    sendMessageTCP(fd,message,295);
-    //printf("%s",message);
+        sprintf(
+            message,"PST %s %02d %ld %s %s %ld ",
+            user->ID,atoi(user->groupID),strlen(text),text,filename, fsize
+        );
 
-    int sent = 0;
-    char buffer[500];   
+        sendMessageTCP(fd,message,strlen(message));
 
-    int i = 0;
-    int actuallyRead = 0;
-    while(sent <= fsize){
-        memset(buffer,0,500);
-        actuallyRead = fread(buffer,sizeof(char),500,fp);
-        sendMessageTCP(fd,buffer,actuallyRead);
-        //printf("%s",buffer);
-        sent += actuallyRead;
-        i ++;
+        int sent = 0;
+        char buffer[500];   
+
+        int i = 0;
+        int actuallyRead = 0;
+        while(sent < fsize){
+            memset(buffer,0,500);
+            actuallyRead = fread(buffer,sizeof(char),500,fp);
+            printf("%s",buffer);
+            sendMessageTCP(fd,buffer,actuallyRead);
+            printf("%d\n",actuallyRead);
+            sent += actuallyRead;
+            printf("%d\n",sent);
+            i ++;
+        }
+        sendMessageTCP(fd,"\n",1);
+        printf("Sent file in %d messages\n",i);
     }
-    sendMessageTCP(fd,"\n",1);
-    // no fim de enviar o ficheiro falta mandar o \n ?
-
-    printf("Sent file in %d messages\n",i);
+    else{
+        sprintf(
+            message,"PST %s %02d %ld %s\n",
+            user->ID,atoi(user->groupID),strlen(text),text
+        );
+        sendMessageTCP(fd,message,strlen(message));
+    }
 
     char* response;
     response = receiveMessageTCP(fd);
     printf("%s",response);
-
-    
 }
