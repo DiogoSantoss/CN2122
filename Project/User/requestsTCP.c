@@ -251,17 +251,6 @@ void processPost(userData* user, serverData* server, char* input){
     int msgSize;
     struct addrinfo *res;
 
-    /**
-     * All verifications:
-     *  User logged in
-     *  User belongs to a group
-     *  Text message max 240 chars
-     *  Check if file exists
-     *  Filename max 24 alphanumeric chars(and - _ .)
-     *  Fsize field at max has 10 digits
-     * 
-    */
-
     FILE* fp;
     long int fsize;
     char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
