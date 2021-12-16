@@ -331,3 +331,61 @@ void processPost(userData* user, serverData* server, char* input){
     response = receiveMessageTCP(fd);
     printf("%s",response);
 }
+
+void processRetrieve(userData* user, serverData* server, char* input){
+
+    int fd;
+    int msgSize;
+    struct addrinfo *res;
+
+    char command[MAXSIZE], MID[MAXSIZE], extra[MAXSIZE];
+    memset(extra,0,sizeof extra);
+
+    sscanf(input,"%s %s %s\n",command,MID,extra);
+
+    if(!strcmp(user->ID,"")){
+        logError("No user logged in.");
+        return;
+    }
+    else if(!strcmp(user->groupID,"")){
+        logError("No group is selected.");
+        return;
+    }
+    else if((strlen(extra) != 0) || (strlen(command) != 8 && strlen(command) != 1) || strlen(MID)>4){
+        logError("Wrong size parameters.");
+        return;
+    }
+
+    connectTCP(server,&fd,res);
+
+    char message[14];
+
+    sprintf(message, "RTV %s %02d %04d\n",user->ID,atoi(user->groupID),atoi(MID));
+    printf("MESSAGE: %s",message);
+
+    sendMessageTCP(fd,message,strlen(message));
+
+
+    //very cool
+
+    // RRT OK 10 0020 12345 5 hello 0021 12345 4 helo image.jpg 252 asfwfeofewmgoewgmwe
+    //          \                  \
+    // 10 -> ok 10 -> _ 
+    // 2 -> ok 2 _
+    // read inicial response
+    char buffer[8];
+    read(fd,buffer,7);
+    buffer[8] = '\0';
+    if(strcmp(buffer,"RRT OK")){
+        logError("error");
+        return;
+    }
+
+    //read number of messages
+    char numberOfMessages[2];
+    read(fd,numberOfMessages,2);
+    if(numberOfMessages[1] == ' '){
+
+    }
+
+}
