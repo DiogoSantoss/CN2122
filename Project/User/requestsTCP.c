@@ -75,11 +75,10 @@ char* parsePost(userData* user, char* input){
         logError("No group is selected.");
         return NULL;
     }
-    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || (strlen(filename) > FILESIZE)){
+    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || !checkStringIsFileName(filename)){
         logError("Wrong size parameters.");
         return NULL;
     }
-
 
     if(strlen(filename) > 4){
         FILE* fp = fopen(filename, "r");
@@ -361,19 +360,19 @@ void processRetrieve(userData* user, serverData* server, char* input){
     char message[14];
 
     sprintf(message, "RTV %s %02d %04d\n",user->ID,atoi(user->groupID),atoi(MID));
-    printf("MESSAGE: %s",message);
 
     sendMessageTCP(fd,message,strlen(message));
 
-
     //very cool
 
-    // RRT OK 10 0020 12345 5 hello 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe
+    // RRT OK 10 0020 12345 11 hello world 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe
     //             4+1+5+1 +3+240    
 
     char header[9];
     char commando[9],status[9],numberOfMessages[9];
     int amountOfMessages;
+
+    // Reads header (ex: 'RTT OK 10')
     read(fd,header,9);
     sscanf(header,"%s %s %s",commando,status,numberOfMessages);
     printf("HEADER: %s\n",header);
@@ -397,21 +396,22 @@ void processRetrieve(userData* user, serverData* server, char* input){
     int numberOfSpaces;
 
     for(int i = 0; i<amountOfMessages; i++){
+
         memset(buffer,0,300);
         numberOfSpaces = 0;
-
         ptr = buffer;
-        
-        while(numberOfSpaces != 4){
+        // 
+        while(numberOfSpaces != 3){
             read(fd,ptr,1);
             if(*ptr == ' '){
                 numberOfSpaces++;
             }
             ptr += 1;
         }
-        read(fd,currentChar,1);
+        pread(fd,currentChar,1,strlen(buffer)+1);
+        printf("%c",currentChar[0]);
         if(currentChar[0] != '\\'){
-            fseek(fd,0L,ftell(fd)-1);
+            
             printf("MESSAGE WITH NO FILE: %s\n",buffer);
             break;
         }
@@ -428,6 +428,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             }
             sscanf(buffer," %s %s ",filename,fileSize);
             bytesInFile = atoi(fileSize);
+            printf("MESSAGE WITH FILE SIZE OF: %s",bytesInFile);
             // read file
         }
         

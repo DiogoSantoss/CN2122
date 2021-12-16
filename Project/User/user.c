@@ -11,25 +11,21 @@
 #include "requestsUDP.h"
 #include "requestsTCP.h"
 
-// Booleans
-#define TRUE  1
-#define FALSE 0
-
 // Constants
 #define MAXSIZE 274
 
 /**
  * Initialize data about user and server
- * @param[in] user Pointer to user
- * @param[in] data Pointer to server
+ * @param[in] user User data
+ * @param[in] server Server data
 */
 void initializeData(userData *user, serverData *server){
-    strcpy((*user).ID,"");
-    strcpy((*user).password,"");
-    strcpy((*user).groupID,"");
+    strcpy(user->ID,"");
+    strcpy(user->password,"");
+    strcpy(user->groupID,"");
 
-    strcpy((*server).ipAddress,"tejo.tecnico.ulisboa.pt");
-    strcpy((*server).port,"58011");
+    strcpy(server->ipAddress,"tejo.tecnico.ulisboa.pt");
+    strcpy(server->port,"58011");
 }
 
 /**
@@ -61,7 +57,7 @@ void parseArguments(serverData *server, int argc, char *argv[]){
         { 
             case 'n': 
                 if(optarg[0] != '-'){
-                    strcpy((*server).ipAddress,optarg);
+                    strcpy(server->ipAddress,optarg);
                 }
                 nCounter++;
                 break;
@@ -70,7 +66,7 @@ void parseArguments(serverData *server, int argc, char *argv[]){
                     logError("Port value should be a positive integer.");
                     exit(1);
                 }
-                strcpy((*server).port,optarg);
+                strcpy(server->port,optarg);
                 pCounter++;
                 break;  
             default: 
@@ -93,7 +89,7 @@ void handleRequests(userData *user, serverData *server){
 
     char input[MAXSIZE],command[MAXSIZE],extra[MAXSIZE];
 
-    while(TRUE){
+    while(1){
 
         fgets(input, MAXSIZE, stdin);
         sscanf(input,"%s %s\n",command,extra);

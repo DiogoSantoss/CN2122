@@ -52,3 +52,19 @@ int checkStringIsGroupName(char* value){
     } 
     return IsGroupName;
 }
+
+/**
+ * Check if string is valid filename
+ * @param[in] value String to be checked
+ * @param[out] TRUE if is valaid filename else FALSE
+*/
+int checkStringIsFileName(char* value){
+    if(!checkStringIsAlphaNum(value)){
+        return FALSE;
+    } else if(strlen(value) > 24){
+        return FALSE;
+    } else if(value[strlen(value)-4] == '.'){
+        return FALSE;
+    }
+    return TRUE;
+}
