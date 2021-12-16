@@ -159,6 +159,7 @@ void logGSR(char* message){
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("subscribe: A fatal error has ocurred.");
     }
+    reset();
 }
 
 void logGUR(char* message){
@@ -182,6 +183,7 @@ void logGUR(char* message){
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("unsubscribe: A fatal error has ocurred.");
     }
+    reset();
 }
 
 // falta verificar server input
