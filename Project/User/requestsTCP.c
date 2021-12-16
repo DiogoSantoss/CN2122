@@ -368,24 +368,68 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
     //very cool
 
-    // RRT OK 10 0020 12345 5 hello 0021 12345 4 helo image.jpg 252 asfwfeofewmgoewgmwe
-    //          \                  \
-    // 10 -> ok 10 -> _ 
-    // 2 -> ok 2 _
-    // read inicial response
-    char buffer[8];
-    read(fd,buffer,7);
-    buffer[8] = '\0';
-    if(strcmp(buffer,"RRT OK")){
-        logError("error");
-        return;
-    }
+    // RRT OK 10 0020 12345 5 hello 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe
+    //             4+1+5+1 +3+240    
 
-    //read number of messages
-    char numberOfMessages[2];
-    read(fd,numberOfMessages,2);
+    char header[9];
+    char commando[9],status[9],numberOfMessages[9];
+    int amountOfMessages;
+    read(fd,header,9);
+    sscanf(header,"%s %s %s",commando,status,numberOfMessages);
+    printf("HEADER: %s\n",header);
+
+    // verify command and status
+
     if(numberOfMessages[1] == ' '){
-
+        amountOfMessages = numberOfMessages[0];
+    }
+    else {
+        amountOfMessages = atoi(numberOfMessages);
+        char space[1];
+        read(fd,space,1);
     }
 
+    char* ptr; 
+    char buffer[300];
+    char filename[300],fileSize[300];
+    int bytesInFile;
+    char currentChar[1];
+    int numberOfSpaces;
+
+    for(int i = 0; i<amountOfMessages; i++){
+        memset(buffer,0,300);
+        numberOfSpaces = 0;
+
+        ptr = buffer;
+        
+        while(numberOfSpaces != 4){
+            read(fd,ptr,1);
+            if(*ptr == ' '){
+                numberOfSpaces++;
+            }
+            ptr += 1;
+        }
+        read(fd,currentChar,1);
+        if(currentChar[0] != '\\'){
+            fseek(fd,0L,ftell(fd)-1);
+            printf("MESSAGE WITH NO FILE: %s\n",buffer);
+            break;
+        }
+        else{
+            memset(buffer,0,300);
+            numberOfSpaces = 0;
+            ptr = buffer;
+            while(numberOfSpaces != 3){
+                read(fd,ptr,1);
+                if(*ptr == ' '){
+                    numberOfSpaces++;
+                }
+                ptr += 1;
+            }
+            sscanf(buffer," %s %s ",filename,fileSize);
+            bytesInFile = atoi(fileSize);
+            // read file
+        }
+        
+    }
 }
