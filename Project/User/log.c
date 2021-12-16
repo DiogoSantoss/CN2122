@@ -114,10 +114,10 @@ void logGLS(char* message){
         for (int i = 0; i < atoi(nGroups); i++){
             i % 2 == 0 ? cyan() : blue(); // coloring
             sscanf(suffix, "%s %s %s %[^\n]s", GID, GName, MID, suffix);
-            printf("Group ID: %s\tGroup Name: %s\tLast Message ID: %s\n", GID, GName, MID);
+            printf("Group ID: %s\tGroup Name: %s\t\t\tLast Message ID: %s\n", GID, GName, MID);
         }
-        reset();
     }
+    reset();
 }
 
 void logGSR(char* message){
@@ -184,6 +184,7 @@ void logGUR(char* message){
     }
 }
 
+// falta verificar server input
 void logULS(char* message){
 
     char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE];
@@ -209,8 +210,8 @@ void logULS(char* message){
             sscanf(suffix, "%s %[^\n]s", userIDTemp, suffix);
             printf("%s\n", userIDTemp);
         }   
-        reset();
     }
+    reset();
 }
 
 void logPST(char* message){

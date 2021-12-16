@@ -138,10 +138,10 @@ void handleRequests(userData *user, serverData *server){
             processRequestTCP(user, server, input, parseUlist, logULS, NULL);
 
         } else if(!strcmp(command,"post")){
-            processPost(user,server,input);
+            processPost(user, server, input);
 
         } else if(!strcmp(command,"retrieve") || !strcmp(command,"r")){
-            //processRetrieve();
+            processRetrieve(user, server, input);
 
         } else {
             logError("Command not found.");
