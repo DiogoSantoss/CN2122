@@ -99,7 +99,7 @@ void logOUT(char* message){
 void logGLS(char* message){
 
     char functionName[10];
-    char prefix[MAXSIZE], nGroups[3], suffix[EXTRAMAXSIZE];
+    char prefix[MAXSIZE], nGroups[3], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
     char GID[3], GName[25], MID[5];
 
     sscanf(message, "%s %s %[^\n]s", prefix, nGroups, suffix);
@@ -118,10 +118,11 @@ void logGLS(char* message){
     }
     else{
         green();
+        strcpy(suffixCopy, suffix);
         printf("%s: List of groups:\n", !strcmp(prefix, "RGL") ? "groups" : "my_groups");
         // Verifies if groups given by server are valid
         for (int i = 0; i < atoi(nGroups); i++){
-            sscanf(suffix, "%s %s %s %[^\n]s", GID, GName, MID, suffix);
+            sscanf(suffixCopy, "%s %s %s %[^\n]s", GID, GName, MID, suffixCopy);
             if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName) || !checkStringIsNumber(MID)){
                 if(!strcmp(prefix, "RGL")){
                     logError("groups: Unexpected message from server.");
@@ -215,7 +216,7 @@ void logGUR(char* message){
 
 void logULS(char* message){
 
-    char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE];
+    char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
     char userIDTemp[6];
     int lenght;
     
@@ -231,11 +232,12 @@ void logULS(char* message){
     else{
         green();
         printf("List of UIDs: %s\n\n", GName);
-        sscanf(suffix, "%[^\n]s", suffix);
+        strcpy(suffixCopy, suffix);
+        //sscanf(suffix, "%[^\n]s", suffix);
         lenght = (strlen(suffix) + 1) / 6;
         // Verifies if users given by server are valid
         for (int i = 0; i < lenght; i++){
-            sscanf(suffix, "%s %[^\n]s", userIDTemp, suffix);
+            sscanf(suffixCopy, "%s %[^\n]s", userIDTemp, suffixCopy);
             if(!checkStringIsNumber(userIDTemp)){
                 logError("ulist: Unexpected message from server.");
                 return;

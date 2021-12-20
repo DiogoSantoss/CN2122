@@ -416,6 +416,8 @@ void processRequestUDP(
 
     (*logger)(response);
 
+    printf("%s\n", response);
+
     free(message);
     free(response);
 }
