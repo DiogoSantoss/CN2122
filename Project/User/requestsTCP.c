@@ -18,6 +18,7 @@
 #define TEXTSIZE 240
 #define FILESIZE 24
 #define MAXBYTES 8000
+#define FILENAMEMAX 200
 
 char* parseUlist(userData* user, char* input){
     
@@ -365,14 +366,16 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
     //very cool
 
-    // RRT OK 10 0020 12345 11 hello world 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe
-    //             4+1+5+1 +3+240    
+    // RRT OK 10 0020 12345 11 hello world 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe  
 
-    char header[9];
+    char header[10];
     char commando[9],status[9],numberOfMessages[9];
     int amountOfMessages;
+    //Named space, but wont always be a space
+    char space[1];
 
     // Reads header (ex: 'RTT OK 10')
+    memset(header, NULL, 10);
     read(fd,header,9);
     sscanf(header,"%s %s %s",commando,status,numberOfMessages);
     printf("HEADER: %s\n",header);
@@ -384,10 +387,166 @@ void processRetrieve(userData* user, serverData* server, char* input){
     }
     else {
         amountOfMessages = atoi(numberOfMessages);
-        char space[1];
         read(fd,space,1);
     }
 
+    printf("Ammount of messages: %d\n", amountOfMessages);
+
+    char info[11];
+    char MessID[5], UserID[6], TSizeString[4];
+    char text[240];
+
+    memset(info, NULL, 11);
+    read(fd,info,1);
+
+    for (int i = 0; i < amountOfMessages; i++)
+    {
+        memset(text, NULL, 240);
+        read(fd, info + 1, 9);
+        sscanf(info, "%s %s", MessID, UserID);
+
+        //TODO - Check if it really is a space
+        read(fd, space, 1);
+
+        memset(TSizeString, NULL, 4);
+        //Check Text Size
+        for (int i = 0; i < 3; i++)
+        {
+            read(fd, space, 1);
+            if(space[0] == ' '){ 
+                if (i == 0){
+                    printf("Error no 1\n");
+                    logError("Bad Formatting");
+                    exit(1);
+                }
+                break;
+            }
+            TSizeString[i] = space[0];
+        }
+        if(space[0] =! ' '){ 
+            printf("Error no 2\n");
+            logError("Bad formatting");
+            exit(1);
+        }
+
+        int TSize = atoi(TSizeString);
+
+        //Read Text
+        read(fd, text, TSize);
+
+        //TODO - Check if it really is a space
+        read(fd, space, 1);
+
+        //Named space, but we hope it wont be a space
+        read(fd, space, 1);
+
+        printf("Space: %c\n", space[0]);
+
+        printf("Message: %s", text);
+
+        // Check if there is a file or not
+        if (space[0] != '/'){
+            memset(info, NULL, 11);
+            info[0] = space[0];
+            printf("Message number %s without file\n\n", MessID);
+            continue;
+        }
+        
+        else if (space[0] == '/'){
+            //TODO - Check if it really is a space
+            read(fd, space, 1);
+
+            char fileName[FILENAMEMAX + 1];
+            memset(fileName, NULL, FILENAMEMAX + 1);
+
+            //Read FileName
+            //TODO - Check if filename sent by the server is not too big
+            for (int i = 0; i < FILENAMEMAX; i++)
+            {
+                read(fd, space, 1);
+                if (space[0] == ' ')
+                {
+                    break;
+                }
+                fileName[i] = space[0];
+            }
+
+            //Read FileSize
+            char fileSizeString[11];
+            memset(fileSizeString, NULL, 11);
+
+            for (int i = 0; i < 10; i++)
+            {
+                read(fd, space, 1);
+                if (space[0] == ' ')
+                {
+                    break;
+                }
+                //TODO - Check if numerical
+                fileSizeString[i] = space[0];
+            }
+
+            int fileSize = atoi(fileSizeString);
+
+            printf("File size: %d\n", fileSize);
+
+            //Read File
+            char fileBuffer[512];
+
+            printf("File name: %s\n", fileName);
+
+            FILE *downptr;
+            downptr = fopen(fileName, "wb");
+            //TODO - Check if file was oppened correctly
+
+            int sum = 0;
+            int rd = 0;
+
+            for (int i = 0; sum < fileSize; i++)
+            {
+                memset(fileBuffer, NULL, 512);
+                if (fileSize - sum > 512)
+                {
+                    rd = read(fd, fileBuffer, 512);
+                }
+                else
+                {
+                    rd = read(fd, fileBuffer, fileSize - sum);
+                }
+                if (rd == -1){
+                    logError("Something really wrong happened");
+                    exit(1);
+                }
+                sum += rd;
+                printf("Sum: %d\n", sum);
+                fwrite(fileBuffer, sizeof(char), rd, downptr);
+            }
+            //actuallyRead = fread(buffer,sizeof(char),500,fp);
+
+
+            fclose(downptr); 
+
+            //TODO - Check if it really is a space
+            read(fd, space, 1);
+
+            read(fd, space, 1);
+
+            memset(info, NULL, 11);
+            info[0] = space[0];
+
+            printf("Message number %s with file\n", MessID);
+        }
+
+        else{
+            printf("Error no 3\n");
+            logError("Bad formatting");
+            exit(1);
+        }
+
+    }
+
+
+/*
     char* ptr; 
     char buffer[300];
     char filename[300],fileSize[300];
@@ -433,4 +592,5 @@ void processRetrieve(userData* user, serverData* server, char* input){
         }
         
     }
+    */
 }
