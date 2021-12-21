@@ -13,6 +13,12 @@
 #define TRUE 1
 #define FALSE 0
 
+/*
+What happends when server gives wrong responses ? 
+for example in groups
+sscanf to smaller array may cause overflow
+*/
+
 // should be stderr ?
 void logError(char* message){
     red();
@@ -275,6 +281,11 @@ void logPST(char* message){
 }
 
 void logRTV(int success, int amountMessages, char** messages){
+    /**
+    * 1 message(s) retrieved:
+    * 0001 - "Benvindos ao lab de RC"; file stored: RC.jpg
+    * 
+    */
     if(success){
         printf("retrieve: %d message(s) retrieved:\n",amountMessages);
         for(int i = 0; i<amountMessages; i++){

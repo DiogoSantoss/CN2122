@@ -16,9 +16,9 @@
 #define MAXSIZE 274
 #define EXTRAMAXSIZE 3268
 #define TEXTSIZE 240
-#define FILESIZE 24
+#define FILENAMESIZE 24
 #define MAXBYTES 8000
-#define FILENAMEMAX 200
+
 
 char* parseUlist(userData* user, char* input){
     
@@ -49,223 +49,10 @@ char* parseUlist(userData* user, char* input){
     return message;
 }
 
+//--------------------------------------------------------------------------------------------
 
 
-/*
-TODO
--do files from post come only from our dir or can come from outside
-better parse to handle  <post "a b"> the spaces between the message
--test if filename is correct  (Ex:  test.txt is good but test is not)
-*/
 
-char* parsePost(userData* user, char* input){
-
-    char *message, *buffer;
-    char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
-    long int fsize;
-
-    memset(extra,0,sizeof extra);
-    memset(filename,0,sizeof extra);
-    sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
-
-    if(!strcmp(user->ID,"")){
-        logError("No user is logged in.");
-        return NULL;
-    }
-    else if (!strcmp(user->groupID,"")){
-        logError("No group is selected.");
-        return NULL;
-    }
-    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || !checkStringIsFileName(filename)){
-        logError("Wrong size parameters.");
-        return NULL;
-    }
-
-    if(strlen(filename) > 4){
-        FILE* fp = fopen(filename, "r");
-        if(fp == NULL){
-            logError("File not found");
-            return NULL;
-        }
-        fseek(fp, 0L, SEEK_END);
-        fsize = ftell(fp);
-        if(fsize == -1){
-            logError("Invalid file size.");
-            fclose(fp);
-            return NULL;
-        }
-        if(fsize >= MAXBYTES){
-            logError("File too big.");
-            fclose(fp);
-            return NULL;
-        }
-        rewind(fp);
-
-        buffer = malloc(fsize + 1);
-        fread(buffer, sizeof(char), fsize, fp);
-        buffer[fsize] = '\0';
-
-        printf("file size: %ld\n",fsize);
-
-        message = malloc(sizeof(char)*(fsize + 295));
-        sprintf(message, "PST %s %02d %ld %s %s %ld %s\n", user->ID, atoi(user->groupID),
-                strlen(text), text, filename, fsize, buffer);
-
-        printf("message: %s\n",message);
-        
-        free(buffer);
-        fclose(fp);
-    }
-
-    else{
-        message = malloc(sizeof(char)*(MAXSIZE));
-        sprintf(message, "PST %s %02d %ld %s\n", user->ID, atoi(user->groupID), strlen(text), text);
-    }
-
-    return message;
-}
-
-/**
- * Connect via TCP socket to server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
-*/
-void connectTCP(serverData *server, int* fd, struct addrinfo* res){
-    int errcode,n;
-    struct addrinfo hints;
-
-    *fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(*fd==-1){
-        logError("Couldn't create TCP socket.");
-        exit(1);
-    }
-
-    memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET;
-    hints.ai_socktype=SOCK_STREAM;
-
-    errcode=getaddrinfo(server->ipAddress,server->port,&hints,&res) ;
-    if(errcode!=0){
-        logError("Couldn't get server info.");
-        exit(1);
-    }
-
-    n = connect(*fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1){
-        logError("Couldn't connect to server.");
-        exit(1);
-    }
-}
-
-/**
- * Send message via TCP socket to server.
- * @param[in] fd File descriptor of TCP socket
- * @param[in] message Message to be sent
- * @param[in] messageLen Message length
-*/
-void sendTCP(int fd, char* message, int messageLen){
-    int nLeft = messageLen;
-    int nWritten;
-    char* ptr;
-
-    ptr = message;
-
-    while (nLeft > 0){
-        nWritten = write(fd, ptr, nLeft);
-        if(nWritten <= 0){
-            logError("Couldn't send message via TCP socket");
-            exit(1);
-        }
-        nLeft -= nWritten;
-        ptr += nWritten;
-    }
-}
-
-/**
- * Receive message via UDP socket from server.
- * @param[in] fd File descriptor of UDP socket
- * @param[out] message Message from server
-*/
-char* receiveWholeTCP(int fd){
-    int nRead = 1; // This can't be initialized as 0
-    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
-    char* ptr;
-
-    ptr = message;
-
-    while (nRead != 0){
-        nRead = read(fd, ptr, EXTRAMAXSIZE);
-        if(nRead == -1){
-            logError("Couldn't receive message via TCP socket");
-            exit(1);
-        }
-        ptr += nRead;
-    }
-     
-    return message;
-}
-
-void receiveNSizeTCP(int fd, char* buffer, int messageSize){
-    
-    char* ptr = buffer;
-    int sum = 0;
-    int nRead = 0;
-
-    while (messageSize > sum){
-        nRead = read(fd, ptr, messageSize);
-        if (nRead == -1){
-            logError("Couldn't receive message via TCP socket");
-            exit(1);
-        }
-        if (nRead == 0){
-            break;
-        }
-        ptr += nRead;
-        sum += nRead;
-        messageSize -= nRead;
-    }
-}
-
-/**
- * Generic function to proccess commands that access the server via TCP protocol.
- * This function receives the user input and a set of function specific for each
- * command.
- * @param[in] input User input
- * @param[in] parser Function to parse the command
- * @param[in] logger Function to log the messages related to the command
- * @param[in] helper "Optional" function when processRequest needs to do additional tasks
- * 
-*/
-void processRequestTCP(
-    userData *user, 
-    serverData *server, 
-    char* input, 
-    char* (*parser)(userData*,char*), 
-    void (*logger)(char*), 
-    void (*helper)(userData*,char*)
-    ){
-
-    int fd;
-    int msgSize;
-    struct addrinfo *res;
-    char *message, *response;
-
-    message = (*parser)(user,input);
-    if(message == NULL) return;
-
-    connectTCP(server,&fd,res);
-    sendTCP(fd,message,strlen(message));
-    response = receiveTCP(fd);
-
-    if(helper != NULL){
-        (*helper)(user,response);
-    }
-
-    (*logger)(response);
-
-    free(message);
-    free(response);
-}
 
 void processPost(userData* user, serverData* server, char* input){
     int fd;
@@ -276,11 +63,11 @@ void processPost(userData* user, serverData* server, char* input){
     long int fsize;
     char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
 
+    //----------------------------VERIFY USER INPUT-----------------------------
+
     memset(extra,0,sizeof extra);
     memset(filename,0,sizeof filename);
     sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
-
-    printf("Command:%s\nText:%s\nFilename:%s\n",command,text,filename);
 
 
     if(!strcmp(user->ID,"")){
@@ -291,7 +78,7 @@ void processPost(userData* user, serverData* server, char* input){
         logError("No group is selected.");
         return;
     }
-    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || (strlen(filename) > FILESIZE)){
+    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || (strlen(filename) > FILENAMESIZE)){
         logError("Wrong size parameters.");
         return;
     }
@@ -308,6 +95,9 @@ void processPost(userData* user, serverData* server, char* input){
 
     connectTCP(server,&fd,res);
 
+    //----------------------------SEND USER INPUT-----------------------------
+
+
     char message[295];
 
     if(strlen(filename)){
@@ -321,6 +111,8 @@ void processPost(userData* user, serverData* server, char* input){
         );
 
         sendTCP(fd,message,strlen(message));
+
+    //PARSE POST END
 
         int sent = 0;
         char buffer[500];   
@@ -349,9 +141,11 @@ void processPost(userData* user, serverData* server, char* input){
     }
 
     char* response;
-    response = receiveTCP(fd);
+    response = receiveWholeTCP(fd);
     printf("%s",response);
 }
+
+//--------------------------------------------------------------------------------------------
 
 void processRetrieve(userData* user, serverData* server, char* input){
 
@@ -548,4 +342,153 @@ void processRetrieve(userData* user, serverData* server, char* input){
     }
     printf("\n");
     reset(); //color reset
+}
+
+//--------------------------------------------------------------------------------------------
+
+/**
+ * Receive the whole message via TCP socket from server.
+ * @param[in] fd File descriptor of TCP socket
+ * @param[out] message Message from server
+*/
+char* receiveWholeTCP(int fd){
+    int nRead = 1; // This can't be initialized as 0
+    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
+    char* ptr;
+
+    ptr = message;
+
+    while (nRead != 0){
+        nRead = read(fd, ptr, EXTRAMAXSIZE);
+        if(nRead == -1){
+            logError("Couldn't receive message via TCP socket");
+            exit(1);
+        }
+        ptr += nRead;
+    }
+     
+    return message;
+}
+/**
+ * Receive messageSize message via TCP socket from server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] buffer Buffer to be filled with message from the server
+ * @param[in] messageSize Size of the desired message
+*/
+void receiveNSizeTCP(int fd, char* buffer, int messageSize){
+    
+    char* ptr = buffer;
+    int sum = 0;
+    int nRead = 0;
+
+    while (messageSize > sum){
+        nRead = read(fd, ptr, messageSize);
+        if (nRead == -1){
+            logError("Couldn't receive message via TCP socket");
+            exit(1);
+        }
+        if (nRead == 0){
+            break;
+        }
+        ptr += nRead;
+        sum += nRead;
+        messageSize -= nRead;
+    }
+}
+
+/**
+ * Connect via TCP socket to server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] res Information about server 
+*/
+void connectTCP(serverData *server, int* fd, struct addrinfo* res){
+    int errcode,n;
+    struct addrinfo hints;
+
+    *fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(*fd==-1){
+        logError("Couldn't create TCP socket.");
+        exit(1);
+    }
+
+    memset(&hints,0,sizeof hints);
+    hints.ai_family=AF_INET;
+    hints.ai_socktype=SOCK_STREAM;
+
+    errcode=getaddrinfo(server->ipAddress,server->port,&hints,&res) ;
+    if(errcode!=0){
+        logError("Couldn't get server info.");
+        exit(1);
+    }
+
+    n = connect(*fd,res->ai_addr,res->ai_addrlen);
+    if(n==-1){
+        logError("Couldn't connect to server.");
+        exit(1);
+    }
+}
+
+/**
+ * Send message via TCP socket to server.
+ * @param[in] fd File descriptor of TCP socket
+ * @param[in] message Message to be sent
+ * @param[in] messageLen Message length
+*/
+void sendTCP(int fd, char* message, int messageLen){
+    int nLeft = messageLen;
+    int nWritten;
+    char* ptr;
+
+    ptr = message;
+
+    while (nLeft > 0){
+        nWritten = write(fd, ptr, nLeft);
+        if(nWritten <= 0){
+            logError("Couldn't send message via TCP socket");
+            exit(1);
+        }
+        nLeft -= nWritten;
+        ptr += nWritten;
+    }
+}
+
+/**
+ * Generic function to proccess commands that access the server via TCP protocol.
+ * This function receives the user input and a set of function specific for each
+ * command.
+ * @param[in] input User input
+ * @param[in] parser Function to parse the command
+ * @param[in] logger Function to log the messages related to the command
+ * @param[in] helper "Optional" function when processRequest needs to do additional tasks
+ * 
+*/
+void processRequestTCP(
+    userData *user, 
+    serverData *server, 
+    char* input, 
+    char* (*parser)(userData*,char*), 
+    void (*logger)(char*), 
+    void (*helper)(userData*,char*)
+    ){
+
+    int fd;
+    int msgSize;
+    struct addrinfo *res;
+    char *message, *response;
+
+    message = (*parser)(user,input);
+    if(message == NULL) return;
+
+    connectTCP(server,&fd,res);
+    sendTCP(fd,message,strlen(message));
+    response = receiveWholeTCP(fd);
+
+    if(helper != NULL){
+        (*helper)(user,response);
+    }
+
+    (*logger)(response);
+
+    free(message);
+    free(response);
 }
