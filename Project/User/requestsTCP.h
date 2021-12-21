@@ -7,8 +7,9 @@ void processPost(userData* user, serverData* server, char* input);
 void processRetrieve(userData* user, serverData* server, char* input);
 
 void connectTCP(serverData *server, int* fd, struct addrinfo* res);
-void sendMessageTCP(int fd, char* message, int messageLen);
-char* receiveMessageTCP(int fd);
+void sendTCP(int fd, char* message, int messageLen);
+char* receiveWholeTCP(int fd);
+void receiveNSizeTCP(int fd, char* buffer, int messageSize);
 void processRequestTCP(userData *user, serverData *server, char* input, char* (*parser)(userData*,char*), void (*logger)(char*), void (*helper)(userData*,char*));
 
 #endif

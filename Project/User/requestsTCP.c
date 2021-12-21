@@ -186,7 +186,7 @@ void sendTCP(int fd, char* message, int messageLen){
  * @param[in] fd File descriptor of UDP socket
  * @param[out] message Message from server
 */
-char* receiveTCP(int fd){
+char* receiveWholeTCP(int fd){
     int nRead = 1; // This can't be initialized as 0
     char* message = calloc(EXTRAMAXSIZE,sizeof(char));
     char* ptr;
