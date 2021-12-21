@@ -294,4 +294,5 @@ void logRTV(int success, int amountMessages, char** messages){
     } else {
         printf("retrieve: Failed to retreive messages.\n");
     }
+    
 }
