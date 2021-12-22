@@ -13,7 +13,7 @@ void logGUR(char* message);
 
 void logULS(char* message);
 void logPST(char* message);
-void logRTV(int success, int amountMessages, char** messages);
+int logRTV(char* message);
 
 void logError(char* message);
 

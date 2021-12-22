@@ -18,7 +18,121 @@
 #define TEXTSIZE 240
 #define FILENAMESIZE 24
 #define MAXBYTES 8000
+#define FILEBUFFERSIZE 512
 
+/**
+ * Receive the whole message via TCP socket from server.
+ * @param[in] fd File descriptor of TCP socket
+ * @param[out] message Message from server
+*/
+char* receiveWholeTCP(int fd){
+    int nRead = 1; // This can't be initialized as 0
+    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
+    char* ptr;
+
+    ptr = message;
+
+    while (nRead != 0){
+        nRead = read(fd, ptr, EXTRAMAXSIZE);
+        if(nRead == -1){
+            logError("Couldn't receive message via TCP socket.");
+            free(message);
+            return NULL;
+        }
+        ptr += nRead;
+    }
+     
+    return message;
+}
+/**
+ * Receive messageSize message via TCP socket from server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] buffer Buffer to be filled with message from the server
+ * @param[in] messageSize Size of the desired message
+*/
+int receiveNSizeTCP(int fd, char* buffer, int messageSize){
+    
+    char* ptr = buffer;
+    int sum = 0;
+    int nRead = 0;
+
+    while (messageSize > sum){
+        nRead = read(fd, ptr, messageSize);
+        if (nRead == -1){
+            logError("Couldn't receive message via TCP socket.");
+            return FALSE;
+        }
+        if (nRead == 0){
+            break;
+        }
+        ptr += nRead;
+        sum += nRead;
+        messageSize -= nRead;
+    }
+    return TRUE;
+}
+
+/**
+ * Connect via TCP socket to server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] res Information about server 
+*/
+int connectTCP(serverData *server, int* fd, struct addrinfo* res){
+    int errcode,n;
+    struct addrinfo hints;
+
+    *fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(*fd==-1){
+        logError("Couldn't create TCP socket.");
+        return FALSE;
+    }
+
+    memset(&hints,0,sizeof hints);
+    hints.ai_family=AF_INET;
+    hints.ai_socktype=SOCK_STREAM;
+
+    errcode=getaddrinfo(server->ipAddress,server->port,&hints,&res) ;
+    if(errcode!=0){
+        logError("Couldn't get server info.");
+        return FALSE;
+    }
+
+    n = connect(*fd,res->ai_addr,res->ai_addrlen);
+    if(n==-1){
+        logError("Couldn't connect to server.");
+        return FALSE;
+    }
+    
+    return TRUE;
+}
+
+/**
+ * Send message via TCP socket to server.
+ * @param[in] fd File descriptor of TCP socket
+ * @param[in] message Message to be sent
+ * @param[in] messageLen Message length
+*/
+int sendTCP(int fd, char* message, int messageLen){
+    int nLeft = messageLen;
+    int nWritten;
+    char* ptr;
+
+    ptr = message;
+
+    while (nLeft > 0){
+        nWritten = write(fd, ptr, nLeft);
+        if(nWritten <= 0){
+            logError("Couldn't send message via TCP socket");
+            return FALSE;
+        }
+        nLeft -= nWritten;
+        ptr += nWritten;
+    }
+
+    return TRUE;
+}
+
+//-------------------------------------------------------------------------------
 
 char* parseUlist(userData* user, char* input){
     
@@ -51,10 +165,8 @@ char* parseUlist(userData* user, char* input){
 
 //--------------------------------------------------------------------------------------------
 
-
-
-
 void processPost(userData* user, serverData* server, char* input){
+
     int fd;
     int msgSize;
     struct addrinfo *res;
@@ -62,6 +174,9 @@ void processPost(userData* user, serverData* server, char* input){
     FILE* fp;
     long int fsize;
     char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
+
+    //TODO - This message size is sus
+    char message[MAXSIZE * 4];
 
     //----------------------------VERIFY USER INPUT-----------------------------
 
@@ -93,56 +208,57 @@ void processPost(userData* user, serverData* server, char* input){
         }
     }
 
-    connectTCP(server,&fd,res);
-
     //----------------------------SEND USER INPUT-----------------------------
 
-
-    char message[295];
+    if(!connectTCP(server,&fd,res)) return;
 
     if(strlen(filename)){
+
+        // Get file size
         fseek(fp,0L,SEEK_END);
         fsize = ftell(fp);
         rewind(fp);
 
         sprintf(
             message,"PST %s %02d %ld %s %s %ld ",
-            user->ID,atoi(user->groupID),strlen(text),text,filename, fsize
+            user->ID,atoi(user->groupID),strlen(text),text,filename,fsize
         );
 
-        sendTCP(fd,message,strlen(message));
+        // Send PST UID GID Tsize text Fname Fsize
+        if(!sendTCP(fd,message,strlen(message))) return;
 
-    //PARSE POST END
+        // Send data from file
 
         int sent = 0;
-        char buffer[500];   
-
-        int i = 0;
+        char buffer[FILEBUFFERSIZE];   
         int actuallyRead = 0;
+
+        // Send "packages" of size FILEBUFFERSIZE at a time
         while(sent < fsize){
-            memset(buffer,0,500);
-            actuallyRead = fread(buffer,sizeof(char),500,fp);
-            printf("%s",buffer);
-            sendTCP(fd,buffer,actuallyRead);
-            printf("%d\n",actuallyRead);
+            memset(buffer, 0, FILEBUFFERSIZE);
+            // Read "package" from file
+            actuallyRead = fread(buffer, sizeof(char), FILEBUFFERSIZE, fp);
+            // Send "package"
+            if(!sendTCP(fd,buffer,actuallyRead)) return;
             sent += actuallyRead;
-            printf("%d\n",sent);
-            i ++;
         }
-        sendTCP(fd,"\n",1);
-        printf("Sent file in %d messages\n",i);
+        // Message to server must end with \n
+        if(!sendTCP(fd,"\n",1)) return;
     }
     else{
+        // Send PST UID GID Tsize text
         sprintf(
             message,"PST %s %02d %ld %s\n",
             user->ID,atoi(user->groupID),strlen(text),text
         );
-        sendTCP(fd,message,strlen(message));
+        if(!sendTCP(fd,message,strlen(message))) return;
     }
 
     char* response;
     response = receiveWholeTCP(fd);
-    printf("%s",response);
+    logPST(response);
+
+    free(response);
 }
 
 //--------------------------------------------------------------------------------------------
@@ -154,8 +270,10 @@ void processRetrieve(userData* user, serverData* server, char* input){
     struct addrinfo *res;
 
     char command[MAXSIZE], MID[MAXSIZE], extra[MAXSIZE];
-    memset(extra,0,sizeof extra);
 
+    //----------------------------VERIFY USER INPUT-----------------------------
+
+    memset(extra,0,sizeof extra);
     sscanf(input,"%s %s %s\n",command,MID,extra);
 
     if(!strcmp(user->ID,"")){
@@ -171,24 +289,38 @@ void processRetrieve(userData* user, serverData* server, char* input){
         return;
     }
 
-    connectTCP(server,&fd,res);
+    //----------------------------SEND USER INPUT-----------------------------
+
+    if(!connectTCP(server,&fd,res)) return;
 
     char message[14];
 
     sprintf(message, "RTV %s %02d %04d\n",user->ID,atoi(user->groupID),atoi(MID));
 
-    sendTCP(fd,message,strlen(message));
+    if(!sendTCP(fd,message,strlen(message))) return;
 
-    // RRT OK 10 0020 12345 11 hello world 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe  
+    //----------------------------RECEIVE SERVER INPUT-----------------------------
+
+    // ERR
+    // RRT NOK
+    // RRT EOF (N=0)
+    // RRT OK 10 0020 12345 11 hello world 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe
+
 
     char header[10];
-    char commando[9],status[9],numberOfMessages[9];
+    char serverCommand[9],serverStatus[9],numberOfMessages[9];
     int amountOfMessages;
     char space[1]; //Named space, but wont always be a space
 
-    // Reads header (ex: 'RTT OK 10')
-    receiveNSizeTCP(fd, header, 9);
-    sscanf(header,"%s %s %s",commando,status,numberOfMessages);
+    // Reads header (ex: 'RRT OK 10', 'RRT NOK', 'RRT EOF', 'ERR')
+    memset(header, 0, 10);
+    memset(numberOfMessages, 0, 9);
+
+    if(!receiveNSizeTCP(fd, header, 9)) return;
+
+    if(!logRTV(header)) return;
+
+    sscanf(header,"%s %s %s",serverCommand,serverStatus,numberOfMessages);
 
     if(numberOfMessages[1] == ' '){
         amountOfMessages = numberOfMessages[0];
@@ -198,34 +330,34 @@ void processRetrieve(userData* user, serverData* server, char* input){
         read(fd,space,1);
     }
 
-    printf("Ammount of messages: %d\n", amountOfMessages);
+    printf("Amount of messages: %d\n", amountOfMessages);
 
     char info[11];
     char MessID[5], UserID[6], TSizeString[4];
     char text[240];
 
     memset(info, 0, 11);
-    receiveNSizeTCP(fd, info, 1);
+    if(!receiveNSizeTCP(fd, info, 1)) return;
 
     for (int i = 0; i < amountOfMessages; i++)
     {
         i % 2 == 0 ? cyan() : white();
         memset(text, 0, 240);
-        receiveNSizeTCP(fd, info + 1, 9);
+        if(!receiveNSizeTCP(fd, info + 1, 9)) return;
         sscanf(info, "%s %s", MessID, UserID);
 
         //TODO - Check if it really is a space
-        receiveNSizeTCP(fd, space, 1);
+        if(!receiveNSizeTCP(fd, space, 1)) return;
 
         memset(TSizeString, 0, 4);
         //Check Text Size
         for (int i = 0; i < 3; i++)
         {
-            receiveNSizeTCP(fd, space, 1);
+            if(!receiveNSizeTCP(fd, space, 1)) return;
             if(space[0] == ' '){ 
                 if (i == 0){
                     logError("Bad Formatting");
-                    exit(1);
+                    return;
                 }
                 break;
             }
@@ -233,19 +365,19 @@ void processRetrieve(userData* user, serverData* server, char* input){
         }
         if(space[0] =! ' '){ 
             logError("Bad formatting");
-            exit(1);
+            return;
         }
 
         int TSize = atoi(TSizeString);
 
         //Read Text
-        receiveNSizeTCP(fd, text, TSize);
+        if(!receiveNSizeTCP(fd, text, TSize)) return;
 
         //TODO - Check if it really is a space
-        receiveNSizeTCP(fd, space, 1);
+        if(!receiveNSizeTCP(fd, space, 1)) return;
 
         //Named space, but we hope it wont be a space
-        receiveNSizeTCP(fd, space, 1);
+        if(!receiveNSizeTCP(fd, space, 1)) return;
 
         printf("Message: %s", text);
 
@@ -259,14 +391,14 @@ void processRetrieve(userData* user, serverData* server, char* input){
         else if (space[0] == '/'){
             printf("Downloading file...\n");
             //TODO - Check if it really is a space
-            receiveNSizeTCP(fd, space, 1);
+            if(!receiveNSizeTCP(fd, space, 1)) return;
 
-            char fileName[FILENAMEMAX + 1];
-            memset(fileName, 0, FILENAMEMAX + 1);
+            char fileName[FILENAMESIZE + 1];
+            memset(fileName, 0, FILENAMESIZE + 1);
 
             //Read FileName
             //TODO - Check if filename sent by the server is not too big
-            for (int i = 0; i < FILENAMEMAX; i++)
+            for (int i = 0; i < FILENAMESIZE; i++)
             {
                 read(fd, space, 1);
                 if (space[0] == ' '){
@@ -281,11 +413,9 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             for (int i = 0; i < 10; i++)
             {
-                receiveNSizeTCP(fd, space, 1);
-                if (space[0] == ' ')
-                {
-                    break;
-                }
+                if(!receiveNSizeTCP(fd, space, 1)) return;
+                if (space[0] == ' ') break;
+
                 //TODO - Check if numerical
                 fileSizeString[i] = space[0];
             }
@@ -295,7 +425,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             printf("File size: %d\nFile name: %s\n", fileSize, fileName);
 
             //Read File
-            char fileBuffer[512];
+            char fileBuffer[FILEBUFFERSIZE];
 
             FILE *downptr;
             downptr = fopen(fileName, "wb");
@@ -306,151 +436,42 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             for (int i = 0; sum < fileSize; i++)
             {
-                memset(fileBuffer, 0, 512);
-                if (fileSize - sum > 512)
-                {
-                    rd = read(fd, fileBuffer, 512);
+                memset(fileBuffer, 0, FILEBUFFERSIZE);
+                if (fileSize - sum > FILEBUFFERSIZE){
+                    rd = read(fd, fileBuffer, FILEBUFFERSIZE);
                 }
-                else
-                {
+                else{
                     rd = read(fd, fileBuffer, fileSize - sum);
                 }
                 if (rd == -1){
                     logError("Something really wrong happened");
-                    exit(1);
+                    return;
                 }
                 sum += rd;
                 fwrite(fileBuffer, sizeof(char), rd, downptr);
             }
-            //actuallyRead = fread(buffer,sizeof(char),500,fp);
-
 
             fclose(downptr); 
 
             //TODO - Check if it really is a space
-            receiveNSizeTCP(fd, space, 1);
+            if(!receiveNSizeTCP(fd, space, 1)) return;
 
-            receiveNSizeTCP(fd, space, 1);
+            if(!receiveNSizeTCP(fd, space, 1)) return;
 
             memset(info, 0, 11);
             info[0] = space[0];
         }
         else{
             logError("Bad formatting");
-            exit(1);
+            return;
         }
     }
-    printf("\n");
     reset(); //color reset
 }
 
 //--------------------------------------------------------------------------------------------
 
-/**
- * Receive the whole message via TCP socket from server.
- * @param[in] fd File descriptor of TCP socket
- * @param[out] message Message from server
-*/
-char* receiveWholeTCP(int fd){
-    int nRead = 1; // This can't be initialized as 0
-    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
-    char* ptr;
 
-    ptr = message;
-
-    while (nRead != 0){
-        nRead = read(fd, ptr, EXTRAMAXSIZE);
-        if(nRead == -1){
-            logError("Couldn't receive message via TCP socket");
-            exit(1);
-        }
-        ptr += nRead;
-    }
-     
-    return message;
-}
-/**
- * Receive messageSize message via TCP socket from server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] buffer Buffer to be filled with message from the server
- * @param[in] messageSize Size of the desired message
-*/
-void receiveNSizeTCP(int fd, char* buffer, int messageSize){
-    
-    char* ptr = buffer;
-    int sum = 0;
-    int nRead = 0;
-
-    while (messageSize > sum){
-        nRead = read(fd, ptr, messageSize);
-        if (nRead == -1){
-            logError("Couldn't receive message via TCP socket");
-            exit(1);
-        }
-        if (nRead == 0){
-            break;
-        }
-        ptr += nRead;
-        sum += nRead;
-        messageSize -= nRead;
-    }
-}
-
-/**
- * Connect via TCP socket to server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
-*/
-void connectTCP(serverData *server, int* fd, struct addrinfo* res){
-    int errcode,n;
-    struct addrinfo hints;
-
-    *fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(*fd==-1){
-        logError("Couldn't create TCP socket.");
-        exit(1);
-    }
-
-    memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET;
-    hints.ai_socktype=SOCK_STREAM;
-
-    errcode=getaddrinfo(server->ipAddress,server->port,&hints,&res) ;
-    if(errcode!=0){
-        logError("Couldn't get server info.");
-        exit(1);
-    }
-
-    n = connect(*fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1){
-        logError("Couldn't connect to server.");
-        exit(1);
-    }
-}
-
-/**
- * Send message via TCP socket to server.
- * @param[in] fd File descriptor of TCP socket
- * @param[in] message Message to be sent
- * @param[in] messageLen Message length
-*/
-void sendTCP(int fd, char* message, int messageLen){
-    int nLeft = messageLen;
-    int nWritten;
-    char* ptr;
-
-    ptr = message;
-
-    while (nLeft > 0){
-        nWritten = write(fd, ptr, nLeft);
-        if(nWritten <= 0){
-            logError("Couldn't send message via TCP socket");
-            exit(1);
-        }
-        nLeft -= nWritten;
-        ptr += nWritten;
-    }
-}
 
 /**
  * Generic function to proccess commands that access the server via TCP protocol.
@@ -479,8 +500,8 @@ void processRequestTCP(
     message = (*parser)(user,input);
     if(message == NULL) return;
 
-    connectTCP(server,&fd,res);
-    sendTCP(fd,message,strlen(message));
+    if(!connectTCP(server,&fd,res)) return;
+    if(!sendTCP(fd,message,strlen(message))) return;
     response = receiveWholeTCP(fd);
 
     if(helper != NULL){

@@ -153,8 +153,10 @@ void processShowUID(userData* user, char* input){
         logError("No user is logged in.");
         return;
     }
-
-    printf("Current UID:%s\n",user->ID);
+    // todo should be login, also current group and current gid
+    green();
+    printf("Current UID: %s\n",user->ID);
+    reset();
 }
 
 char* parseSubscribe(userData* user, char* input){
@@ -281,7 +283,9 @@ void processSelect(userData* user, char* input){
     }
 
     strcpy(user->groupID, GID);
+    green();
     printf("Current group selected: %s\n", user->groupID);
+    reset();
 }
 
 void processShowGID(userData* user, char* input){
@@ -306,8 +310,9 @@ void processShowGID(userData* user, char* input){
         logError("No group is selected.");
         return;
     }
-
-    printf("Current GID:%s\n",user->groupID);
+    green();
+    printf("Current GID: %s\n",user->groupID);
+    reset();
 }
 
 /**
@@ -316,14 +321,14 @@ void processShowGID(userData* user, char* input){
  * @param[in] fd File descriptor of UDP socket
  * @param[in] res Information about server 
 */
-void connectUDP(serverData *server, int* fd, struct addrinfo** res){
+int connectUDP(serverData *server, int* fd, struct addrinfo** res){
     int errcode;
     struct addrinfo hints;
 
     *fd = socket(AF_INET, SOCK_DGRAM, 0);
     if(*fd==-1){
         logError("Couldn't create UDP socket.");
-        exit(1);
+        return FALSE;
     }
 
     memset(&hints,0,sizeof hints);
@@ -333,8 +338,10 @@ void connectUDP(serverData *server, int* fd, struct addrinfo** res){
     errcode=getaddrinfo(server->ipAddress,server->port,&hints,res);
     if(errcode!=0){
         logError("Couldn't get server info.");
-        exit(1);
+        return FALSE;
     }
+
+    return TRUE;
 }
 
 /**
@@ -344,7 +351,7 @@ void connectUDP(serverData *server, int* fd, struct addrinfo** res){
  * @param[in] message Message to be sent
  * @param[in] messageLen Message length
 */
-void sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen){
+int sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen){
     int n;
     socklen_t addrlen;
     struct sockaddr_in addr;
@@ -352,8 +359,9 @@ void sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen)
     n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
     if(n==-1){
         logError("Couldn't send message via UDP socket");
-        exit(1);
+        return FALSE;
     }   
+    return TRUE;
 }
 
 /**
@@ -372,7 +380,8 @@ char* receiveMessageUDP(int fd){
     n = recvfrom(fd,message,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
     if(n==-1){
         logError("Couldn't receive message via UDP socket");
-        exit(1);
+        free(message);
+        return NULL;
     } 
     return message;
 }
@@ -406,9 +415,10 @@ void processRequestUDP(
     message = (*parser)(user,input);
     if(message == NULL) return;
 
-    connectUDP(server,&fd,&res);
-    sendMessageUDP(fd,res,message,strlen(message));
+    if(!connectUDP(server,&fd,&res)) return;
+    if(!sendMessageUDP(fd,res,message,strlen(message))) return;
     response = receiveMessageUDP(fd);
+    if(response == NULL) return;
 
     if(helper != NULL){
         (*helper)(user,response);

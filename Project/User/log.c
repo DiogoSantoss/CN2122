@@ -278,21 +278,36 @@ void logPST(char* message){
         green();
         printf("post: Message with number %s was successfully posted.\n", status);
     }
+    reset();
 }
 
-void logRTV(int success, int amountMessages, char** messages){
-    /**
-    * 1 message(s) retrieved:
-    * 0001 - "Benvindos ao lab de RC"; file stored: RC.jpg
-    * 
-    */
-    if(success){
-        printf("retrieve: %d message(s) retrieved:\n",amountMessages);
-        for(int i = 0; i<amountMessages; i++){
-            printf("%s",messages[i]);
-        }
-    } else {
-        printf("retrieve: Failed to retreive messages.\n");
-    }
+int logRTV(char* message){
+
+    int success = FALSE;
+
+    //printf("%s", message);
     
+    char rrt[10], status[10], numberOfMessages[10], extra[MAXSIZE];
+    sscanf(message, "%s %s %s %s\n", rrt, status, numberOfMessages, extra);
+
+    if(!strcmp(message, "RRT NOK\n")){
+        yellow();
+        printf("retrieve: Failed to retrieve the message.\n");
+    }
+    else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
+        logError("retrieve: A fatal error has ocurred.");
+    }
+    else if(!strcmp(message,"RRT EOF\n")){
+        printf("retrieve: 0 messages retrieved.\n");
+    }
+    else if(strcmp(rrt,"RRT") && strcmp(status,"OK") && !checkStringIsNumber(numberOfMessages)){
+        logError("retrieve: Server response wrongly formatted");
+    }
+    else{
+        green();
+        printf("%s message(s) retrived:\n", numberOfMessages);
+        success = TRUE;
+    }
+    reset();
+    return success;
 }

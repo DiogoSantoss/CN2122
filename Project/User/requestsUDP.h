@@ -15,8 +15,8 @@ char* parseMyGroups(userData* user, char* input);
 void processSelect(userData* user, char* input);
 void processShowGID(userData* user, char* input);
 
-void connectUDP(serverData *server, int* fd, struct addrinfo** res);
-void sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen);
+int connectUDP(serverData *server, int* fd, struct addrinfo** res);
+int sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen);
 char* receiveMessageUDP(int fd);
 void processRequestUDP(userData* user, serverData *server, char* input, char* (*parser)(userData*,char*), void (*logger)(char*), void (*helper)(userData*,char*));
 
