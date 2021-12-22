@@ -14,7 +14,7 @@
 #define FALSE 0
 
 /*
-What happends when server gives wrong responses ? 
+What happens when server gives wrong responses ? 
 for example in groups
 sscanf to smaller array may cause overflow
 */
@@ -305,7 +305,7 @@ int logRTV(char* message){
     }
     else{
         green();
-        printf("%s message(s) retrived:\n", numberOfMessages);
+        printf("%s message(s) retrieved:\n", numberOfMessages);
         success = TRUE;
     }
     reset();

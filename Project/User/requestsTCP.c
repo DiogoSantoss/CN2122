@@ -416,7 +416,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
                 if(!receiveNSizeTCP(fd, space, 1)) return;
                 if (space[0] == ' ') break;
 
-                //TODO - Check if numerical
+                if(!checkStringIsNumber(space)) return;
                 fileSizeString[i] = space[0];
             }
 
@@ -429,7 +429,11 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             FILE *downptr;
             downptr = fopen(fileName, "wb");
-            //TODO - Check if file was oppened correctly
+
+            if(downptr == NULL){
+                logError("Could not open file");
+                return;
+            }
 
             int sum = 0;
             int rd = 0;
