@@ -293,7 +293,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
     if(!connectTCP(server,&fd,res)) return;
 
-    char message[14];
+    char message[35];
 
     sprintf(message, "RTV %s %02d %04d\n",user->ID,atoi(user->groupID),atoi(MID));
 
