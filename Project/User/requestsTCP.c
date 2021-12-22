@@ -346,8 +346,12 @@ void processRetrieve(userData* user, serverData* server, char* input){
         if(!receiveNSizeTCP(fd, info + 1, 9)) return;
         sscanf(info, "%s %s", MessID, UserID);
 
-        //TODO - Check if it really is a space
         if(!receiveNSizeTCP(fd, space, 1)) return;
+
+        if(space[0] != ' '){
+            logError("Bad formatting");
+            return;
+        }
 
         memset(TSizeString, 0, 4);
         //Check Text Size
@@ -373,7 +377,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
         //Read Text
         if(!receiveNSizeTCP(fd, text, TSize)) return;
 
-        //TODO - Check if it really is a space
         if(!receiveNSizeTCP(fd, space, 1)) return;
 
         //Named space, but we hope it wont be a space
@@ -390,8 +393,13 @@ void processRetrieve(userData* user, serverData* server, char* input){
         
         else if (space[0] == '/'){
             printf("Downloading file...\n");
-            //TODO - Check if it really is a space
+
             if(!receiveNSizeTCP(fd, space, 1)) return;
+
+            if(space[0] != ' '){
+                logError("Bad formatting");
+                return;
+            }
 
             char fileName[FILENAMESIZE + 1];
             memset(fileName, 0, FILENAMESIZE + 1);
@@ -416,7 +424,10 @@ void processRetrieve(userData* user, serverData* server, char* input){
                 if(!receiveNSizeTCP(fd, space, 1)) return;
                 if (space[0] == ' ') break;
 
-                if(!checkStringIsNumber(space)) return;
+                if(!checkStringIsNumber(space)){
+                    logError("Bad formatting");
+                    return;
+                }
                 fileSizeString[i] = space[0];
             }
 
@@ -457,7 +468,11 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             fclose(downptr); 
 
-            //TODO - Check if it really is a space
+            if(space[0] != ' '){
+                logError("Bad formatting");
+                return;
+            }
+
             if(!receiveNSizeTCP(fd, space, 1)) return;
 
             if(!receiveNSizeTCP(fd, space, 1)) return;
