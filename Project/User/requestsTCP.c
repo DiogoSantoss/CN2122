@@ -175,8 +175,8 @@ void processPost(userData* user, serverData* server, char* input){
     long int fsize;
     char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
 
-    //TODO - This message size is sus
-    char message[MAXSIZE * 4];
+    //Max message size possible is 531 so 2*MAXSIZE is enough
+    char message[MAXSIZE * 2];
 
     //----------------------------VERIFY USER INPUT-----------------------------
 
