@@ -1,13 +1,13 @@
 #ifndef COLORS_DOT_H
 #define COLORS_DOT_H
 
-void red();
-void green();
-void blue();
-void purple();
-void cyan();
-void white();
-void yellow();
-void reset();
+void colorRed();
+void colorGreen();
+void colorBlue();
+void colorPurple();
+void colorCyan();
+void colorWhite();
+void colorYellow();
+void colorReset();
 
 #endif

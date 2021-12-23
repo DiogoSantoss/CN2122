@@ -19,6 +19,7 @@
 #define FILENAMESIZE 24
 #define MAXBYTES 8000
 #define FILEBUFFERSIZE 512
+#define FILESIZEMAXDIGITS 10
 
 /**
  * Receive the whole message via TCP socket from server.
@@ -132,6 +133,44 @@ int sendTCP(int fd, char* message, int messageLen){
     return TRUE;
 }
 
+int skipSpace(int fd){
+
+    char space[1];
+
+    if(!receiveNSizeTCP(fd, space, 1)) return FALSE;
+    if(space[0] != ' '){
+        logError("Bad formatting");
+        return FALSE;
+    }    
+    return TRUE;
+}
+
+/*
+textsize 240 oalallalsaslda
+sai do for
+
+textsize 24 fdsafdsa
+nao sai do for, leva break
+
+*/
+
+int readWord(int fd, char* buffer, int maxRead){
+
+    char readChar[1];
+    memset(buffer, 0, maxRead + 1);
+
+    for (int i = 0; i < maxRead; i++){
+        // Reads one char
+        if(!receiveNSizeTCP(fd, readChar, 1)) return FALSE;
+        // If space is found in buffer boundaries, return TRUE
+        if (readChar[0] == ' ') return TRUE;
+        // Save char to buffer
+        buffer[i] = readChar[0];
+    }
+    // Read max size, next should be space if not, error
+    return skipSpace(fd);
+}
+
 //-------------------------------------------------------------------------------
 
 char* parseUlist(userData* user, char* input){
@@ -224,7 +263,7 @@ void processPost(userData* user, serverData* server, char* input){
             user->ID,atoi(user->groupID),strlen(text),text,filename,fsize
         );
 
-        // Send PST UID GID Tsize text Fname Fsize
+        // Send PST UID GID textSize text Fname Fsize
         if(!sendTCP(fd,message,strlen(message))) return;
 
         // Send data from file
@@ -246,7 +285,7 @@ void processPost(userData* user, serverData* server, char* input){
         if(!sendTCP(fd,"\n",1)) return;
     }
     else{
-        // Send PST UID GID Tsize text
+        // Send PST UID GID textSize text
         sprintf(
             message,"PST %s %02d %ld %s\n",
             user->ID,atoi(user->groupID),strlen(text),text
@@ -261,176 +300,151 @@ void processPost(userData* user, serverData* server, char* input){
     free(response);
 }
 
-//--------------------------------------------------------------------------------------------
-
-void processRetrieve(userData* user, serverData* server, char* input){
-
-    int fd;
-    int msgSize;
-    struct addrinfo *res;
-
+/**
+*/
+char* parseRetrieve(userData* user, char* input){
+    
+    char* message = calloc(35,sizeof(char));
     char command[MAXSIZE], MID[MAXSIZE], extra[MAXSIZE];
-
-    //----------------------------VERIFY USER INPUT-----------------------------
 
     memset(extra,0,sizeof extra);
     sscanf(input,"%s %s %s\n",command,MID,extra);
 
     if(!strcmp(user->ID,"")){
         logError("No user logged in.");
-        return;
+        return NULL;
     }
     else if(!strcmp(user->groupID,"")){
         logError("No group is selected.");
-        return;
+        return NULL;
     }
-    else if((strlen(extra) != 0) || (strlen(command) != 8 && strlen(command) != 1) || strlen(MID)>4){
+    else if((strlen(extra) != 0) || (strlen(command) != 8 && strlen(command) != 1) || strlen(MID) > 4){
         logError("Wrong size parameters.");
-        return;
+        return NULL;
     }
-
-    //----------------------------SEND USER INPUT-----------------------------
-
-    if(!connectTCP(server,&fd,res)) return;
-
-    char message[35];
 
     sprintf(message, "RTV %s %02d %04d\n",user->ID,atoi(user->groupID),atoi(MID));
 
+    return message;
+}
+
+
+void processRetrieve(userData* user, serverData* server, char* input){
+
+    int fd;
+    char* message;
+    struct addrinfo *res;
+
+    message = parseRetrieve(user, input);
+    if(message == NULL) return;
+
+    if(!connectTCP(server,&fd,res)) return;
     if(!sendTCP(fd,message,strlen(message))) return;
+    free(message);
 
     //----------------------------RECEIVE SERVER INPUT-----------------------------
-
+    // ALL RESPONSES:
     // ERR
     // RRT NOK
     // RRT EOF (N=0)
     // RRT OK 10 0020 12345 11 hello world 0021 12345 4 helo \ image.jpg 252 asfwfeofewmgoewgmwe
+    
 
+    //----------------------------READ HEADER-----------------------------
+    // ALL RESPONSES:
+    // RRT OK 10
+    // RRT NOK
+    // RRT EOF 
+    // ERR
 
-    char header[10];
-    char serverCommand[9],serverStatus[9],numberOfMessages[9];
-    int amountOfMessages;
-    char space[1]; //Named space, but wont always be a space
+    int numOfMessages;
+    char header[10], aux[9], numOfMessagesString[9], readChar[1];
 
-    // Reads header (ex: 'RRT OK 10', 'RRT NOK', 'RRT EOF', 'ERR')
     memset(header, 0, 10);
-    memset(numberOfMessages, 0, 9);
+    memset(numOfMessagesString, 0, 9);
 
+    // Reads header
     if(!receiveNSizeTCP(fd, header, 9)) return;
-
+    // Verifies if server response is valid
     if(!logRTV(header)) return;
 
-    sscanf(header,"%s %s %s",serverCommand,serverStatus,numberOfMessages);
+    // Parse header
+    sscanf(header,"%s %s %s", aux, aux, numOfMessagesString);
 
-    if(numberOfMessages[1] == ' '){
-        amountOfMessages = numberOfMessages[0];
+    // Get number of messages
+    if(numOfMessagesString[1] == ' '){
+        numOfMessages = numOfMessagesString[0];
     }
     else {
-        amountOfMessages = atoi(numberOfMessages);
-        read(fd,space,1);
+        numOfMessages = atoi(numOfMessagesString);
+        read(fd,readChar,1);
     }
 
-    printf("Amount of messages: %d\n", amountOfMessages);
 
+    // Start reading messages
+    
     char info[11];
-    char MessID[5], UserID[6], TSizeString[4];
-    char text[240];
+    char MessID[5], UserID[6], textSizeDigits[4];
+    char text[TEXTSIZE + 1];
 
     memset(info, 0, 11);
+    //---
     if(!receiveNSizeTCP(fd, info, 1)) return;
 
-    for (int i = 0; i < amountOfMessages; i++)
-    {
-        i % 2 == 0 ? cyan() : blue();
-        memset(text, 0, 240);
+    for (int i = 0; i < numOfMessages; i++){
+        
+        // Colors
+        i % 2 == 0 ? colorCyan() : colorBlue();
+
+        // Read MessID and UserID of text message
         if(!receiveNSizeTCP(fd, info + 1, 9)) return;
         sscanf(info, "%s %s", MessID, UserID);
 
-        if(!receiveNSizeTCP(fd, space, 1)) return;
-
-        if(space[0] != ' '){
-            logError("Bad formatting");
-            return;
-        }
-
-        memset(TSizeString, 0, 4);
-        //Check Text Size
-        for (int i = 0; i < 3; i++)
-        {
-            if(!receiveNSizeTCP(fd, space, 1)) return;
-            if(space[0] == ' '){ 
-                if (i == 0){
-                    logError("Bad Formatting");
-                    return;
-                }
-                break;
-            }
-            TSizeString[i] = space[0];
-        }
-        if(space[0] =! ' '){ 
-            logError("Bad formatting");
-            return;
-        }
-
-        int TSize = atoi(TSizeString);
+        // Skips space
+        if(!skipSpace(fd)) return;
+        
+        // Read text size
+        if(!readWord(fd,textSizeDigits, 3));
+        int textSize = atoi(textSizeDigits);
 
         //Read Text
-        if(!receiveNSizeTCP(fd, text, TSize)) return;
-
-        if(!receiveNSizeTCP(fd, space, 1)) return;
-
-        //Named space, but we hope it wont be a space
-        if(!receiveNSizeTCP(fd, space, 1)) return;
+        memset(text, 0, TEXTSIZE + 1);
+        if(!receiveNSizeTCP(fd, text, textSize)) return;
 
         printf("Message: %s", text);
 
+        skipSpace(fd);
+
+        //Named space, but we hope it wont be a space
+        if(!receiveNSizeTCP(fd, readChar, 1)) return;
+
         // Check if there is a file or not
-        if (space[0] != '/'){
+        if (readChar[0] != '/'){
             memset(info, 0, 11);
-            info[0] = space[0];
+            info[0] = readChar[0];
             continue;
         }
         
-        else if (space[0] == '/'){
+        else if (readChar[0] == '/'){
 
-            if(!receiveNSizeTCP(fd, space, 1)) return;
+            if(!receiveNSizeTCP(fd, readChar, 1)) return;
 
-            if(space[0] != ' '){
+            if(readChar[0] != ' '){
                 logError("Bad formatting");
                 return;
             }
 
-            char fileName[FILENAMESIZE + 1];
-            memset(fileName, 0, FILENAMESIZE + 1);
-
             //Read FileName
-            //TODO - Check if filename sent by the server is not too big
-            for (int i = 0; i < FILENAMESIZE; i++)
-            {
-                read(fd, space, 1);
-                if (space[0] == ' '){
-                    break;
-                }
-                fileName[i] = space[0];
-            }
+            char fileName[FILENAMESIZE + 1];
+            //TODO? - Check if filename sent by the server is not too big?
+            readWord(fd, fileName, FILENAMESIZE);
 
             //Read FileSize
-            char fileSizeString[11];
-            memset(fileSizeString, 0, 11);
+            char fileSizeDigits[FILESIZEMAXDIGITS + 1];
 
-            for (int i = 0; i < 10; i++)
-            {
-                if(!receiveNSizeTCP(fd, space, 1)) return;
-                if (space[0] == ' ') break;
+            readWord(fd, fileSizeDigits, FILESIZEMAXDIGITS);
 
-                if(!checkStringIsNumber(space)){
-                    logError("Bad formatting");
-                    return;
-                }
-                fileSizeString[i] = space[0];
-            }
-
-            int fileSize = atoi(fileSizeString);
+            int fileSize = atoi(fileSizeDigits);
 
             printf("File size: %d\nFile name: %s\n", fileSize, fileName);
 
@@ -472,24 +486,24 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             printf("File successfully downloaded.\n");
 
-            if(space[0] != ' '){
+            if(readChar[0] != ' '){
                 logError("Bad formatting");
                 return;
             }
 
-            if(!receiveNSizeTCP(fd, space, 1)) return;
+            if(!receiveNSizeTCP(fd, readChar, 1)) return;
 
-            if(!receiveNSizeTCP(fd, space, 1)) return;
+            if(!receiveNSizeTCP(fd, readChar, 1)) return;
 
             memset(info, 0, 11);
-            info[0] = space[0];
+            info[0] = readChar[0];
         }
         else{
             logError("Bad formatting");
             return;
         }
     }
-    reset(); //color reset
+    colorReset();
 }
 
 //--------------------------------------------------------------------------------------------

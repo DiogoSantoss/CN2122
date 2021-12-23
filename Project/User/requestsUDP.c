@@ -154,9 +154,9 @@ void processShowUID(userData* user, char* input){
         return;
     }
     // todo should be login, also current group and current gid
-    green();
+    colorGreen();
     printf("Current UID: %s\n",user->ID);
-    reset();
+    colorReset();
 }
 
 char* parseSubscribe(userData* user, char* input){
@@ -283,9 +283,9 @@ void processSelect(userData* user, char* input){
     }
 
     strcpy(user->groupID, GID);
-    green();
+    colorGreen();
     printf("Current group selected: %s\n", user->groupID);
-    reset();
+    colorReset();
 }
 
 void processShowGID(userData* user, char* input){
@@ -310,9 +310,9 @@ void processShowGID(userData* user, char* input){
         logError("No group is selected.");
         return;
     }
-    green();
+    colorGreen();
     printf("Current GID: %s\n",user->groupID);
-    reset();
+    colorReset();
 }
 
 /**

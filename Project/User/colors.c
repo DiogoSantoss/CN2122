@@ -1,34 +1,34 @@
 #include <stdio.h>
 
 // Pretty colors
-void red() {
+void colorRed() {
   printf("\033[1;31m");
 }
 
-void green() {
+void colorGreen() {
   printf("\033[0;32m");
 }
 
-void blue() {
+void colorBlue() {
   printf("\033[0;34m");
 }
 
-void purple() {
+void colorPurple() {
   printf("\033[0;35m");
 }
 
-void cyan() {
+void colorCyan() {
   printf("\033[0;36m");
 }
 
-void white() {
+void colorWhite() {
   printf("\033[0;37m");
 }
 
-void yellow() {
+void colorYellow() {
   printf("\033[1;33m");
 }
 
-void reset() {
+void colorReset() {
   printf("\033[0m");
 }
