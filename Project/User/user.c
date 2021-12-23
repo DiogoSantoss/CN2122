@@ -142,6 +142,7 @@ void handleRequests(userData *user, serverData *server){
         } else {
             logError("Command not found.");
         }
+        colorReset();
     }
 }
 
