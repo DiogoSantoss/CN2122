@@ -144,7 +144,7 @@ void logGLS(char* message){
         for (int i = 0; i < atoi(nGroups); i++){
             i % 2 == 0 ? cyan() : blue(); // coloring
             sscanf(suffix, "%s %s %s %[^\n]s", GID, GName, MID, suffix);
-            printf("Group ID: %s\tGroup Name: %s\t\t\tLast Message ID: %s\n", GID, GName, MID);
+            printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", GID, GName, MID);
         }
     }
     reset();
@@ -164,7 +164,7 @@ void logGSR(char* message){
 
     } else if (!strcmp(message,"RGS NOK\n")){
         yellow();
-        printf("subscribe: User failled to subscribe.\n");
+        printf("subscribe: User failed to subscribe.\n");
 
     } else if (!strcmp(message,string)){
         green();

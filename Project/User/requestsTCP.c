@@ -175,8 +175,8 @@ void processPost(userData* user, serverData* server, char* input){
     long int fsize;
     char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
 
-    //Max message size possible is 531 so 2*MAXSIZE is enough
-    char message[MAXSIZE * 2];
+    //Is this too much allocated memory?
+    char message[MAXSIZE * 3];
 
     //----------------------------VERIFY USER INPUT-----------------------------
 
@@ -341,7 +341,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
     for (int i = 0; i < amountOfMessages; i++)
     {
-        i % 2 == 0 ? cyan() : white();
+        i % 2 == 0 ? cyan() : blue();
         memset(text, 0, 240);
         if(!receiveNSizeTCP(fd, info + 1, 9)) return;
         sscanf(info, "%s %s", MessID, UserID);
@@ -392,7 +392,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
         }
         
         else if (space[0] == '/'){
-            printf("Downloading file...\n");
 
             if(!receiveNSizeTCP(fd, space, 1)) return;
 
@@ -449,6 +448,9 @@ void processRetrieve(userData* user, serverData* server, char* input){
             int sum = 0;
             int rd = 0;
 
+            printf("Downloading file...\n");
+
+            // File downloading
             for (int i = 0; sum < fileSize; i++)
             {
                 memset(fileBuffer, 0, FILEBUFFERSIZE);
@@ -467,6 +469,8 @@ void processRetrieve(userData* user, serverData* server, char* input){
             }
 
             fclose(downptr); 
+
+            printf("File successfully downloaded.\n");
 
             if(space[0] != ' '){
                 logError("Bad formatting");
