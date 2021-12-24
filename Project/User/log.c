@@ -5,21 +5,15 @@
 #include "colors.h"
 #include "common.h"
 
-//Constants
-#define MAXSIZE 274
-#define EXTRAMAXSIZE 3268
-
 //Boolean
 #define TRUE 1
 #define FALSE 0
 
-/*
-What happens when server gives wrong responses ? 
-for example in groups
-sscanf to smaller array may cause overflow
-*/
+//Constants
+#define MAXSIZE 274
+#define EXTRAMAXSIZE 3268
 
-// should be stderr ?
+
 void logError(char* message){
     colorRed();
     printf("%s\n", message);
@@ -99,6 +93,12 @@ void logOUT(char* message){
     } else{
         logError("logout: Unexpected message from server.");
     }
+    colorReset();
+}
+
+void logSU(char* message){
+    colorGreen();
+    printf("Current UID: %s\n",message);
     colorReset();
 }
 
@@ -220,11 +220,23 @@ void logGUR(char* message){
     colorReset();
 }
 
+void logSAG(char* message){
+    colorGreen();
+    printf("Current group selected: %s\n", message);
+    colorReset();
+}
+
+void logSG(char* message){
+    colorGreen();
+    printf("Current GID: %s\n", message);
+    colorReset();
+}
+
 void logULS(char* message){
 
     char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
     char userIDTemp[6];
-    int lenght;
+    int length;
     
     sscanf(message, "%s %s %s %[^\n]s", prefix, status, GName, suffix);
 
@@ -239,10 +251,10 @@ void logULS(char* message){
         colorGreen();
         printf("List of UIDs: %s\n\n", GName);
         strcpy(suffixCopy, suffix);
-        //sscanf(suffix, "%[^\n]s", suffix);
-        lenght = (strlen(suffix) + 1) / 6;
+
+        length = (strlen(suffix) + 1) / 6;
         // Verifies if users given by server are valid
-        for (int i = 0; i < lenght; i++){
+        for (int i = 0; i < length; i++){
             sscanf(suffixCopy, "%s %[^\n]s", userIDTemp, suffixCopy);
             if(!checkStringIsNumber(userIDTemp)){
                 logError("ulist: Unexpected message from server.");
@@ -250,7 +262,7 @@ void logULS(char* message){
             }
         }  
         // Prints groups 
-        for (int i = 0; i < lenght; i++){
+        for (int i = 0; i < length; i++){
             i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
             sscanf(suffix, "%s %[^\n]s", userIDTemp, suffix);
             printf("%s\n", userIDTemp);
@@ -284,10 +296,8 @@ void logPST(char* message){
 int logRTV(char* message){
 
     int success = FALSE;
-
-    //printf("%s", message);
-    
     char rrt[10], status[10], numberOfMessages[10], extra[MAXSIZE];
+
     sscanf(message, "%s %s %s %s\n", rrt, status, numberOfMessages, extra);
 
     if(!strcmp(message, "RRT NOK\n")){

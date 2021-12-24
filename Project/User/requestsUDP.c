@@ -18,6 +18,7 @@
 
 /**
  * Parse register command.
+ * @param[in] user User data
  * @param[in] input User input to be parsed
  * @param[out] message Formarted message to send to server
 */
@@ -44,6 +45,12 @@ char* parseRegister(userData* user, char* input){
     return message;
 }
 
+/**
+ * Parse unregister command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseUnregister(userData* user, char* input){
 
     char* message;
@@ -67,6 +74,12 @@ char* parseUnregister(userData* user, char* input){
     return message;
 } 
 
+/**
+ * Parse login command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseLogin(userData* user, char* input){
 
     char* message;
@@ -99,12 +112,23 @@ char* parseLogin(userData* user, char* input){
     return message;
 }
 
+/**
+ * Resets UID if server gives bad response.
+ * @param[in] user User data
+ * @param[in] response Server response
+*/
 void helperLogin(userData *user, char *response){
     if(!strcmp(response,"RLO NOK\n")){
         strcpy(user->ID,"");
     }
 }
 
+/**
+ * Parse logout command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseLogout(userData* user, char* input){
 
     char* message;
@@ -129,6 +153,11 @@ char* parseLogout(userData* user, char* input){
     return message;
 }
 
+/**
+ * Resets UID and password if server gives good response.
+ * @param[in] user User data
+ * @param[in] response Server response
+*/
 void helperLogout(userData* user, char* response){
     if(!strcmp(response,"ROU OK\n")){
         strcpy(user->ID,"");
@@ -136,6 +165,11 @@ void helperLogout(userData* user, char* response){
     }
 }
 
+/**
+ * Process showUID command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+*/
 void processShowUID(userData* user, char* input){
 
     char* message;
@@ -154,11 +188,39 @@ void processShowUID(userData* user, char* input){
         return;
     }
     // todo should be login, also current group and current gid
-    colorGreen();
-    printf("Current UID: %s\n",user->ID);
-    colorReset();
+    logSU(user->ID);
 }
 
+/**
+ * Parse groups command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
+char* parseGroups(userData* user, char* input){
+    char* message;
+    char command[MAXSIZE], extra[MAXSIZE];
+
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s\n",command,extra);
+
+    if((strlen(extra) != 0) || ((strlen(command) != 2) && (strlen(command) != 6))){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+
+    message = malloc(sizeof(char)*4);
+    sprintf(message,"GLS\n");
+
+    return message;
+}
+
+/**
+ * Parse subscribe command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseSubscribe(userData* user, char* input){
 
     char* message;
@@ -187,6 +249,12 @@ char* parseSubscribe(userData* user, char* input){
     return message;
 }
 
+/**
+ * Parse unsubscribe command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseUnsubscribe(userData* user, char* input){
 
     char* message;
@@ -215,24 +283,12 @@ char* parseUnsubscribe(userData* user, char* input){
     return message;
 }
 
-char* parseGroups(userData* user, char* input){
-    char* message;
-    char command[MAXSIZE], extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s\n",command,extra);
-
-    if((strlen(extra) != 0) || ((strlen(command) != 2) && (strlen(command) != 6))){
-        logError("Wrong size parameters.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*4);
-    sprintf(message,"GLS\n");
-
-    return message;
-}
-
+/**
+ * Parse my_groups command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseMyGroups(userData* user, char* input){
 
     char* message;
@@ -257,6 +313,11 @@ char* parseMyGroups(userData* user, char* input){
     return message;
 }
 
+/**
+ * Process select command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+*/
 void processSelect(userData* user, char* input){
 
     char* message;
@@ -283,11 +344,14 @@ void processSelect(userData* user, char* input){
     }
 
     strcpy(user->groupID, GID);
-    colorGreen();
-    printf("Current group selected: %s\n", user->groupID);
-    colorReset();
+    logSAG(user->groupID);
 }
 
+/**
+ * Parse showGID command.
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+*/
 void processShowGID(userData* user, char* input){
 
     char* message;
@@ -310,9 +374,8 @@ void processShowGID(userData* user, char* input){
         logError("No group is selected.");
         return;
     }
-    colorGreen();
-    printf("Current GID: %s\n",user->groupID);
-    colorReset();
+    
+    logSG(user->groupID);
 }
 
 /**

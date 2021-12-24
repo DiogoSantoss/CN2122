@@ -154,7 +154,6 @@ int main(int argc, char *argv[]){
     initializeData(&user, &server);
     parseArguments(&server, argc, argv);
     handleRequests(&user, &server);
-    //disconnect() gracefully;
 
     return 1;
 }
