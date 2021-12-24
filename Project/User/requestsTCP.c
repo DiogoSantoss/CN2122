@@ -278,6 +278,8 @@ void processPost(userData* user, serverData* server, char* input){
 
         // Send "packages" of size FILEBUFFERSIZE at a time
         while(sent < fsize){
+            printf("\rUploading file... %d out of %ld", sent, fsize);
+            fflush(stdout);
             memset(buffer, 0, FILEBUFFERSIZE);
             // Read "package" from file
             actuallyRead = fread(buffer, sizeof(char), FILEBUFFERSIZE, fp);
@@ -287,6 +289,7 @@ void processPost(userData* user, serverData* server, char* input){
         }
         // Message to server must end with \n
         if(!sendTCP(fd,"\n",1)) return;
+        printf("\rUploading file... %-30s\n", "Done");
     }
     else{
         // Send PST UID GID textSize text
@@ -304,8 +307,6 @@ void processPost(userData* user, serverData* server, char* input){
     free(response);
 }
 
-/**
-*/
 char* parseRetrieve(userData* user, char* input){
     
     char* message = calloc(35,sizeof(char));
@@ -459,18 +460,30 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             int sum = 0;
             int nRead = 0;
-            printf("Downloading file...\n");
+            //printf("Downloading file...\n");
 
             // Reads file in "packages" of size FILEBUFFERSIZE
             for (int i = 0; sum < fileSize; i++)
             {
+                printf("\rDownload file... %d out of %d", sum, fileSize);
+                fflush(stdout);
                 memset(fileBuffer, 0, FILEBUFFERSIZE);
-                nRead = receiveNSizeTCP(fd, fileBuffer, FILEBUFFERSIZE);
-                if(nRead== -1) return;
+                if (fileSize - sum > FILEBUFFERSIZE){
+                    nRead = read(fd, fileBuffer, FILEBUFFERSIZE);
+                }
+                else{
+                    nRead = read(fd, fileBuffer, fileSize - sum);
+                }
+                if (nRead == -1){
+                    logError("Something really wrong happened");
+                    return;
+                }
                 sum += nRead;
                 fwrite(fileBuffer, sizeof(char), nRead, downptr);
             }
             fclose(downptr); 
+
+            printf("\rDownload file... %-30s\n", "Done");
 
             printf("File successfully downloaded.\n");
 
@@ -485,10 +498,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
         }
     }
 }
-
-//--------------------------------------------------------------------------------------------
-
-
 
 /**
  * Generic function to proccess commands that access the server via TCP protocol.
