@@ -482,7 +482,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             for (int i = 0; sum < fileSize; i++)
             {
                 // Progress bar
-                printf("\rDownload file... %d out of %d", sum, fileSize);
+                printf("\rDownloading file... %d out of %d bytes", sum, fileSize);
                 fflush(stdout);
 
                 memset(fileBuffer, 0, FILEBUFFERSIZE);
@@ -501,7 +501,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             }
             fclose(downptr); 
 
-            printf("\rDownload file... %-30s\n", "Done");
+            printf("\rDownloading file... %-30s\n", "Done");
             printf("File successfully downloaded.\n");
 
             // Skips spaces between messages and if its \n then all messages are read

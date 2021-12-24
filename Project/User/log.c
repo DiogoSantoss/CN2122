@@ -28,7 +28,7 @@ void logREG(char* message){
 
     } else if (!strcmp(message,"RRG DUP\n")){
         colorYellow();
-        printf("register: User failled to registered because it's a duplicate.\n");
+        printf("register: User failed to registered because it's a duplicate.\n");
 
     } else if (!strcmp(message,"RRG NOK\n")){
         colorYellow();
@@ -68,7 +68,7 @@ void logLOG(char* message){
 
     } else if (!strcmp(message,"RLO NOK\n")){
         colorYellow();
-        printf("login: User failled to login.\n");
+        printf("login: User failed to login.\n");
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("login: A fatal error has ocurred.");
@@ -86,7 +86,7 @@ void logOUT(char* message){
 
     } else if (!strcmp(message,"ROU NOK\n")){
         colorYellow();
-        printf("logout: User failled to logout.\n");
+        printf("logout: User failed to logout.\n");
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("logout: A fatal error has ocurred.");
