@@ -445,7 +445,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
         
         else if (readChar[0] == '/'){
 
-           if(!skipSpace(fd)) return;
+            if(!skipSpace(fd)) return;
 
             //Read FileName
             char fileName[FILENAMESIZE + 1];
