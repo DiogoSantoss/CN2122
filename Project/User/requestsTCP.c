@@ -21,58 +21,6 @@
 #define FILEBUFFERSIZE 512
 #define FILESIZEMAXDIGITS 10
 
-/**
- * Receive the whole message via TCP socket from server.
- * @param[in] fd File descriptor of TCP socket
- * @param[out] message Message from server
-*/
-char* receiveWholeTCP(int fd){
-    int nRead = 1; // This can't be initialized as 0
-    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
-    char* ptr;
-
-    ptr = message;
-
-    while (nRead != 0){
-        nRead = read(fd, ptr, EXTRAMAXSIZE);
-        if(nRead == -1){
-            logError("Couldn't receive message via TCP socket.");
-            free(message);
-            return NULL;
-        }
-        ptr += nRead;
-    }
-     
-    return message;
-}
-/**
- * Receive messageSize message via TCP socket from server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] buffer Buffer to be filled with message from the server
- * @param[in] messageSize Size of the desired message
- * @param[out] number of bytes read
-*/
-int receiveNSizeTCP(int fd, char* buffer, int messageSize){
-    
-    char* ptr = buffer;
-    int sum = 0;
-    int nRead = 0;
-
-    while (messageSize > sum){
-        nRead = read(fd, ptr, messageSize);
-        if (nRead == -1){
-            logError("Couldn't receive message via TCP socket.");
-            return -1;
-        }
-        if (nRead == 0){
-            break;
-        }
-        ptr += nRead;
-        sum += nRead;
-        messageSize -= nRead;
-    }
-    return sum;
-}
 
 /**
  * Connect via TCP socket to server.
@@ -134,6 +82,65 @@ int sendTCP(int fd, char* message, int messageLen){
     return TRUE;
 }
 
+/**
+ * Receive the whole message via TCP socket from server.
+ * @param[in] fd File descriptor of TCP socket
+ * @param[out] message Message from server
+*/
+char* receiveWholeTCP(int fd){
+    int nRead = 1; // This can't be initialized as 0
+    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
+    char* ptr;
+
+    ptr = message;
+
+    while (nRead != 0){
+        nRead = read(fd, ptr, EXTRAMAXSIZE);
+        if(nRead == -1){
+            logError("Couldn't receive message via TCP socket.");
+            free(message);
+            return NULL;
+        }
+        ptr += nRead;
+    }
+     
+    return message;
+}
+
+/**
+ * Receive messageSize message via TCP socket from server.
+ * @param[in] fd File descriptor of UDP socket
+ * @param[in] buffer Buffer to be filled with message from the server
+ * @param[in] messageSize Size of the desired message
+ * @param[out] number of bytes read
+*/
+int receiveNSizeTCP(int fd, char* buffer, int messageSize){
+    
+    char* ptr = buffer;
+    int sum = 0;
+    int nRead = 0;
+
+    while (messageSize > sum){
+        nRead = read(fd, ptr, messageSize);
+        if (nRead == -1){
+            logError("Couldn't receive message via TCP socket.");
+            return -1;
+        }
+        if (nRead == 0){
+            break;
+        }
+        ptr += nRead;
+        sum += nRead;
+        messageSize -= nRead;
+    }
+    return sum;
+}
+
+/**
+ * Skips a space when reading a file/socket
+ * @param[in] fd File descriptor
+ * @param[out] TRUE or FALSE depending if it was a space or not
+*/
 int skipSpace(int fd){
 
     char space[1];
@@ -147,15 +154,13 @@ int skipSpace(int fd){
     return TRUE;
 }
 
-/*
-textsize 240 oalallalsaslda
-sai do for
-
-textsize 24 fdsafdsa
-nao sai do for, leva break
-
+/**
+ * Reads a word of size maxRead from fd
+ * @param[in] fd File descriptor
+ * @param[in] buffer array to read word to
+ * @param[in] maxRead number of bytes to read
+ * @param[out] TRUE or FALSE depending if word was correctly read
 */
-
 int readWord(int fd, char* buffer, int maxRead){
 
     char readChar[1];
@@ -173,8 +178,12 @@ int readWord(int fd, char* buffer, int maxRead){
     return skipSpace(fd);
 }
 
-//-------------------------------------------------------------------------------
-
+/**
+ * Parse ulist command
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseUlist(userData* user, char* input){
     
     char* message;
@@ -204,8 +213,12 @@ char* parseUlist(userData* user, char* input){
     return message;
 }
 
-//--------------------------------------------------------------------------------------------
-
+/**
+ * Process post command
+ * @param[in] user User data
+ * @param[in] server Server data
+ * @param[in] input User input to be parsed
+*/
 void processPost(userData* user, serverData* server, char* input){
 
     int fd;
@@ -239,12 +252,10 @@ void processPost(userData* user, serverData* server, char* input){
         return;
     }
     else if(strlen(filename)){
-        /*
         if(filename[strlen(filename)-4] != '.'){
             logError("Wrong file format.");
             return;
         }
-        */
         if(!(fp = fopen(filename, "rb"))){
             logError("File doesn't exist");
             return;
@@ -307,6 +318,12 @@ void processPost(userData* user, serverData* server, char* input){
     free(response);
 }
 
+/**
+ * Parse retrieve command
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 char* parseRetrieve(userData* user, char* input){
     
     char* message = calloc(35,sizeof(char));
@@ -333,7 +350,12 @@ char* parseRetrieve(userData* user, char* input){
     return message;
 }
 
-
+/**
+ * Process retrieve command
+ * @param[in] user User data
+ * @param[in] input User input to be parsed
+ * @param[out] message Formarted message to send to server
+*/
 void processRetrieve(userData* user, serverData* server, char* input){
 
     int fd;
@@ -391,7 +413,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
         if(receiveNSizeTCP(fd, info + 1, 9) == -1) return;
         sscanf(info, "%s %s", MessID, UserID);
 
-        // Skips space
         if(!skipSpace(fd)) return;
         
         // Read text size
@@ -411,7 +432,8 @@ void processRetrieve(userData* user, serverData* server, char* input){
         if(receiveNSizeTCP(fd, readChar, 1) == -1) return;
         if (readChar[0] == '\n') return;
 
-        //Named space, but we hope it wont be a space
+        // Next char can be a number (representing the start of the next message)
+        // or can be a dash (\) which means this message has a file appended
         if(receiveNSizeTCP(fd, readChar, 1) == -1) return;
 
         // Check if there is a file or not
@@ -423,12 +445,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
         
         else if (readChar[0] == '/'){
 
-            if(receiveNSizeTCP(fd, readChar, 1) == -1) return;
-
-            if(readChar[0] != ' '){
-                logError("Bad formatting 1");
-                return;
-            }
+           if(!skipSpace(fd)) return;
 
             //Read FileName
             char fileName[FILENAMESIZE + 1];
@@ -438,7 +455,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
                 return;
             };
 
-            //Read FileSize
+            // Read FileSize
             char fileSizeDigits[FILESIZEMAXDIGITS + 1];
 
             readWord(fd, fileSizeDigits, FILESIZEMAXDIGITS);
@@ -447,7 +464,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             printf("File size: %d\nFile name: %s\n", fileSize, fileName);
 
-            //Read File
+            // Open file
             char fileBuffer[FILEBUFFERSIZE];
 
             FILE *downptr;
@@ -460,13 +477,14 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             int sum = 0;
             int nRead = 0;
-            //printf("Downloading file...\n");
 
             // Reads file in "packages" of size FILEBUFFERSIZE
             for (int i = 0; sum < fileSize; i++)
             {
+                // Progress bar
                 printf("\rDownload file... %d out of %d", sum, fileSize);
                 fflush(stdout);
+
                 memset(fileBuffer, 0, FILEBUFFERSIZE);
                 if (fileSize - sum > FILEBUFFERSIZE){
                     nRead = read(fd, fileBuffer, FILEBUFFERSIZE);
@@ -484,7 +502,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
             fclose(downptr); 
 
             printf("\rDownload file... %-30s\n", "Done");
-
             printf("File successfully downloaded.\n");
 
             // Skips spaces between messages and if its \n then all messages are read
