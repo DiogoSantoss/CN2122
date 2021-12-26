@@ -187,7 +187,7 @@ void processShowUID(userData* user, char* input){
         logError("No user is logged in.");
         return;
     }
-    // todo should be login, also current group and current gid
+
     logSU(user->ID);
 }
 
@@ -470,17 +470,15 @@ void processRequestUDP(
     void (*helper)(userData*,char*)
     ){
 
-    int fd;
     int msgSize;
-    struct addrinfo *res;
     char *message, *response;
 
     message = (*parser)(user,input);
     if(message == NULL) return;
 
-    if(!connectUDP(server,&fd,&res)) return;
-    if(!sendMessageUDP(fd,res,message,strlen(message))) return;
-    response = receiveMessageUDP(fd);
+    if(!connectUDP(server, &(user->fd), &(user->res))) return;
+    if(!sendMessageUDP(user->fd, user->res, message, strlen(message))) return;
+    response = receiveMessageUDP(user->fd);
     if(response == NULL) return;
 
     if(helper != NULL){

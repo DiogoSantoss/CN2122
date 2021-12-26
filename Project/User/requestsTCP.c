@@ -221,9 +221,7 @@ char* parseUlist(userData* user, char* input){
 */
 void processPost(userData* user, serverData* server, char* input){
 
-    int fd;
     int msgSize;
-    struct addrinfo *res;
 
     FILE* fp;
     long int fsize;
@@ -264,7 +262,7 @@ void processPost(userData* user, serverData* server, char* input){
 
     //----------------------------SEND USER INPUT-----------------------------
 
-    if(!connectTCP(server,&fd,res)) return;
+    if(!connectTCP(server, &(user->fd), user->res)) return;
 
     if(strlen(filename)){
 
@@ -279,7 +277,7 @@ void processPost(userData* user, serverData* server, char* input){
         );
 
         // Send PST UID GID textSize text Fname Fsize
-        if(!sendTCP(fd,message,strlen(message))) return;
+        if(!sendTCP(user->fd,message,strlen(message))) return;
 
         // Send data from file
 
@@ -295,11 +293,11 @@ void processPost(userData* user, serverData* server, char* input){
             // Read "package" from file
             actuallyRead = fread(buffer, sizeof(char), FILEBUFFERSIZE, fp);
             // Send "package"
-            if(!sendTCP(fd,buffer,actuallyRead)) return;
+            if(!sendTCP(user->fd,buffer,actuallyRead)) return;
             sent += actuallyRead;
         }
         // Message to server must end with \n
-        if(!sendTCP(fd,"\n",1)) return;
+        if(!sendTCP(user->fd,"\n",1)) return;
         printf("\rUploading file... %-30s\n", "Done");
     }
     else{
@@ -308,11 +306,11 @@ void processPost(userData* user, serverData* server, char* input){
             message,"PST %s %02d %ld %s\n",
             user->ID,atoi(user->groupID),strlen(text),text
         );
-        if(!sendTCP(fd,message,strlen(message))) return;
+        if(!sendTCP(user->fd,message,strlen(message))) return;
     }
 
     char* response;
-    response = receiveWholeTCP(fd);
+    response = receiveWholeTCP(user->fd);
     logPST(response);
 
     free(response);
@@ -358,17 +356,15 @@ char* parseRetrieve(userData* user, char* input){
 */
 void processRetrieve(userData* user, serverData* server, char* input){
 
-    int fd;
     char* message;
-    struct addrinfo *res;
 
     // Verify user input and format message
     message = parseRetrieve(user, input);
     if(message == NULL) return;
 
     // Send message to server
-    if(!connectTCP(server,&fd,res)) return;
-    if(!sendTCP(fd,message,strlen(message))) return;
+    if(!connectTCP(server,&(user->fd),user->res)) return;
+    if(!sendTCP(user->fd,message,strlen(message))) return;
     free(message);
 
     int numOfMessages;
@@ -378,7 +374,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
     memset(numOfMessagesString, 0, 9);
 
     // Reads header
-    if(receiveNSizeTCP(fd, header, 9) == -1) return;
+    if(receiveNSizeTCP(user->fd, header, 9) == -1) return;
     // Verifies if server response is valid
     if(!logRTV(header)) return;
 
@@ -391,7 +387,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
     }
     else {
         numOfMessages = atoi(numOfMessagesString);
-        read(fd,readChar,1);
+        read(user->fd,readChar,1);
     }
 
     
@@ -402,7 +398,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
     // Reads first char of message to info
     // For loops starts reading message after the first char to info+1
     memset(info, 0, 11);
-    if(receiveNSizeTCP(fd, info, 1) == -1) return;
+    if(receiveNSizeTCP(user->fd, info, 1) == -1) return;
 
     for (int i = 0; i < numOfMessages; i++){
         
@@ -410,13 +406,13 @@ void processRetrieve(userData* user, serverData* server, char* input){
         i % 2 == 0 ? colorCyan() : colorBlue();
 
         // Read MessID and UserID of text message
-        if(receiveNSizeTCP(fd, info + 1, 9) == -1) return;
+        if(receiveNSizeTCP(user->fd, info + 1, 9) == -1) return;
         sscanf(info, "%s %s", MessID, UserID);
 
-        if(!skipSpace(fd)) return;
+        if(!skipSpace(user->fd)) return;
         
         // Read text size
-        if(!readWord(fd,textSizeDigits, 3)){
+        if(!readWord(user->fd,textSizeDigits, 3)){
             logError("Text size too big");
             return;
         }
@@ -424,17 +420,17 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
         //Read Text
         memset(text, 0, TEXTSIZE + 1);
-        if(receiveNSizeTCP(fd, text, textSize) == -1) return;
+        if(receiveNSizeTCP(user->fd, text, textSize) == -1) return;
 
         printf("Message: %s", text);
 
         // Skips spaces between messages and if its \n then all messages are read
-        if(receiveNSizeTCP(fd, readChar, 1) == -1) return;
+        if(receiveNSizeTCP(user->fd, readChar, 1) == -1) return;
         if (readChar[0] == '\n') return;
 
         // Next char can be a number (representing the start of the next message)
         // or can be a dash (\) which means this message has a file appended
-        if(receiveNSizeTCP(fd, readChar, 1) == -1) return;
+        if(receiveNSizeTCP(user->fd, readChar, 1) == -1) return;
 
         // Check if there is a file or not
         if (readChar[0] != '/'){
@@ -445,12 +441,12 @@ void processRetrieve(userData* user, serverData* server, char* input){
         
         else if (readChar[0] == '/'){
 
-            if(!skipSpace(fd)) return;
+            if(!skipSpace(user->fd)) return;
 
             //Read FileName
             char fileName[FILENAMESIZE + 1];
             
-            if(!readWord(fd, fileName, FILENAMESIZE)){
+            if(!readWord(user->fd, fileName, FILENAMESIZE)){
                 logError("File name is too big");
                 return;
             };
@@ -458,7 +454,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             // Read FileSize
             char fileSizeDigits[FILESIZEMAXDIGITS + 1];
 
-            readWord(fd, fileSizeDigits, FILESIZEMAXDIGITS);
+            readWord(user->fd, fileSizeDigits, FILESIZEMAXDIGITS);
 
             int fileSize = atoi(fileSizeDigits);
 
@@ -487,10 +483,10 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
                 memset(fileBuffer, 0, FILEBUFFERSIZE);
                 if (fileSize - sum > FILEBUFFERSIZE){
-                    nRead = read(fd, fileBuffer, FILEBUFFERSIZE);
+                    nRead = read(user->fd, fileBuffer, FILEBUFFERSIZE);
                 }
                 else{
-                    nRead = read(fd, fileBuffer, fileSize - sum);
+                    nRead = read(user->fd, fileBuffer, fileSize - sum);
                 }
                 if (nRead == -1){
                     logError("Something really wrong happened");
@@ -505,11 +501,11 @@ void processRetrieve(userData* user, serverData* server, char* input){
             printf("File successfully downloaded.\n");
 
             // Skips spaces between messages and if its \n then all messages are read
-            if(receiveNSizeTCP(fd, readChar, 1) == -1) return;
+            if(receiveNSizeTCP(user->fd, readChar, 1) == -1) return;
             if (readChar[0] == '\n') return;
 
             // Reads first char of the next message (because messages are read to info + 1)
-            if(receiveNSizeTCP(fd, readChar, 1) == -1) return;
+            if(receiveNSizeTCP(user->fd, readChar, 1) == -1) return;
             memset(info, 0, 11);
             info[0] = readChar[0];
         }
@@ -526,7 +522,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
  * @param[in] helper "Optional" function when processRequest needs to do additional tasks
  * 
 */
-void processRequestTCP(
+void processUlist(
     userData *user, 
     serverData *server, 
     char* input, 
@@ -535,17 +531,15 @@ void processRequestTCP(
     void (*helper)(userData*,char*)
     ){
 
-    int fd;
     int msgSize;
-    struct addrinfo *res;
     char *message, *response;
 
     message = (*parser)(user,input);
     if(message == NULL) return;
 
-    if(!connectTCP(server,&fd,res)) return;
-    if(!sendTCP(fd,message,strlen(message))) return;
-    response = receiveWholeTCP(fd);
+    if(!connectTCP(server, &(user->fd), user->res)) return;
+    if(!sendTCP(user->fd, message, strlen(message))) return;
+    response = receiveWholeTCP(user->fd);
 
     if(helper != NULL){
         (*helper)(user,response);

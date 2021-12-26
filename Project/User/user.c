@@ -131,7 +131,7 @@ void handleRequests(userData *user, serverData *server){
             processShowGID(user, input);
 
         } else if(!strcmp(command,"ulist") || !strcmp(command,"ul")){
-            processRequestTCP(user, server, input, parseUlist, logULS, NULL);
+            processUlist(user, server, input, parseUlist, logULS, NULL);
 
         } else if(!strcmp(command,"post")){
             processPost(user, server, input);
@@ -142,6 +142,9 @@ void handleRequests(userData *user, serverData *server){
         } else {
             logError("Command not found.");
         }
+
+        freeaddrinfo(user->res);
+        close(user->fd);
         colorReset();
     }
 }

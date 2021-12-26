@@ -2,6 +2,9 @@
 #define STRUCTS_DOT_H
 
 struct userData {
+    int fd;
+    struct addrinfo *res;
+    
     char ID[6];
     char password[9];
     char groupID[3];
