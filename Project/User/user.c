@@ -143,8 +143,11 @@ void handleRequests(userData *user, serverData *server){
             logError("Command not found.");
         }
 
-        freeaddrinfo(user->res);
-        close(user->fd);
+        if(user->res != NULL){
+            freeaddrinfo(user->res);
+            close(user->fd);
+            user->res = NULL;
+        }
         colorReset();
     }
 }
