@@ -249,7 +249,7 @@ void logULS(char* message){
     }
     else{
         colorGreen();
-        printf("List of UIDs: %s\n\n", GName);
+        printf("List of UIDs: %s\n", GName);
         strcpy(suffixCopy, suffix);
 
         length = (strlen(suffix) + 1) / 6;
