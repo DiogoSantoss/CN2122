@@ -287,7 +287,7 @@ void handleRequests(userData* user, serverData* server){
             //----------------------------------------------
             int n;
             char buffer[500];
-            n = recvfrom(fdUdp,buffer,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
+            n = recvfrom(fdUdp, buffer, 500, 0, (struct sockaddr*)&addr, &addrlen);
             if(n==-1){
                 logError("Couldn't receive message via UDP socket");
                 break;
@@ -297,13 +297,12 @@ void handleRequests(userData* user, serverData* server){
             printf("%d\n",addr.sin_port);
             printf("%s",buffer);
             
-
-            n = sendto(fdUdp, buffer,strlen(buffer),0,(struct sockaddr*)&addr,addrlen);
+            n = sendto(fdUdp, buffer, strlen(buffer), 0, (struct sockaddr*)&addr, addrlen);
             if(n == -1){
                 logError("Couldn't send message via UDP socket");
                 break;
             }
-
+            
             //----------------------------------------------
 
         }
