@@ -296,6 +296,13 @@ void handleRequests(userData* user, serverData* server){
             printf("%d\n",addr.sin_addr.s_addr);
             printf("%d\n",addr.sin_port);
             printf("%s",buffer);
+            
+
+            n = sendto(fdUdp, buffer,strlen(buffer),0,(struct sockaddr*)&addr,addrlen);
+            if(n == -1){
+                logError("Couldn't send message via UDP socket");
+                break;
+            }
 
             //----------------------------------------------
 
