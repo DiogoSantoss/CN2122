@@ -23,6 +23,7 @@ void initializeData(userData *user, serverData *server){
     strcpy(user->ID,"");
     strcpy(user->password,"");
     strcpy(user->groupID,"");
+    user->res = NULL;
 
     strcpy(server->ipAddress,"tejo.tecnico.ulisboa.pt");
     strcpy(server->port,"58011");
