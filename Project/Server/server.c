@@ -4,76 +4,19 @@
 #include <string.h>
 #include <netdb.h>
 
+#include "requestsUDP.h"
 #include "common.h"
+#include "log.h"
 #include "structs.h"
 
 // Booleans
 #define TRUE  1
 #define FALSE 0
 
-#define MAXSIZE 274
+#define MAXSIZEUDP 39 //GSR is the biggest command 
 #define EXTRAMAXSIZE 3169
 
 #define max(A,B) ((A)>=(B)?(A):(B))
-
-
-void logError(char* message){
-    printf("%s\n", message);
-}
-
-
-
-
-
-int runServerUDP(serverData server, int fd, struct addrinfo* res){
-
-    int n;
-    socklen_t addrlen;
-    struct sockaddr_in addr;
-    char* message  = calloc(EXTRAMAXSIZE,sizeof(char));
-    char* response = calloc(EXTRAMAXSIZE,sizeof(char));
-
-    n = bind(fd, res->ai_addr, res->ai_addrlen);
-    if (n == -1){
-        logError("Couldn't bind server");
-        return FALSE;
-    }
-
-    while (1){
-        addrlen = sizeof(addr);
-        memset(message, EXTRAMAXSIZE, sizeof(char));
-        memset(response, EXTRAMAXSIZE, sizeof(char));
-        n = recvfrom(fd,message,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
-        printf("%d bytes received\n", n);
-        if (n == -1){
-            logError("Couldn't receive message via UDP socket");
-            return FALSE;
-        }
-        printf("Received from: %s\n", message);
-        strcpy(response, "RRG OK");
-        n = sendto(fd, response, strlen(response), 0, res->ai_addr, res->ai_addrlen);
-        if(n==-1){
-            logError("Couldn't send message via UDP socket");
-            return FALSE;
-        }   
-        printf("Sent to: %s", response);
-    }
-
-}
-
-int serverUDP(int fd, struct addrinfo* res, char* message, int messageLen){
-    int n;
-    socklen_t addrlen;
-    struct sockaddr_in addr;
-
-    n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
-    if(n==-1){
-        logError("Couldn't send message via UDP socket");
-        return FALSE;
-    }   
-    return TRUE;
-}
-
 
 /**
  * Initialize data about user and server
@@ -133,7 +76,7 @@ void parseArguments(serverData *server, int argc, char *argv[]){
     }
 }
 
-int createServerSocketUDP(serverData *server, int* fd, struct addrinfo* res){
+int createSocketUDP(serverData *server, int* fd, struct addrinfo* res){
     int errcode;
     struct addrinfo hints;
 
@@ -162,7 +105,7 @@ int createServerSocketUDP(serverData *server, int* fd, struct addrinfo* res){
     return TRUE;
 }
 
-int createServerSocketTCP(serverData *server, int* fd, struct addrinfo* res){
+int createSocketTCP(serverData *server, int* fd, struct addrinfo* res){
     int errcode;
     struct addrinfo hints;
 
@@ -200,8 +143,8 @@ int createServerSocketTCP(serverData *server, int* fd, struct addrinfo* res){
 void handleRequests(userData* user, serverData* server){
 
     fd_set rfds;
-    int fdUdp, fdTcp;
-    int fdNew;
+    int fdUdp, fdTcp; // File descriptors for udp and tcp connections
+    int fdNew;        // File descriptor for tcp client connection
     int maxfd, counter;
 
     struct addrinfo *res;
@@ -209,18 +152,15 @@ void handleRequests(userData* user, serverData* server){
     struct sockaddr_in addr; 
     socklen_t addrlen;
 
+    //enum {
+    //    idle, 
+    //    busy
+    //} state;
 
-    enum {
-        idle, 
-        busy
-    } state;
+    if(!createSocketUDP(server,&fdUdp,res)) return;
+    if(!createSocketTCP(server,&fdTcp,res)) return;
 
-
-    if(!createServerSocketUDP(server,&fdUdp,res)) return;
-    if(!createServerSocketTCP(server,&fdTcp,res)) return;
-
-
-    state = idle;
+    //state = idle;
     while(1){
 
         FD_ZERO(&rfds);
@@ -259,10 +199,10 @@ void handleRequests(userData* user, serverData* server){
 
             //----------------------------------------------
             int nRead = -1;
-            char buffer[500];
+            char request[500];
             char* ptr;
 
-            ptr = buffer;
+            ptr = request;
             while (nRead != 0){
                 nRead = read(fdNew, ptr, EXTRAMAXSIZE);
                 if(nRead == -1){
@@ -272,7 +212,7 @@ void handleRequests(userData* user, serverData* server){
                 ptr += nRead;
             }
             printf("Message from TCP:\n");
-            printf("%s",buffer);
+            printf("%s",request);
 
             close(fdNew);
             //----------------------------------------------
@@ -281,13 +221,11 @@ void handleRequests(userData* user, serverData* server){
 
         if(FD_ISSET(fdUdp,&rfds)){
 
-            printf("UDP\n");
+            // RECEIVE UDP MESSAGE
 
-            
-            //----------------------------------------------
             int n;
-            char buffer[500];
-            n = recvfrom(fdUdp, buffer, 500, 0, (struct sockaddr*)&addr, &addrlen);
+            char request[MAXSIZEUDP],command[MAXSIZEUDP],extra[MAXSIZEUDP];
+            n = recvfrom(fdUdp, request, MAXSIZEUDP, 0, (struct sockaddr*)&addr, &addrlen);
             if(n==-1){
                 logError("Couldn't receive message via UDP socket");
                 break;
@@ -295,16 +233,64 @@ void handleRequests(userData* user, serverData* server){
             printf("Message from UDP:\n");
             printf("%d\n",addr.sin_addr.s_addr);
             printf("%d\n",addr.sin_port);
-            printf("%s",buffer);
+
+            if(request[strlen(request)-1] != '\n'){
+                logError("Client message doesn't end with \\n.");
+                //sendErrorMessage();
+                continue;
+            }
+
+            sscanf(request,"%s %s",command,extra);
+
+            if(!strcmp(command,"REG")){
+                processREG(user, server, request);
+
+            } else if(!strcmp(command,"URN")){
+                
+
+            } else if(!strcmp(command,"LOG")){
+
+            } else if(!strcmp(command,"OUT")){
+
+            } else if(!strcmp(command,"GLS")){
+
+            } else if(!strcmp(command,"GSR")){
+
+            } else if(!strcmp(command,"GUR")){
+
+            } else if(!strcmp(command,"GLM")){
+
+            } else{
+                logError("Command not found.");
+                //sendErrorMessage();
+            }
             
-            n = sendto(fdUdp, buffer, strlen(buffer), 0, (struct sockaddr*)&addr, addrlen);
+
+
+
+
+
+
+            // STRCMPS
+
+            //REG UID pass\n
+            //UNR UID pass\n
+            //LOG UID pass\n
+            //OUT UID pass\n
+            //GLS\n
+            //GSR UID GID GName\n
+            //GUR UID GID\n
+            //GLM UID\n
+
+
+            strcpy(request,"RLO OK\n");
+            int manuel = strlen(request);
+            
+            n = sendto(fdUdp, request, (ssize_t)manuel, 0, (struct sockaddr*)&addr, addrlen);
             if(n == -1){
                 logError("Couldn't send message via UDP socket");
                 break;
             }
-            
-            //----------------------------------------------
-
         }
     }
 
@@ -320,16 +306,9 @@ int main(int argc, char *argv[]){
     userData user;
     serverData server;
     
-
-
     initializeData(&user, &server);
     parseArguments(&server, argc, argv);
     handleRequests(&user, &server);
-
-    /*
-    connectServerUDP(&server, &fd, &res);
-    runServerUDP(server, fd, res);
-    */
 
     return 1;
 };
