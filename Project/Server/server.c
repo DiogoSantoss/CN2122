@@ -4,10 +4,10 @@
 #include <string.h>
 #include <netdb.h>
 
-#include "requestsUDP.h"
 #include "common.h"
 #include "log.h"
 #include "structs.h"
+#include "requestsUDP.h"
 
 // Booleans
 #define TRUE  1
@@ -243,7 +243,7 @@ void handleRequests(userData* user, serverData* server){
             sscanf(request,"%s %s",command,extra);
 
             if(!strcmp(command,"REG")){
-                processREG(user, server, request);
+                processREG(*user,*server,request);
 
             } else if(!strcmp(command,"URN")){
                 
