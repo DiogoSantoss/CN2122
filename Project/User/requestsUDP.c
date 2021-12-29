@@ -106,9 +106,8 @@ char* parseLogin(userData* user, char* input){
         strcpy(user->password,pass);
     }
 
-    message = malloc(sizeof(char)*19);
-    sprintf(message,"LOG %s %s\n ",UID,pass);
-    sprintf(message,"LOG %s %sa\n",UID,pass);
+    message = malloc(sizeof(char)*18);
+    sprintf(message,"LOG %s %s\n",UID,pass);
     
     return message;
 }

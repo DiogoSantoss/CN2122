@@ -287,7 +287,7 @@ void processPost(userData* user, serverData* server, char* input){
 
         // Send "packages" of size FILEBUFFERSIZE at a time
         while(sent < fsize){
-            printf("\rUploading file... %d out of %ld", sent, fsize);
+            printf("\rUploading file... %d out of %ld bytes", sent, fsize);
             fflush(stdout);
             memset(buffer, 0, FILEBUFFERSIZE);
             // Read "package" from file
