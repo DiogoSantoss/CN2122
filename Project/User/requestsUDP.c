@@ -118,8 +118,9 @@ char* parseLogin(userData* user, char* input){
  * @param[in] response Server response
 */
 void helperLogin(userData *user, char *response){
-    if(!strcmp(response,"RLO NOK\n")){
+    if(strcmp(response,"RLO OK\n")){
         strcpy(user->ID,"");
+        strcpy(user->password,"");
     }
 }
 

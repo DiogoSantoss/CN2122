@@ -169,8 +169,6 @@ void handleRequests(userData* user, serverData* server){
 
         maxfd = max(fdTcp, fdUdp) + 1;
 
-        printf("Before here\n");
-
         // Which masks to use ? TIMEOUT , etc ?
         counter = select(
             maxfd, 
@@ -179,8 +177,6 @@ void handleRequests(userData* user, serverData* server){
             (fd_set*)NULL, 
             (struct timeval *)NULL
         );
-
-        printf("Here\n");
 
         if(counter == -1){
             logError("Select error.");
@@ -234,6 +230,7 @@ void handleRequests(userData* user, serverData* server){
             printf("Message from UDP:\n");
             printf("%d\n",addr.sin_addr.s_addr);
             printf("%d\n",addr.sin_port);
+            printf("Message:%s",request);
 
             if(request[strlen(request)-1] != '\n'){
                 logError("Client message doesn't end with \\n.");
@@ -244,11 +241,13 @@ void handleRequests(userData* user, serverData* server){
             sscanf(request,"%s %s",command,extra);
 
             if(!strcmp(command,"REG")){
-                response = processREG(*user, *server, fdUdp, request);
+                response = processREG(*user, *server, request);
 
-            } else if(!strcmp(command,"URN")){
+            } else if(!strcmp(command,"UNR")){
+                response = processURN(*user, *server, request);
 
             } else if(!strcmp(command,"LOG")){
+                response = processLOG(*user, *server, request);
 
             } else if(!strcmp(command,"OUT")){
 
@@ -276,7 +275,8 @@ void handleRequests(userData* user, serverData* server){
             //GUR UID GID\n
             //GLM UID\n
 
-            //strcpy(request,"RLO OK\n");
+            printf("Response:%s",response);
+            printf("-------------------------\n");
             int manuel = strlen(response);
             
             n = sendto(fdUdp, response, (ssize_t)manuel, 0, (struct sockaddr*)&addr, addrlen);
@@ -284,6 +284,7 @@ void handleRequests(userData* user, serverData* server){
                 logError("Couldn't send message via UDP socket");
                 break;
             }
+            memset(response,0,strlen(response));
         }
     }
 
