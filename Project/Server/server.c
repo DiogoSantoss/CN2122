@@ -49,7 +49,7 @@ void parseArguments(serverData *server, int argc, char *argv[]){
     // and returns the flag , eg: "-p" -> opt = 'p'
     // also has external variables such as optarg that stores
     // the flag argument, eg: "-p 58011" -> optarg = "58011"
-    while((opt = getopt(argc, argv, "vp:")) != -1) 
+    while((opt = getopt(argc, argv, "v:p:")) != -1) 
     { 
         switch(opt) 
         { 
@@ -225,6 +225,7 @@ void handleRequests(userData* user, serverData* server){
 
             int n;
             char request[MAXSIZEUDP],command[MAXSIZEUDP],extra[MAXSIZEUDP];
+            char* response;
             n = recvfrom(fdUdp, request, MAXSIZEUDP, 0, (struct sockaddr*)&addr, &addrlen);
             if(n==-1){
                 logError("Couldn't receive message via UDP socket");
@@ -243,10 +244,9 @@ void handleRequests(userData* user, serverData* server){
             sscanf(request,"%s %s",command,extra);
 
             if(!strcmp(command,"REG")){
-                processREG(*user,*server,request);
+                response = processREG(*user, *server, fdUdp, request);
 
             } else if(!strcmp(command,"URN")){
-                
 
             } else if(!strcmp(command,"LOG")){
 
@@ -264,12 +264,6 @@ void handleRequests(userData* user, serverData* server){
                 logError("Command not found.");
                 //sendErrorMessage();
             }
-            
-
-
-
-
-
 
             // STRCMPS
 
@@ -282,11 +276,10 @@ void handleRequests(userData* user, serverData* server){
             //GUR UID GID\n
             //GLM UID\n
 
-
-            strcpy(request,"RLO OK\n");
-            int manuel = strlen(request);
+            //strcpy(request,"RLO OK\n");
+            int manuel = strlen(response);
             
-            n = sendto(fdUdp, request, (ssize_t)manuel, 0, (struct sockaddr*)&addr, addrlen);
+            n = sendto(fdUdp, response, (ssize_t)manuel, 0, (struct sockaddr*)&addr, addrlen);
             if(n == -1){
                 logError("Couldn't send message via UDP socket");
                 break;
