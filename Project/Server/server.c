@@ -250,8 +250,10 @@ void handleRequests(userData* user, serverData* server){
                 response = processLOG(*user, *server, request);
 
             } else if(!strcmp(command,"OUT")){
+                response = processOUT(*user, *server, request);
 
             } else if(!strcmp(command,"GLS")){
+                response = processGLS(*user, *server, request);
 
             } else if(!strcmp(command,"GSR")){
 

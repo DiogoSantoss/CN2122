@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "log.h"
 #include "structs.h"
@@ -124,6 +125,54 @@ int checkUserPassword(char* UID, char* password){
     else
         return FALSE;
 }
+/*
+int ListGroupsDir(GROUPLIST *list){
+
+    DIR *d;
+    struct dirent *dir;
+    int i=0;
+    FILE *fp;
+    char GIDname[30];
+
+    list->no_groups=0;
+
+    d = opendir("GROUPS");
+    if (d){
+        while ((dir = readdir(d)) != NULL){
+
+            if(dir->d_name[0]=='.')
+                continue;
+            if(strlen(dir->d_name)>2)
+                continue;
+
+            strcpy(list->group_no[i], dir->d_name);
+            sprintf(GIDname,"GROUPS/%s/%s_name.txt",dir->d_name,dir->d_name);
+
+            fp=fopen(GIDname,"r");
+
+            if(fp){
+                fscanf(fp,"%24s",list->group_name[i]);
+                fclose(fp);
+            }
+            ++i;
+
+            if(i==99)
+                break;
+        }
+
+        list->no_groups=i;
+        closedir(d);
+
+    } else
+        return(-1);
+
+    if(list->no_groups > 1)
+        SortGList(list);
+
+    return(list->no_groups);
+}
+*/
+
 
 /* Treatment of Requests */
 
@@ -217,8 +266,6 @@ char* processURN(userData user, serverData server, char* request){
 */
 char* processLOG(userData user, serverData server, char* request){
 
-    // UNSURE IF FINISHED
-
     char prefix[4], sufix[MAXSIZEUDP];
     char UserID[6], password[9];
 
@@ -247,4 +294,55 @@ char* processLOG(userData user, serverData server, char* request){
     }
 
     return message;
+}
+
+/**
+ * Process logout request.
+ * @param[in] user User data
+ * @param[in] request Client input to be parsed
+ * @param[out] message Formarted message to respond to client
+*/
+char* processOUT(userData user, serverData server, char* request){
+
+    char prefix[4], sufix[MAXSIZEUDP];
+    char UserID[6], password[9];
+
+    char* message = calloc(9, sizeof(char));
+
+    sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
+
+    if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
+        // Wrong size parameters
+        strcpy(message, "ROU NOK\n");
+        return message;
+    }
+    else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)){
+        // Forbidden character in parameters
+        strcpy(message, "ROU NOK\n");
+        return message;
+    }
+    else if (!UserExists(UserID) || !checkUserPassword(UserID,password)){
+        // User doesn't exists or wrong password
+        strcpy(message, "ROU NOK\n");
+        return message;
+    }
+    else{
+        // Everything ok
+        strcpy(message, "ROU OK\n");
+    }
+
+    return message;
+}
+
+/**
+ * Process groups request.
+ * @param[in] user User data
+ * @param[in] request Client input to be parsed
+ * @param[out] message Formarted message to respond to client
+*/
+char* processOUT(userData user, serverData server, char* request){
+
+
+
+    
 }
