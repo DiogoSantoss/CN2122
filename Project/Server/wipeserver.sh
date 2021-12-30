@@ -1,4 +1,4 @@
 #!/bin/bash
 
-rm -rf USERS/*
-rm -rf GROUPS/*
+rm -rf USERS
+rm -rf GROUPS

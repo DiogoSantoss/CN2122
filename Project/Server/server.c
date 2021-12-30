@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <errno.h>
 
 #include "common.h"
 #include "log.h"
@@ -219,9 +220,11 @@ void handleRequests(userData* user, serverData* server){
 
             // RECEIVE UDP MESSAGE
 
-            int n;
+            ssize_t n;
             char request[MAXSIZEUDP],command[MAXSIZEUDP],extra[MAXSIZEUDP];
             char* response;
+            memset(request, 0, MAXSIZEUDP);
+            addrlen=sizeof(addr);
             n = recvfrom(fdUdp, request, MAXSIZEUDP, 0, (struct sockaddr*)&addr, &addrlen);
             if(n==-1){
                 logError("Couldn't receive message via UDP socket");
@@ -283,10 +286,11 @@ void handleRequests(userData* user, serverData* server){
             
             n = sendto(fdUdp, response, (ssize_t)manuel, 0, (struct sockaddr*)&addr, addrlen);
             if(n == -1){
+                printf("sendto: Error %s (%d)\n", strerror(errno), errno);
                 logError("Couldn't send message via UDP socket");
                 break;
             }
-            memset(response,0,strlen(response));
+            free(response);
         }
     }
 
@@ -302,9 +306,9 @@ int main(int argc, char *argv[]){
     userData user;
     serverData server;
     
+    createDirectories();
     initializeData(&user, &server);
     parseArguments(&server, argc, argv);
-    createDirectories();
     handleRequests(&user, &server);
 
     return 1;

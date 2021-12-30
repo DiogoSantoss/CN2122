@@ -38,6 +38,7 @@ void createDirectories(){
     DIR* dir = opendir("USERS");
     if(dir){
         //Do nothing
+        closedir(dir);
     }
     else if(ENOENT == errno){
         retUsers = mkdir(users, 0700);
@@ -54,6 +55,7 @@ void createDirectories(){
     dir = opendir("GROUPS");
     if(dir){
         //Do nothing
+        closedir(dir);
     }
     else if(ENOENT == errno){
         retGroups = mkdir(groups, 0700);
@@ -230,12 +232,17 @@ char* processREG(userData user, serverData server, char* request){
     char prefix[4], sufix[MAXSIZEUDP];
     char UserID[6], password[9];
 
+    memset(sufix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
     sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
 
+    printf("Request: %s", request);
+
     if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
         // Wrong size parameters
+        //printf("sizesufix: %d\nsizeUID: %d\nsizepassword: %d\n", strlen(sufix), strlen(UserID), strlen(password));
+        //printf("sufix: %s\n", sufix);
         strcpy(message, "RRG NOK\n");
         return message;
     }
@@ -271,6 +278,7 @@ char* processURN(userData user, serverData server, char* request){
     char prefix[4], sufix[MAXSIZEUDP];
     char UserID[6], password[9];
 
+    memset(sufix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
     sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
@@ -312,6 +320,7 @@ char* processLOG(userData user, serverData server, char* request){
     char prefix[4], sufix[MAXSIZEUDP];
     char UserID[6], password[9];
 
+    memset(sufix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
     sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
@@ -350,6 +359,7 @@ char* processOUT(userData user, serverData server, char* request){
     char prefix[4], sufix[MAXSIZEUDP];
     char UserID[6], password[9];
 
+    memset(sufix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
     sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
