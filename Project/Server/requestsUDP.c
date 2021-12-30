@@ -25,6 +25,30 @@ int mkdir(const char *pathname, mode_t mode);
 
 /* Treatment of directories and files */
 
+//Create initial USERS and GROUPS directories
+void createDirectories(){
+    
+    char users[6];
+    char groups[7]; 
+    int retUsers, retGroups;
+
+    strcpy(users, "USERS");
+    strcpy(groups, "GROUPS");
+
+    // If already exists, dont fail (confirm)
+    retUsers = mkdir(users, 0700);
+    if(retUsers == -1){
+        logError("Couldn't create USERS directory.");
+        exit(1);
+    }
+
+    retGroups = mkdir(groups, 0700);
+    if(retGroups == -1){
+        logError("Couldn't create GROUPS directory.");
+        exit(1);
+    }
+}
+
 int CreateUserDir(char *UID){
 
     char user_dirname[20];
@@ -340,7 +364,7 @@ char* processOUT(userData user, serverData server, char* request){
  * @param[in] request Client input to be parsed
  * @param[out] message Formarted message to respond to client
 */
-char* processOUT(userData user, serverData server, char* request){
+char* processGLS(userData user, serverData server, char* request){
 
 
 

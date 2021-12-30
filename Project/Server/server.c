@@ -304,6 +304,7 @@ int main(int argc, char *argv[]){
     
     initializeData(&user, &server);
     parseArguments(&server, argc, argv);
+    createDirectories();
     handleRequests(&user, &server);
 
     return 1;
