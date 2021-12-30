@@ -35,16 +35,35 @@ void createDirectories(){
     strcpy(users, "USERS");
     strcpy(groups, "GROUPS");
 
-    // If already exists, dont fail (confirm)
-    retUsers = mkdir(users, 0700);
-    if(retUsers == -1){
-        logError("Couldn't create USERS directory.");
+    DIR* dir = opendir("USERS");
+    if(dir){
+        //Do nothing
+    }
+    else if(ENOENT == errno){
+        retUsers = mkdir(users, 0700);
+        if(retUsers == -1){
+            logError("Couldn't create USERS directory.");
+            exit(1);
+        }
+    }
+    else{
+        logError("Directory USERS failed to open.");
         exit(1);
     }
 
-    retGroups = mkdir(groups, 0700);
-    if(retGroups == -1){
-        logError("Couldn't create GROUPS directory.");
+    dir = opendir("GROUPS");
+    if(dir){
+        //Do nothing
+    }
+    else if(ENOENT == errno){
+        retGroups = mkdir(groups, 0700);
+        if(retGroups == -1){
+            logError("Couldn't create GROUPS directory.");
+            exit(1);
+        }
+    }
+    else{
+        logError("Directory USERS failed to open.");
         exit(1);
     }
 }
