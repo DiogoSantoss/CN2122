@@ -3,16 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <dirent.h>
-#include <errno.h>
-#include <dirent.h>
 
 #include "log.h"
 #include "structs.h"
 #include "common.h"
-
-#include <sys/stat.h>
-#include <sys/types.h>
+#include "directories.h"
 
 int mkdir(const char *pathname, mode_t mode);
 
@@ -22,336 +17,6 @@ int mkdir(const char *pathname, mode_t mode);
 
 #define MAXSIZEUDP 39 //GSR is the biggest command 
 #define EXTRAMAXSIZE 3169
-
-/* Treatment of directories and files */
-
-//Create initial USERS and GROUPS directories
-void createDirectories(){
-    
-    char users[6];
-    char groups[7]; 
-    int retUsers, retGroups;
-
-    strcpy(users, "USERS");
-    strcpy(groups, "GROUPS");
-
-    DIR* dir = opendir("USERS");
-    if(dir){
-        //Do nothing
-        closedir(dir);
-    }
-    else if(ENOENT == errno){
-        retUsers = mkdir(users, 0700);
-        if(retUsers == -1){
-            logError("Couldn't create USERS directory.");
-            exit(1);
-        }
-    }
-    else{
-        logError("Directory USERS failed to open.");
-        exit(1);
-    }
-
-    dir = opendir("GROUPS");
-    if(dir){
-        //Do nothing
-        closedir(dir);
-    }
-    else if(ENOENT == errno){
-        retGroups = mkdir(groups, 0700);
-        if(retGroups == -1){
-            logError("Couldn't create GROUPS directory.");
-            exit(1);
-        }
-    }
-    else{
-        logError("Directory USERS failed to open.");
-        exit(1);
-    }
-}
-
-int CreateUserDir(char *UID){
-
-    char user_dirname[20];
-    int ret;
-
-    sprintf(user_dirname,"USERS/%s",UID);
-    ret=mkdir(user_dirname,0700);
-
-    if(ret==-1)
-        return FALSE;
-
-    return TRUE;
-}
-
-int DelUserDir(char *UID){
-
-    char user_dirname[20];
-
-    sprintf(user_dirname,"USERS/%s",UID);
-
-    if(rmdir(user_dirname)==0)
-        return TRUE;
-    else
-        return FALSE;
-}
-
-int CreatePassFile(char* UID, char* password){
-
-    FILE *fptr;
-    char path[31];
-
-    sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
-
-    if(!(fptr = fopen(path, "w"))){
-        //Failed to open path
-        return FALSE;
-    }
-
-    fwrite(password, sizeof(char), 8, fptr);
-    fclose(fptr);
-
-    return TRUE;
-}
-
-int DelPassFile(char *UID){
-
-    char pathname[50];
-
-    sprintf(pathname,"USERS/%s/%s_pass.txt",UID,UID);
-
-    if(unlink(pathname)==0)
-        return TRUE;
-    else
-        return FALSE;
-}
-
-int DelLoginFile(char *UID){
-
-    char pathname[50];
-
-    sprintf(pathname,"USERS/%s/%s_login.txt",UID,UID);
-
-    if(unlink(pathname)==0)
-        return TRUE;
-    else
-        return FALSE;
-}
-
-int UserExists(char* UID){
-
-    char path[31];
-    DIR* dir;
-
-    sprintf(path, "USERS/%s", UID);
-
-    if(dir = opendir(path)){
-        // User exists
-        return TRUE;
-    }
-    else if (ENOENT == errno) {
-        //Directory doesnt exist.
-        return FALSE;
-    } 
-    else {
-        //Unknown error
-        return FALSE;
-    }
-}
-
-int GroupExists(char* GID){
-
-    DIR *d;
-    struct dirent *dir;
-
-    FILE *fp;
-
-    int groupMax = 0;
-
-    d = opendir("GROUPS");
-    if (d)
-    {
-        while ((dir = readdir(d)))
-        {
-            if(strcmp(GID, dir->d_name) == 0)
-            return TRUE;
-        }
-        return FALSE;
-    }
-    else
-        return FALSE;
-
-}
-
-int latestGroup(){
-
-    DIR *d;
-    struct dirent *dir;
-
-    FILE *fp;
-
-    int groupMax = 0;
-
-    d = opendir("GROUPS");
-    if (d)
-    {
-        while ((dir = readdir(d)))
-        {
-            if (dir->d_name[0]=='.')
-                continue;
-            if(strlen(dir->d_name)>2)
-                continue;
-            if (atoi(dir->d_name) > groupMax)
-                groupMax = atoi(dir->d_name);
-        }
-        return groupMax;
-    }
-    else
-        return -1;
-}
-
-int CreateGroupDir(char *GID){
-
-    char group_dirname[20];
-    int ret;
-
-    sprintf(group_dirname,"GROUPS/%s",GID);
-    ret=mkdir(group_dirname,0700);
-
-    if(ret==-1)
-        return FALSE;
-
-    return TRUE;
-}
-
-int checkUserPassword(char* UID, char* password){
-
-    FILE *fptr;
-    char path[31];
-    char userPassword[9]; // 8+1
-
-    sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
-
-    if(!(fptr = fopen(path, "r"))){
-        //Failed to open path
-        return FALSE;
-    }
-
-    fread(userPassword, sizeof(char), 9, fptr);
-    printf("userPassword:%s\n",userPassword);
-    printf("password:%s\n",password);
-    fclose(fptr);
-
-    if(!strcmp(userPassword,password))
-        return TRUE;
-    else
-        return FALSE;
-}
-
-int checkLoginFile(char* UID){
-
-    FILE* fptr;
-    char path[32];
-
-    sprintf(path, "USERS/%s/%s_login.txt", UID, UID);
-
-    if(!(fptr = fopen(path, "r"))){
-        if(!(fptr = fopen(path, "w"))){
-            //Failed to open path
-            return FALSE;
-        }
-        fclose(fptr);
-        return TRUE;
-    }
-
-    fclose(fptr);
-    return TRUE;
-}
-
-int checkGroupName(char* GID, char* GName){
-
-    FILE* fptr;
-    char path[50];
-    char groupName[25];
-
-    sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
-
-    if(!(fptr = fopen(path, "r"))){
-        //Failed to open path
-        return FALSE;
-    }
-
-    fread(groupName, sizeof(char), 25, fptr);
-    fclose(fptr);
-
-    if(!strcmp(groupName, GName)){
-        return TRUE;
-    }
-    else{
-        return FALSE;
-    }
-}
-
-int CreateGroupFile(char* UID, char* password){
-
-    FILE *fptr;
-    char path[31];
-
-    sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
-
-    if(!(fptr = fopen(path, "w"))){
-        //Failed to open path
-        return FALSE;
-    }
-
-    fwrite(password, sizeof(char), 8, fptr);
-    fclose(fptr);
-
-    return TRUE;
-}
-
-int SubscribeUser(char* UID, char* GID){
-
-    FILE *fptr;
-    char path[31];
-
-    sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
-
-    printf("PATH: %s\n", path);
-
-    if(!(fptr = fopen(path, "w"))){
-        //Failed to open path
-        return FALSE;
-    }
-
-    fclose(fptr);
-
-    return TRUE;
-}
-
-int UserExistsInGroup(char* UID, char* GID){
-
-    FILE *fptr;
-    char path[31];
-    DIR* dir;
-
-    sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
-
-    if(dir = opendir(path)){
-        // User exists in group
-        return TRUE;
-    }
-    else if (ENOENT == errno) {
-        // User doesnt exist in group
-        return FALSE;
-    } 
-    else {
-        //Unknown error
-        return FALSE;
-    }
-}
-
-/* Treatment of Requests */
 
 /**
  * Process register request.
@@ -435,6 +100,7 @@ char* processURN(userData user, serverData server, char* request){
         strcpy(message, "RUN OK\n");
 
         if (!DelPassFile(UserID)) strcpy(message, "ERR\n");
+        if (!DelLoginFile(UserID)) strcpy(message, "ERR\n");
         if (!DelUserDir(UserID)) strcpy(message, "ERR\n");
     }
 
@@ -476,7 +142,7 @@ char* processLOG(userData user, serverData server, char* request){
         // Everything ok
         strcpy(message, "RLO OK\n");
 
-        if(!checkLoginFile(UserID)) strcpy(message, "ERR\n");
+        if(!createLoginFile(UserID)) strcpy(message, "ERR\n");
     }
 
     return message;
@@ -549,59 +215,83 @@ char* processGSR(userData user, serverData server, char* request){
 
     sscanf(request, "%s %s %s %s %s", prefix, UserID, GroupID, GroupName, sufix);
 
+    int groupMax = maxGroupNumber();
 
-    int groupMax = latestGroup();
 
-    if (strlen(sufix) == 0){
+    if(strlen(GroupID) == 1){
+        sprintf(GroupID, "%02d", atoi(GroupID));
+    }
 
-        if (strlen(UserID) != 5 || !checkStringIsAlphaNum(UserID) || !UserExists(UserID)){
-            strcpy(message, "RGS E_USR\n");
+    if (strlen(sufix) != 0){
+        // Wrong size parameters
+        strcpy(message, "RGS NOK\n");
+        return message;
+    }
+    if (strlen(UserID) != 5 || !checkStringIsNumber(UserID) || !UserExists(UserID)){
+        // Invalid UID
+        strcpy(message, "RGS E_USR\n");
+        return message;
+    }
+    else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID)){
+        // Invalid GID
+        strcpy(message, "RGS E_GRP\n");
+        return message;
+    }
+    else if (strlen(GroupName) > 24 || !checkStringIsGroupName(GroupName)){
+        // Invalid Gname
+        strcpy(message, "RGS E_GNAME\n");
+        return message;
+    }
+    // User want to create and subscribe to new group
+    else if (strcmp(GroupID, "00") == 0){
+       
+        if (groupMax >= 99){
+            // Max number of groups, can't create more
+            strcpy(message, "RGS E_FULL\n");
             return message;
         }
-        else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID) || !GroupExists(GroupID)){
-            strcpy(message, "RGS E_GRP\n");
-            return message;
-        }
-        else if (strlen(GroupName) > 24 || !checkStringIsAlphaNum(GroupName) || !checkGroupName(GroupID, GroupName)){
-            strcpy(message, "RGS E_GNAME\n");
-            return message;
-        }
-        // Existing group is subscribed
-        else if (strlen(GroupID) == 2 && checkStringIsNumber(GroupID)){
-            if (strcmp(GroupID, "00") == 0){
-                if (groupMax >= 99){
-                    strcpy(message, "RGS E_FULL\n");
-                    return message;
-                }
-                char newGroup[3];
-                sprintf(newGroup, "%02d", groupMax + 1);
-                CreateGroupDir(newGroup);
-                if(!SubscribeUser(UserID, newGroup)){
-                    strcpy(message, "RGS NOK\n");
-                    return message;
-                }
 
-                sprintf(message, "RGS NEW %s\n", newGroup);
-                return message;
-            }
-            else{
-                if(!SubscribeUser(UserID, GroupID)){
-                    strcpy(message, "RGS NOK\n");
-                    return message;
-                }
-                strcpy(message, "RGS OK\n");
-                return message;
-            }
+        char newGroupID[3];
+        sprintf(newGroupID, "%02d", groupMax + 1);
+
+        if(!CreateGroupDir(newGroupID)){
+            strcpy(message,"ERR\n");
+            return message;
         }
-        // New group is created
-        else{
+
+        if(!CreateGroupFile(newGroupID,GroupName)){
+            strcpy(message,"ERR\n");
+            return message;
+        }
+
+        if(!SubscribeUser(UserID, newGroupID)){
+            // Failed to subscribe user to newly created group
             strcpy(message, "RGS NOK\n");
             return message;
         }
-    }
-    else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(GroupID) || !checkStringIsAlphaNum(GroupName)){
-        // Forbidden character in parameters
-        strcpy(message, "ROU NOK\n");
+        // Created and subscribed to new group
+        sprintf(message, "RGS NEW %s\n", newGroupID);
+        return message;
+    }  
+    // User wants to subscribe to group 
+    else{ 
+        if(!GroupExists(GroupID)){
+            // Invalid GID
+            strcpy(message, "RGS E_GRP\n");
+            return message;
+        }
+        if(!checkGroupName(GroupID, GroupName)){
+            // Invalid Gname
+            strcpy(message, "RGS E_GNAME\n");
+            return message;
+        }
+        if(!SubscribeUser(UserID, GroupID)){
+            // Failed to subscribe user
+            strcpy(message, "RGS NOK\n");
+            return message;
+        }
+        // Subscribed user 
+        strcpy(message, "RGS OK\n");
         return message;
     }
 }
