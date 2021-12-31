@@ -249,6 +249,7 @@ int checkUserPassword(char* UID, char* password){
 }
 
 int checkLoginFile(char* UID){
+
     FILE* fptr;
     char path[32];
 
@@ -265,6 +266,30 @@ int checkLoginFile(char* UID){
 
     fclose(fptr);
     return TRUE;
+}
+
+int checkGroupName(char* GID, char* GName){
+
+    FILE* fptr;
+    char path[50];
+    char groupName[25];
+
+    sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
+
+    if(!(fptr = fopen(path, "r"))){
+        //Failed to open path
+        return FALSE;
+    }
+
+    fread(groupName, sizeof(char), 25, fptr);
+    fclose(fptr);
+
+    if(!strcmp(groupName, GName)){
+        return TRUE;
+    }
+    else{
+        return FALSE;
+    }
 }
 
 int CreateGroupFile(char* UID, char* password){
@@ -299,7 +324,6 @@ int SubscribeUser(char* UID, char* GID){
         return FALSE;
     }
 
-    fwrite(UID, sizeof(char), 5, fptr);
     fclose(fptr);
 
     return TRUE;
@@ -509,6 +533,12 @@ char* processGLS(userData user, serverData server, char* request){
 
 }
 
+/**
+ * Process subscribe request.
+ * @param[in] user User data
+ * @param[in] request Client input to be parsed
+ * @param[out] message Formarted message to respond to client
+*/
 char* processGSR(userData user, serverData server, char* request){
 
     char prefix[4], sufix[MAXSIZEUDP];
@@ -528,7 +558,11 @@ char* processGSR(userData user, serverData server, char* request){
             strcpy(message, "RGS E_USR\n");
             return message;
         }
-        else if (strlen(GroupName) > 24 || !checkStringIsAlphaNum(GroupName)){
+        else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID) || !GroupExists(GroupID)){
+            strcpy(message, "RGS E_GRP\n");
+            return message;
+        }
+        else if (strlen(GroupName) > 24 || !checkStringIsAlphaNum(GroupName) || !checkGroupName(GroupID, GroupName)){
             strcpy(message, "RGS E_GNAME\n");
             return message;
         }
@@ -551,8 +585,6 @@ char* processGSR(userData user, serverData server, char* request){
                 return message;
             }
             else{
-                // TODO - check if user is already subscribed to that group? (not sure) - use funcition UserExistsInGroup
-                // In the tejo server, this is not verified, the user just happens to subscribe again to the group
                 if(!SubscribeUser(UserID, GroupID)){
                     strcpy(message, "RGS NOK\n");
                     return message;
