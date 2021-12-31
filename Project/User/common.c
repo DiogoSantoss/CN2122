@@ -24,7 +24,7 @@ int checkStringIsNumber(char* value){
 /**
  * Check if string is alphanumeric
  * @param[in] value String to be checked
- * @param[out] IsNumber TRUE if is alphanumeric else FALSE
+ * @param[out] IsAlphaNumberic TRUE if is alphanumeric else FALSE
 */
 int checkStringIsAlphaNum(char* value){
     int IsAlphaNumeric = TRUE;
