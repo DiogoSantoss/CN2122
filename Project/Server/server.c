@@ -259,6 +259,7 @@ void handleRequests(userData* user, serverData* server){
                 response = processGLS(*user, *server, request);
 
             } else if(!strcmp(command,"GSR")){
+                response = processGSR(*user, *server, request);
 
             } else if(!strcmp(command,"GUR")){
 

@@ -147,6 +147,71 @@ int UserExists(char* UID){
     }
 }
 
+int GroupExists(char* GID){
+
+    DIR *d;
+    struct dirent *dir;
+
+    FILE *fp;
+
+    int groupMax = 0;
+
+    d = opendir("GROUPS");
+    if (d)
+    {
+        while ((dir = readdir(d)))
+        {
+            if(strcmp(GID, dir->d_name) == 0)
+            return TRUE;
+        }
+        return FALSE;
+    }
+    else
+        return FALSE;
+
+}
+
+int latestGroup(){
+
+    DIR *d;
+    struct dirent *dir;
+
+    FILE *fp;
+
+    int groupMax = 0;
+
+    d = opendir("GROUPS");
+    if (d)
+    {
+        while ((dir = readdir(d)))
+        {
+            if (dir->d_name[0]=='.')
+                continue;
+            if(strlen(dir->d_name)>2)
+                continue;
+            if (atoi(dir->d_name) > groupMax)
+                groupMax = atoi(dir->d_name);
+        }
+        return groupMax;
+    }
+    else
+        return -1;
+}
+
+int CreateGroupDir(char *GID){
+
+    char group_dirname[20];
+    int ret;
+
+    sprintf(group_dirname,"GROUPS/%s",GID);
+    ret=mkdir(group_dirname,0700);
+
+    if(ret==-1)
+        return FALSE;
+
+    return TRUE;
+}
+
 int checkUserPassword(char* UID, char* password){
 
     FILE *fptr;
@@ -170,54 +235,66 @@ int checkUserPassword(char* UID, char* password){
     else
         return FALSE;
 }
-/*
-int ListGroupsDir(GROUPLIST *list){
 
-    DIR *d;
-    struct dirent *dir;
-    int i=0;
-    FILE *fp;
-    char GIDname[30];
+int CreateGroupFile(char* UID, char* password){
 
-    list->no_groups=0;
+    FILE *fptr;
+    char path[31];
 
-    d = opendir("GROUPS");
-    if (d){
-        while ((dir = readdir(d)) != NULL){
+    sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
 
-            if(dir->d_name[0]=='.')
-                continue;
-            if(strlen(dir->d_name)>2)
-                continue;
+    if(!(fptr = fopen(path, "w"))){
+        //Failed to open path
+        return FALSE;
+    }
 
-            strcpy(list->group_no[i], dir->d_name);
-            sprintf(GIDname,"GROUPS/%s/%s_name.txt",dir->d_name,dir->d_name);
+    fwrite(password, sizeof(char), 8, fptr);
+    fclose(fptr);
 
-            fp=fopen(GIDname,"r");
-
-            if(fp){
-                fscanf(fp,"%24s",list->group_name[i]);
-                fclose(fp);
-            }
-            ++i;
-
-            if(i==99)
-                break;
-        }
-
-        list->no_groups=i;
-        closedir(d);
-
-    } else
-        return(-1);
-
-    if(list->no_groups > 1)
-        SortGList(list);
-
-    return(list->no_groups);
+    return TRUE;
 }
-*/
 
+int SubscribeUser(char* UID, char* GID){
+
+    FILE *fptr;
+    char path[31];
+
+    sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
+
+    printf("PATH: %s\n", path);
+
+    if(!(fptr = fopen(path, "w"))){
+        //Failed to open path
+        return FALSE;
+    }
+
+    fwrite(UID, sizeof(char), 5, fptr);
+    fclose(fptr);
+
+    return TRUE;
+}
+
+int UserExistsInGroup(char* UID, char* GID){
+
+    FILE *fptr;
+    char path[31];
+    DIR* dir;
+
+    sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
+
+    if(dir = opendir(path)){
+        // User exists in group
+        return TRUE;
+    }
+    else if (ENOENT == errno) {
+        // User doesnt exist in group
+        return FALSE;
+    } 
+    else {
+        //Unknown error
+        return FALSE;
+    }
+}
 
 /* Treatment of Requests */
 
@@ -395,7 +472,69 @@ char* processOUT(userData user, serverData server, char* request){
 */
 char* processGLS(userData user, serverData server, char* request){
 
+}
+
+char* processGSR(userData user, serverData server, char* request){
+
+    char prefix[4], sufix[MAXSIZEUDP];
+    char UserID[6], GroupID[3], GroupName[25];
+
+    memset(sufix, 0, MAXSIZEUDP);
+    char* message = calloc(13, sizeof(char));
+
+    sscanf(request, "%s %s %s %s %s", prefix, UserID, GroupID, GroupName, sufix);
 
 
-    
+    int groupMax = latestGroup();
+
+    if (strlen(sufix) == 0){
+
+        if (strlen(UserID) != 5 || !checkStringIsAlphaNum(UserID) || !UserExists(UserID)){
+            strcpy(message, "RGS E_USR\n");
+            return message;
+        }
+        else if (strlen(GroupName) > 24 || !checkStringIsAlphaNum(GroupName)){
+            strcpy(message, "RGS E_GNAME\n");
+            return message;
+        }
+        // Existing group is subscribed
+        else if (strlen(GroupID) == 2 && checkStringIsNumber(GroupID)){
+            if (strcmp(GroupID, "00") == 0){
+                if (groupMax >= 99){
+                    strcpy(message, "RGS E_FULL\n");
+                    return message;
+                }
+                char newGroup[3];
+                sprintf(newGroup, "%02d", groupMax + 1);
+                CreateGroupDir(newGroup);
+                if(!SubscribeUser(UserID, newGroup)){
+                    strcpy(message, "RGS NOK\n");
+                    return message;
+                }
+
+                sprintf(message, "RGS NEW %s\n", newGroup);
+                return message;
+            }
+            else{
+                // TODO - check if user is already subscribed to that group? (not sure) - use funcition UserExistsInGroup
+                // In the tejo server, this is not verified, the user just happens to subscribe again to the group
+                if(!SubscribeUser(UserID, GroupID)){
+                    strcpy(message, "RGS NOK\n");
+                    return message;
+                }
+                strcpy(message, "RGS OK\n");
+                return message;
+            }
+        }
+        // New group is created
+        else{
+            strcpy(message, "RGS NOK\n");
+            return message;
+        }
+    }
+    else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(GroupID) || !checkStringIsAlphaNum(GroupName)){
+        // Forbidden character in parameters
+        strcpy(message, "ROU NOK\n");
+        return message;
+    }
 }
