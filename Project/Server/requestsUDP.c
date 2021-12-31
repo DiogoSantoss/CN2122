@@ -126,6 +126,18 @@ int DelPassFile(char *UID){
         return FALSE;
 }
 
+int DelLoginFile(char *UID){
+
+    char pathname[50];
+
+    sprintf(pathname,"USERS/%s/%s_login.txt",UID,UID);
+
+    if(unlink(pathname)==0)
+        return TRUE;
+    else
+        return FALSE;
+}
+
 int UserExists(char* UID){
 
     char path[31];
@@ -234,6 +246,25 @@ int checkUserPassword(char* UID, char* password){
         return TRUE;
     else
         return FALSE;
+}
+
+int checkLoginFile(char* UID){
+    FILE* fptr;
+    char path[32];
+
+    sprintf(path, "USERS/%s/%s_login.txt", UID, UID);
+
+    if(!(fptr = fopen(path, "r"))){
+        if(!(fptr = fopen(path, "w"))){
+            //Failed to open path
+            return FALSE;
+        }
+        fclose(fptr);
+        return TRUE;
+    }
+
+    fclose(fptr);
+    return TRUE;
 }
 
 int CreateGroupFile(char* UID, char* password){
@@ -420,6 +451,8 @@ char* processLOG(userData user, serverData server, char* request){
     else{
         // Everything ok
         strcpy(message, "RLO OK\n");
+
+        if(!checkLoginFile(UserID)) strcpy(message, "ERR\n");
     }
 
     return message;
@@ -459,6 +492,8 @@ char* processOUT(userData user, serverData server, char* request){
     else{
         // Everything ok
         strcpy(message, "ROU OK\n");
+
+        if (!DelLoginFile(UserID)) strcpy(message, "ERR\n");
     }
 
     return message;
