@@ -296,6 +296,8 @@ int checkGroupName(char* GID, char* GName){
         return FALSE;
     }
 
+    memset(groupName, 0, 25);
+
     fread(groupName, sizeof(char), 25, fptr);
     fclose(fptr);
 
