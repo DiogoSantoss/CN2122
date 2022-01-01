@@ -214,9 +214,7 @@ char* processGSR(userData user, serverData server, char* request){
     char* message = calloc(13, sizeof(char));
 
     sscanf(request, "%s %s %s %s %s", prefix, UserID, GroupID, GroupName, sufix);
-
     int groupMax = maxGroupNumber();
-
 
     if(strlen(GroupID) == 1){
         sprintf(GroupID, "%02d", atoi(GroupID));
@@ -292,6 +290,50 @@ char* processGSR(userData user, serverData server, char* request){
         }
         // Subscribed user 
         strcpy(message, "RGS OK\n");
+        return message;
+    }
+}
+
+char* processGUR(userData user, serverData server, char* request){
+
+    char prefix[4], sufix[MAXSIZEUDP];
+    char UserID[6], GroupID[3];
+
+    memset(sufix, 0, MAXSIZEUDP);
+    char* message = calloc(13, sizeof(char));
+
+    sscanf(request, "%s %s %s %s", prefix, UserID, GroupID, sufix);
+    
+    if (strlen(sufix) != 0){
+        // Wrong size parameters
+        strcpy(message, "RGU NOK\n");
+        return message;
+    }
+    else if (strlen(UserID) != 5 || !checkStringIsNumber(UserID) || !UserExists(UserID)){
+        // Invalid UID
+        strcpy(message, "RGU E_USR\n");
+        return message;
+    }
+    else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID)){
+        // Invalid GID
+        strcpy(message, "RGU E_GRP\n");
+        return message;
+    }
+    else if(checkUserSubscribedToGroup(UserID, GroupID)){
+        // User is actually subscribed to group
+        if(UnsubscribeUser(UserID, GroupID)){
+            strcpy(message, "RGU OK\n");
+            return message;
+        }
+        else{
+            strcpy(message, "RGU NOK\n");
+            return message;
+        }
+    }
+    else if(!checkUserSubscribedToGroup(UserID, GroupID)){
+        // In this case the user is not subscribed to the group
+        // But it returns success nonetheless
+        strcpy(message, "RGU OK\n");
         return message;
     }
 }

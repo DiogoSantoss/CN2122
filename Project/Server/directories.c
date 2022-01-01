@@ -327,6 +327,20 @@ int SubscribeUser(char* UID, char* GID){
     return TRUE;
 }
 
+// Add user to subscribed users of group
+int UnsubscribeUser(char* UID, char* GID){
+
+    char pathname[50];
+    sprintf(pathname,"GROUPS/%s/%s.txt",GID,UID);
+
+    if(unlink(pathname)==0)
+        // Success
+        return TRUE;
+    else
+        // Failed to unsubcribe user
+        return FALSE;
+}
+
 // Check if user is subscribe to group
 int checkUserSubscribedToGroup(char* UID, char* GID){
 
@@ -336,16 +350,10 @@ int checkUserSubscribedToGroup(char* UID, char* GID){
 
     sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
 
-    if(dir = opendir(path)){
-        // User exists in group
-        return TRUE;
-    }
-    else if (ENOENT == errno) {
-        // User doesnt exist in group
-        return FALSE;
-    } 
-    else {
-        //Unknown error
+    if(!(fptr = fopen(path, "r"))){
+        //Failed to open path
         return FALSE;
     }
+    fclose(fptr);
+    return TRUE;
 }

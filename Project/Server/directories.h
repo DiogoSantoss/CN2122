@@ -16,6 +16,7 @@ int CreateGroupFile(char* UID, char* password);
 int GroupExists(char* GID);
 int checkGroupName(char* GID, char* GName);
 int SubscribeUser(char* UID, char* GID);
+int UnsubscribeUser(char* UID, char* GID);
 int checkUserSubscribedToGroup(char* UID, char* GID);
 
 #endif
