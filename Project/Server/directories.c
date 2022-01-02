@@ -8,6 +8,7 @@
 #include <sys/types.h>
 
 #include "log.h"
+#include "structs.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -241,6 +242,83 @@ int CreateGroupDir(char *GID){
     return TRUE;
 }
 
+int GroupLastMessage(char *GID){
+
+    DIR *d;
+    int messageNumber ,max = 0;
+    struct dirent *dir;
+    char path[14];
+
+    sprintf(path,"GROUPS/%s/MSG",GID);
+    d = opendir(path);
+
+    if(d){
+        while((dir = readdir(d)) != NULL){
+            if(dir->d_name[0] == '.' || strlen(dir->d_name) > 4)
+                continue;
+
+            messageNumber = atoi(dir->d_name);
+            if(messageNumber > max)
+                max = messageNumber;
+        }
+
+        return max;
+    } 
+    else
+        return (-1);
+    
+}
+
+//Fill GROUPSLIST struct with all groups info
+int ListGroupsDir(GROUPLIST *list){
+    
+    DIR *d;
+    struct dirent *dir;
+    int i=0;
+    int lastMessage;
+    FILE *fp;
+    char GIDname[30];
+
+    list->no_groups = 0;
+    d = opendir("GROUPS");
+    if(d){
+        while((dir = readdir(d)) != NULL){
+            if(dir->d_name[0] == '.')
+                continue;
+            if(strlen(dir->d_name)>2)
+                continue;
+
+            strcpy(list->group_no[i], dir->d_name);
+            sprintf(GIDname, "GROUPS/%s/%s_name.txt", dir->d_name, dir->d_name);
+            
+            fp = fopen(GIDname, "r");
+            if(fp){
+                fscanf(fp,"%24s", list->group_name[i]);
+                fclose(fp);
+            }
+            lastMessage = GroupLastMessage(dir->d_name);
+            if(lastMessage != -1)
+                sprintf(list->group_lastMens[i], "%04d", lastMessage);
+            else
+                return(-1);
+
+            ++i;
+            if(i == 99)
+                break;
+        }
+        list->no_groups = i;
+        closedir(d);
+    }
+    else
+        return(-1);
+        
+    if(list->no_groups>1){
+        //SortGList(list);
+    }   
+
+    return(list->no_groups);
+}
+
 // Create group file in group directory
 int CreateGroupFile(char* GID, char* Gname){
 
@@ -327,7 +405,7 @@ int SubscribeUser(char* UID, char* GID){
     return TRUE;
 }
 
-// Add user to subscribed users of group
+// Remove user from group
 int UnsubscribeUser(char* UID, char* GID){
 
     char pathname[50];

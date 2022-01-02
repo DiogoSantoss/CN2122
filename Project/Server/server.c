@@ -284,9 +284,9 @@ void handleRequests(userData* user, serverData* server){
 
             printf("Response:%s",response);
             printf("-------------------------\n");
-            int manuel = strlen(response);
+            //int manuel = strlen(response);
             
-            n = sendto(fdUdp, response, (ssize_t)manuel, 0, (struct sockaddr*)&addr, addrlen);
+            n = sendto(fdUdp, response, strlen(response), 0, (struct sockaddr*)&addr, addrlen);
             if(n == -1){
                 printf("sendto: Error %s (%d)\n", strerror(errno), errno);
                 logError("Couldn't send message via UDP socket");

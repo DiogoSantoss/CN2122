@@ -197,6 +197,22 @@ char* processOUT(userData user, serverData server, char* request){
 */
 char* processGLS(userData user, serverData server, char* request){
 
+    int n;
+    GROUPLIST list;
+
+    n = ListGroupsDir(&list);
+
+    // last message for each group
+
+    printf("%d\n",n);
+    for(int i = 0; i<n; i++){
+        printf("GROUP NUMBER:%s\t GROUP NAME:%s\t LAST MESSAGE:%s\n",list.group_no[i],list.group_name[i],list.group_lastMens[i]);
+    }
+
+    char* message = calloc(13, sizeof(char));
+    strcpy(message,"ERR\n");
+
+    return message;
 }
 
 /**
@@ -294,6 +310,12 @@ char* processGSR(userData user, serverData server, char* request){
     }
 }
 
+/**
+ * Process unsubscribe request.
+ * @param[in] user User data
+ * @param[in] request Client input to be parsed
+ * @param[out] message Formarted message to respond to client
+*/
 char* processGUR(userData user, serverData server, char* request){
 
     char prefix[4], sufix[MAXSIZEUDP];
@@ -314,13 +336,14 @@ char* processGUR(userData user, serverData server, char* request){
         strcpy(message, "RGU E_USR\n");
         return message;
     }
-    else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID)){
+    else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID) || !GroupExists(GroupID)){
         // Invalid GID
         strcpy(message, "RGU E_GRP\n");
         return message;
     }
+    // User is actually subscribed to group
     else if(checkUserSubscribedToGroup(UserID, GroupID)){
-        // User is actually subscribed to group
+        
         if(UnsubscribeUser(UserID, GroupID)){
             strcpy(message, "RGU OK\n");
             return message;
@@ -330,9 +353,10 @@ char* processGUR(userData user, serverData server, char* request){
             return message;
         }
     }
+    // In this case the user is not subscribed to the group
+    // But it returns success nonetheless
     else if(!checkUserSubscribedToGroup(UserID, GroupID)){
-        // In this case the user is not subscribed to the group
-        // But it returns success nonetheless
+        
         strcpy(message, "RGU OK\n");
         return message;
     }

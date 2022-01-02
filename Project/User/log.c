@@ -102,6 +102,7 @@ void logSU(char* message){
     colorReset();
 }
 
+// TODO - this needs to be split
 void logGLS(char* message){
 
     char functionName[10];
@@ -115,17 +116,25 @@ void logGLS(char* message){
         printf("%s: No groups available to list.\n", !strcmp(prefix, "RGL") ? "groups" : "my_groups");
     }
     else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
-        if(!strcmp(prefix, "RGL")){
+        if(!strcmp(prefix, "RGL"))
             logError("groups: A fatal error has ocurred.");
-        }
-        else{
+        else
             logError("my_groups: A fatal error has ocurred.");
-        }
     }
     else{
         colorGreen();
         strcpy(suffixCopy, suffix);
-        printf("%s: List of groups:\n", !strcmp(prefix, "RGL") ? "groups" : "my_groups");
+
+        if (!strcmp(prefix, "RGL"))
+            printf("groups: List of groups:\n");
+        else if(!strcmp(prefix, "RGM"))
+            printf("my_groups: List of groups:\n");
+        else{
+            //TODO - Fix this, need to know if was called by my_groups or groups
+            logError("server: A fatal error has ocurred.");
+            return;
+        }
+        //printf("%s: List of groups:\n", !strcmp(prefix, "RGL") ? "groups" : "my_groups");
         // Verifies if groups given by server are valid
         for (int i = 0; i < atoi(nGroups); i++){
             sscanf(suffixCopy, "%s %s %s %[^\n]s", GID, GName, MID, suffixCopy);
