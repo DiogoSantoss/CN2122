@@ -86,9 +86,16 @@ void parseArguments(serverData *server, int argc, char *argv[]){
  * @param[in] user User data
  * @param[in] server Server data
 */
-void handleRequests(userData *user, serverData *server){
+void handleRequests(int argc, userData *user, serverData *server){
 
     char input[MAXSIZE],command[MAXSIZE],extra[MAXSIZE];
+
+    if(argc <= 1){
+        printf("USING UDP\n");
+    }
+    else{
+        printf("USING TCP\n");
+    }
 
     while(1){
 
@@ -97,9 +104,17 @@ void handleRequests(userData *user, serverData *server){
         int msgSize;
         char *response;
 
-        if(!connectUDP(server, &(user->fd), &(user->res))) return;
-        if(!sendMessageUDP(user->fd, user->res, input, strlen(input))) return;
-        response = receiveMessageUDP(user->fd);
+        if(argc <= 1){
+            if(!connectUDP(server, &(user->fd), &(user->res))) return;
+            if(!sendMessageUDP(user->fd, user->res, input, strlen(input))) return;
+            response = receiveMessageUDP(user->fd);
+        }
+        else{
+            if(!connectTCP(server, &(user->fd), (user->res))) return;
+            if(!sendTCP(user->fd, input, strlen(input))) return;
+            response = receiveWholeTCP(user->fd);
+        }
+
         if(response == NULL) return;
 
         colorYellow();
@@ -116,8 +131,8 @@ int main(int argc, char *argv[]){
     serverData server;
 
     initializeData(&user, &server);
-    parseArguments(&server, argc, argv);
-    handleRequests(&user, &server);
+    //parseArguments(&server, argc, argv);
+    handleRequests(argc,&user, &server);
 
     return 1;
 }

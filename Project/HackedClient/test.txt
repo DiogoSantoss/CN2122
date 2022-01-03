@@ -1,0 +1,2 @@
+REG 00001 password
+REG 00002 password
