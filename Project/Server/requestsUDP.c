@@ -57,8 +57,8 @@ char* processREG(userData user, serverData server, char* request){
         // Everything ok
         strcpy(message, "RRG OK\n");
 
-        if (!CreateUserDir(UserID)) strcpy(message, "ERR\n");
-        if (!CreatePassFile(UserID, password)) strcpy(message, "ERR\n");
+        if (!CreateUserDir(UserID)) strcpy(message, "RRG NOK\n");
+        if (!CreatePassFile(UserID, password)) strcpy(message, "RRG NOK\n");
     }
 
     return message;
@@ -164,6 +164,7 @@ char* processOUT(userData user, serverData server, char* request){
 
     sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
 
+    // sufix is ERR
     if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
         // Wrong size parameters
         strcpy(message, "ROU NOK\n");
@@ -183,7 +184,7 @@ char* processOUT(userData user, serverData server, char* request){
         // Everything ok
         strcpy(message, "ROU OK\n");
 
-        if (!DelLoginFile(UserID)) strcpy(message, "ERR\n");
+        if (!DelLoginFile(UserID)) strcpy(message, "ROU NOK\n");
     }
 
     return message;
@@ -197,20 +198,37 @@ char* processOUT(userData user, serverData server, char* request){
 */
 char* processGLS(userData user, serverData server, char* request){
 
-    int n;
+    int numberMessages;
     GROUPLIST list;
+    char prefix[4], sufix[MAXSIZEUDP];
 
-    n = ListGroupsDir(&list);
+    char* message = calloc(EXTRAMAXSIZE, sizeof(char));
+    
+    memset(sufix, 0, MAXSIZEUDP);
+    sscanf(request, "%s %s", prefix, sufix);
 
-    // last message for each group
+    // TODO - think about this (ERR in all strlen(sufix) != 0)
+    /*if (strlen(sufix) != 0){
+        // Wrong size parameters
+        strcpy(message, "ERR\n");
+        return message;
+    }*/
 
-    printf("%d\n",n);
-    for(int i = 0; i<n; i++){
-        printf("GROUP NUMBER:%s\t GROUP NAME:%s\t LAST MESSAGE:%s\n",list.group_no[i],list.group_name[i],list.group_lastMens[i]);
+    numberMessages = ListGroupsDir(&list);
+    if(numberMessages == -1){
+        strcpy(message,"ERR\n");
+        return message;
+    }
+    else if(numberMessages == 0){
+        strcpy(message, "RGL 0\n");
+        return message;
     }
 
-    char* message = calloc(13, sizeof(char));
-    strcpy(message,"ERR\n");
+    sprintf(message, "RGL %d", numberMessages);
+    for(int i = 0; i < numberMessages; i++){
+        sprintf(message, "%s %s %s %s", message, list.group_no[i], list.group_name[i], list.group_lastMens[i]);
+    }
+    sprintf(message, "%s\n", message);
 
     return message;
 }

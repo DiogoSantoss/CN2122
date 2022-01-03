@@ -289,7 +289,7 @@ int ListGroupsDir(GROUPLIST *list){
                 continue;
 
             strcpy(list->group_no[i], dir->d_name);
-            sprintf(GIDname, "GROUPS/%s/%s_name.txt", dir->d_name, dir->d_name);
+            sprintf(GIDname, "GROUPS/%s/%s_name.txt", list->group_no[i], list->group_no[i]);
             
             fp = fopen(GIDname, "r");
             if(fp){
