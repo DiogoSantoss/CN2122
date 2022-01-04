@@ -9,6 +9,7 @@
 #include "log.h"
 #include "structs.h"
 #include "requestsUDP.h"
+#include "requestsTCP.h"
 
 // Booleans
 #define TRUE  1
@@ -194,26 +195,39 @@ void handleRequests(userData* user, serverData* server){
                 break;
             }
 
-            //----------------------------------------------
             int nRead = -1;
-            char request[500];
+            char command[5];
             char* ptr;
+            int toRead = 4;
 
-            ptr = request;
+            memset(command, 0, 5);
+
+            ptr = command;
             while (nRead != 0){
-                nRead = read(fdNew, ptr, EXTRAMAXSIZE);
+                nRead = read(fdNew, ptr, toRead);
                 if(nRead == -1){
                     logError("Couldn't receive message via TCP socket.");
                     break;
                 }
                 ptr += nRead;
+                toRead -= nRead;
             }
             printf("Message from TCP:\n");
-            printf("%s",request);
+            printf("%s",command);
+
+            if(!strcmp(command,"ULS ")){
+                processULS(*user, *server, fdNew);
+
+            } else if(!strcmp(command,"PST ")){
+
+            } else if(!strcmp(command,"RTV ")){
+
+            } else{
+                logError("Command not found.");
+                //sendErrorMessage();
+            }
 
             close(fdNew);
-            //----------------------------------------------
-
         }
 
         if(FD_ISSET(fdUdp,&rfds)){
@@ -265,26 +279,15 @@ void handleRequests(userData* user, serverData* server){
                 response = processGUR(*user, *server, request);
                 
             } else if(!strcmp(command,"GLM")){
+                response = processGLM(*user, *server, request);
 
             } else{
                 logError("Command not found.");
                 //sendErrorMessage();
             }
 
-            // STRCMPS
-
-            //REG UID pass\n
-            //UNR UID pass\n
-            //LOG UID pass\n
-            //OUT UID pass\n
-            //GLS\n
-            //GSR UID GID GName\n
-            //GUR UID GID\n
-            //GLM UID\n
-
             printf("Response:%s",response);
             printf("-------------------------\n");
-            //int manuel = strlen(response);
             
             n = sendto(fdUdp, response, strlen(response), 0, (struct sockaddr*)&addr, addrlen);
             if(n == -1){

@@ -11,11 +11,10 @@ struct userData {
     char ipAddress[513];
 } typedef userData;
 
-struct GROUPLIST {
-    int no_groups;
-    char group_no[99][3];
-    char group_name[99][25];
-    char group_lastMens[99][5];
-} typedef GROUPLIST;
+struct Group {
+    char groupNumber[3];
+    char groupName[25];
+    char groupLastMsg[5];
+} typedef Group;
 
 #endif

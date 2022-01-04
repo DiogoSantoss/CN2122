@@ -13,6 +13,8 @@
 #define TRUE 1
 #define FALSE 0
 
+#define MAXGROUPS 99
+
 //Create initial USERS and GROUPS directories
 void createDirectories(){
     
@@ -193,6 +195,23 @@ int DelLoginFile(char *UID){
         return FALSE;
 }
 
+// Verify if user is logged in
+int CheckUserLogin(char* UID){
+
+    FILE* fptr;
+    char path[32];
+
+    sprintf(path, "USERS/%s/%s_login.txt", UID, UID);
+
+    if(!(fptr = fopen(path, "r"))){
+        //Failed to read file
+        return FALSE;
+    }
+
+    fclose(fptr);
+    return TRUE;
+}
+
 // Return biggest group number
 int maxGroupNumber(){
 
@@ -269,8 +288,22 @@ int GroupLastMessage(char *GID){
     
 }
 
+// Sort list of groups by name
+int compName(const void* name1, const void* name2){
+
+    Group* group1 = (Group*) name1;
+    Group* group2 = (Group*) name2;
+
+    return (atoi(group1->groupNumber)-atoi(group2->groupNumber));
+}
+
+// Helper function
+void SortGList(Group* list, int numberGroups){
+    qsort(list,numberGroups,sizeof(Group),compName);
+}
+
 //Fill GROUPSLIST struct with all groups info
-int ListGroupsDir(GROUPLIST *list){
+int ListGroupsDir(Group* list){
     
     DIR *d;
     struct dirent *dir;
@@ -279,7 +312,7 @@ int ListGroupsDir(GROUPLIST *list){
     FILE *fp;
     char GIDname[30];
 
-    list->no_groups = 0;
+    int numberGroups = 0;
     d = opendir("GROUPS");
     if(d){
         while((dir = readdir(d)) != NULL){
@@ -288,35 +321,35 @@ int ListGroupsDir(GROUPLIST *list){
             if(strlen(dir->d_name)>2)
                 continue;
 
-            strcpy(list->group_no[i], dir->d_name);
-            sprintf(GIDname, "GROUPS/%s/%s_name.txt", list->group_no[i], list->group_no[i]);
+            strcpy(list[i].groupNumber, dir->d_name);
+            sprintf(GIDname, "GROUPS/%s/%s_name.txt", list[i].groupNumber, list[i].groupNumber);
             
             fp = fopen(GIDname, "r");
             if(fp){
-                fscanf(fp,"%24s", list->group_name[i]);
+                fscanf(fp,"%24s", list[i].groupName);
                 fclose(fp);
             }
             lastMessage = GroupLastMessage(dir->d_name);
             if(lastMessage != -1)
-                sprintf(list->group_lastMens[i], "%04d", lastMessage);
+                sprintf(list[i].groupLastMsg, "%04d", lastMessage);
             else
                 return(-1);
 
             ++i;
-            if(i == 99)
+            if(i == MAXGROUPS)
                 break;
         }
-        list->no_groups = i;
+        numberGroups = i;
         closedir(d);
     }
     else
         return(-1);
         
-    if(list->no_groups>1){
-        //SortGList(list);
+    if(numberGroups>1){
+        SortGList(list,numberGroups);
     }   
 
-    return(list->no_groups);
+    return(numberGroups);
 }
 
 // Create group file in group directory
@@ -342,9 +375,8 @@ int CreateGroupFile(char* GID, char* Gname){
 int GroupExists(char* GID){
 
     DIR *d;
-    struct dirent *dir;
-
     FILE *fp;
+    struct dirent *dir;
 
     d = opendir("GROUPS");
     if (d)
@@ -361,7 +393,7 @@ int GroupExists(char* GID){
 }
 
 // Check if group name is correct
-int checkGroupName(char* GID, char* GName){
+char* checkGroupName(char* GID, char* GName){
 
     FILE* fptr;
     char path[50];
@@ -434,4 +466,57 @@ int checkUserSubscribedToGroup(char* UID, char* GID){
     }
     fclose(fptr);
     return TRUE;
+}
+
+// Return number of useres subscribed to GID
+int NumberUsersSubscribed(char* GID){
+    
+    DIR *d;
+    FILE *fp;
+    char path[10];
+    struct dirent *dir;
+    int numberUsers = 0;
+
+    sprintf(path, "GROUPS/%s", GID);
+
+    d = opendir(path);
+    if (d)
+    {
+        while ((dir = readdir(d)))
+        {   
+            // 12345.txt
+            if(strlen(dir->d_name) == 9){
+                numberUsers++;
+            }
+        }
+        return numberUsers;
+    }
+    else
+        return -1;
+}
+
+int ListSubscribedUsers(char** usersSubscribed, int GID){
+
+    DIR *d;
+    FILE *fp;
+    char path[10];
+    struct dirent *dir;
+    int i = 0;
+
+    sprintf(path, "GROUPS/%s", GID);
+
+    d = opendir(path);
+    if (d)
+    {
+        while ((dir = readdir(d)))
+        {   
+            if(strlen(dir->d_name) == 9){
+                strcpy(usersSubscribed[i], dir->d_name);
+                i ++;
+            }
+        }
+        return 1;
+    }
+    else
+        return -1;
 }

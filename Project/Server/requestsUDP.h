@@ -10,5 +10,6 @@ char* processOUT(userData user, serverData server, char* request);
 char* processGLS(userData user, serverData server, char* request);
 char* processGSR(userData user, serverData server, char* request);
 char* processGUR(userData user, serverData server, char* request);
+char* processGLM(userData user, serverData server, char* request);
 
 #endif

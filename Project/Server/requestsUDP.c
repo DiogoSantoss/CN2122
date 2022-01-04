@@ -9,14 +9,14 @@
 #include "common.h"
 #include "directories.h"
 
-int mkdir(const char *pathname, mode_t mode);
-
 // Booleans
 #define TRUE  1
 #define FALSE 0
 
 #define MAXSIZEUDP 39 //GSR is the biggest command 
 #define EXTRAMAXSIZE 3169
+
+#define MAXGROUPS 99
 
 /**
  * Process register request.
@@ -198,8 +198,8 @@ char* processOUT(userData user, serverData server, char* request){
 */
 char* processGLS(userData user, serverData server, char* request){
 
-    int numberMessages;
-    GROUPLIST list;
+    int numberGroups;
+    Group list[MAXGROUPS];;
     char prefix[4], sufix[MAXSIZEUDP];
 
     char* message = calloc(EXTRAMAXSIZE, sizeof(char));
@@ -214,19 +214,20 @@ char* processGLS(userData user, serverData server, char* request){
         return message;
     }*/
 
-    numberMessages = ListGroupsDir(&list);
-    if(numberMessages == -1){
+    // Fill list data structure with groups info
+    numberGroups = ListGroupsDir(list);
+    if(numberGroups == -1){
         strcpy(message,"ERR\n");
         return message;
     }
-    else if(numberMessages == 0){
+    else if(numberGroups == 0){
         strcpy(message, "RGL 0\n");
         return message;
     }
 
-    sprintf(message, "RGL %d", numberMessages);
-    for(int i = 0; i < numberMessages; i++){
-        sprintf(message, "%s %s %s %s", message, list.group_no[i], list.group_name[i], list.group_lastMens[i]);
+    sprintf(message, "RGL %d", numberGroups);
+    for(int i = 0; i < numberGroups; i++){
+        sprintf(message, "%s %s %s %s", message, list[i].groupNumber, list[i].groupName, list[i].groupLastMsg);
     }
     sprintf(message, "%s\n", message);
 
@@ -277,7 +278,7 @@ char* processGSR(userData user, serverData server, char* request){
     // User want to create and subscribe to new group
     else if (strcmp(GroupID, "00") == 0){
        
-        if (groupMax >= 99){
+        if (groupMax >= MAXGROUPS){
             // Max number of groups, can't create more
             strcpy(message, "RGS E_FULL\n");
             return message;
@@ -378,4 +379,63 @@ char* processGUR(userData user, serverData server, char* request){
         strcpy(message, "RGU OK\n");
         return message;
     }
+}
+
+/**
+ * Process my_groups request.
+ * @param[in] user User data
+ * @param[in] request Client input to be parsed
+ * @param[out] message Formarted message to respond to client
+*/
+char* processGLM(userData user, serverData server, char* request){
+
+    int numberGroups;
+    int subscribedGroups = 0;
+    Group list[MAXGROUPS];
+    char prefix[4], sufix[MAXSIZEUDP];
+    char UserID[6];
+
+    char* message = calloc(EXTRAMAXSIZE, sizeof(char));
+    
+    memset(sufix, 0, MAXSIZEUDP);
+    sscanf(request, "%s %s %s", prefix, UserID, sufix);
+
+    if (strlen(sufix) != 0){
+        // Wrong size parameters
+        strcpy(message, "RGM NOK\n");
+        return message;
+    }
+    else if (strlen(UserID) != 5 || !checkStringIsNumber(UserID) || !UserExists(UserID) || !CheckUserLogin(UserID)){
+        // Invalid UID
+        strcpy(message, "RGM E_USR\n");
+        return message;
+    }
+
+    // Fill list data structure with groups info
+    numberGroups = ListGroupsDir(list);
+    if(numberGroups == -1){
+        strcpy(message,"ERR\n");
+        return message;
+    }
+    else if(numberGroups == 0){
+        strcpy(message, "RGM 0\n");
+        return message;
+    }
+
+    for (int i = 0; i < numberGroups; i++){
+        if(checkUserSubscribedToGroup(UserID, list[i].groupNumber)){
+            subscribedGroups ++;
+        }
+    }
+    
+    sprintf(message, "RGM %d", subscribedGroups);
+    
+    for(int i = 0; i < numberGroups; i++){
+        if(checkUserSubscribedToGroup(UserID, list[i].groupNumber)){
+            sprintf(message, "%s %s %s %s", message, list[i].groupNumber, list[i].groupName, list[i].groupLastMsg);
+        }
+    }
+    sprintf(message, "%s\n",message);
+        
+    return message;
 }
