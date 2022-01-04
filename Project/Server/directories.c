@@ -393,7 +393,7 @@ int GroupExists(char* GID){
 }
 
 // Check if group name is correct
-char* checkGroupName(char* GID, char* GName){
+int checkGroupName(char* GID, char* GName){
 
     FILE* fptr;
     char path[50];
@@ -469,7 +469,7 @@ int checkUserSubscribedToGroup(char* UID, char* GID){
 }
 
 // Return number of useres subscribed to GID
-int NumberUsersSubscribed(char* GID){
+int NumberUsersSub(char* GID){
     
     DIR *d;
     FILE *fp;
@@ -503,7 +503,7 @@ int ListSubscribedUsers(char** usersSubscribed, int GID){
     struct dirent *dir;
     int i = 0;
 
-    sprintf(path, "GROUPS/%s", GID);
+    sprintf(path, "GROUPS/%d", GID);
 
     d = opendir(path);
     if (d)

@@ -154,15 +154,9 @@ void handleRequests(userData* user, serverData* server){
     struct sockaddr_in addr; 
     socklen_t addrlen;
 
-    //enum {
-    //    idle, 
-    //    busy
-    //} state;
-
     if(!createSocketUDP(server,&fdUdp,res)) return;
     if(!createSocketTCP(server,&fdTcp,res)) return;
 
-    //state = idle;
     while(1){
 
         FD_ZERO(&rfds);
@@ -226,7 +220,7 @@ void handleRequests(userData* user, serverData* server){
                 logError("Command not found.");
                 //sendErrorMessage();
             }
-
+        
             close(fdNew);
         }
 

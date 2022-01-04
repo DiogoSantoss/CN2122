@@ -102,12 +102,11 @@ void processULS(userData user, serverData server, int fd){
     char buffer[40];
     char GroupID[3];
     int numberUsersSub;
-    //char** usersSubscribed;
-    memset(GroupID, 0, 3);
-
     char* message = calloc(9, sizeof(char));
 
+    memset(GroupID, 0, 3);
     read = receiveNSizeTCP(fd, GroupID, 2);
+    
     if (read != 2){
         strcpy(buffer,"ERR\n");
         sendTCP(fd,buffer,strlen(buffer));

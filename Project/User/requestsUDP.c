@@ -428,6 +428,21 @@ int sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen){
     return TRUE;
 }
 
+int TimerON(int sd){
+
+    struct timeval tmout;
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    tmout.tv_sec=15; /* Wait for 15 sec for a reply from server. */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+
+int TimerOFF(int sd){
+
+    struct timeval tmout;
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+
 /**
  * Receive message via UDP socket from server.
  * @param[in] fd File descriptor of UDP socket
@@ -441,12 +456,28 @@ char* receiveMessageUDP(int fd){
     char* message = calloc(EXTRAMAXSIZE,sizeof(char));
 
     addrlen = sizeof(addr);
+    if(TimerON(fd) == -1){
+        logError("Error setting timeout for UDP socket.");
+        free(message);
+        TimerOFF(fd);
+        return NULL;
+    }
     n = recvfrom(fd,message,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
     if(n==-1){
-        logError("Couldn't receive message via UDP socket");
+        logError("Couldn't receive message via UDP socket.");
         free(message);
+        if(TimerOFF(fd) == -1){
+            logError("Error setting timeout for UDP socket.");
+            free(message);
+            return NULL;
+        }
         return NULL;
     } 
+    if(TimerOFF(fd) == -1){
+        logError("Error setting timeout for UDP socket.");
+        free(message);
+        return NULL;
+    }
     return message;
 }
 

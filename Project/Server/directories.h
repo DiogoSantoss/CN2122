@@ -20,6 +20,7 @@ int checkGroupName(char* GID, char* GName);
 int SubscribeUser(char* UID, char* GID);
 int UnsubscribeUser(char* UID, char* GID);
 int checkUserSubscribedToGroup(char* UID, char* GID);
-int NumberUsersSubscribed(char* GID);
+int NumberUsersSub(char* GID);
+int ListSubscribedUsers(char** usersSubscribed, int GID);
 
 #endif
