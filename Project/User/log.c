@@ -102,7 +102,6 @@ void logSU(char* message){
     colorReset();
 }
 
-// TODO - this needs to be split
 void logGLS(char* message){
 
     char functionName[10];
@@ -111,15 +110,12 @@ void logGLS(char* message){
 
     sscanf(message, "%s %s %[^\n]s", prefix, nGroups, suffix);
     
-    if(!strcmp(message, "RGL 0\n") || !strcmp(message, "RGM 0\n")){
+    if(!strcmp(message, "RGL 0\n")){
         colorGreen();
-        printf("%s: No groups available to list.\n", !strcmp(prefix, "RGL") ? "groups" : "my_groups");
+        printf("groups: No groups available to list.\n");
     }
     else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
-        if(!strcmp(prefix, "RGL"))
-            logError("groups: A fatal error has ocurred.");
-        else
-            logError("my_groups: A fatal error has ocurred.");
+        logError("groups: A fatal error has ocurred.");
     }
     else{
         colorGreen();
@@ -127,26 +123,16 @@ void logGLS(char* message){
 
         if (!strcmp(prefix, "RGL"))
             printf("groups: List of groups:\n");
-        else if(!strcmp(prefix, "RGM"))
-            printf("my_groups: List of groups:\n");
         else{
-            //TODO - Fix this, need to know if was called by my_groups or groups
-            logError("server: A fatal error has ocurred.");
+            logError("groups: A fatal error has ocurred.");
             return;
         }
-        //printf("%s: List of groups:\n", !strcmp(prefix, "RGL") ? "groups" : "my_groups");
         // Verifies if groups given by server are valid
         for (int i = 0; i < atoi(nGroups); i++){
             sscanf(suffixCopy, "%s %s %s %[^\n]s", GID, GName, MID, suffixCopy);
             if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName) || !checkStringIsNumber(MID)){
-                if(!strcmp(prefix, "RGL")){
-                    logError("groups: Unexpected message from server.");
-                    return;
-                }
-                else{
-                    logError("my_groups: Unexpected message from server.");
-                    return;
-                }
+                logError("groups: Unexpected message from server.");
+                return;
             }
         }
         // Prints groups 
@@ -225,6 +211,48 @@ void logGUR(char* message){
         logError("unsubscribe: A fatal error has ocurred.");
     } else{
         logError("subscribe: Unexpected message from server.");
+    }
+    colorReset();
+}
+
+void logGLM(char* message){
+
+    char functionName[10];
+    char prefix[MAXSIZE], nGroups[3], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
+    char GID[3], GName[25], MID[5];
+
+    sscanf(message, "%s %s %[^\n]s", prefix, nGroups, suffix);
+    
+    if(!strcmp(message, "RGM 0\n")){
+        colorGreen();
+        printf("my_groups: No groups available to list.\n");
+    }
+    else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
+        logError("my_groups: A fatal error has ocurred.");
+    }
+    else{
+        colorGreen();
+        strcpy(suffixCopy, suffix);
+
+        if(!strcmp(prefix, "RGM"))
+            printf("my_groups: List of groups:\n");
+        else{
+            logError("my_groups: A fatal error has ocurred.");
+            return;
+        }
+        for (int i = 0; i < atoi(nGroups); i++){
+            sscanf(suffixCopy, "%s %s %s %[^\n]s", GID, GName, MID, suffixCopy);
+            if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName) || !checkStringIsNumber(MID)){
+                logError("my_groups: Unexpected message from server.");
+                return;
+            }
+        }
+        // Prints groups 
+        for (int i = 0; i < atoi(nGroups); i++){
+            i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
+            sscanf(suffix, "%s %s %s %[^\n]s", GID, GName, MID, suffix);
+            printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", GID, GName, MID);
+        }
     }
     colorReset();
 }

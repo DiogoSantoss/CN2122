@@ -11,6 +11,7 @@ void logSU(char* message);
 void logGLS(char* message);
 void logGSR(char* message);
 void logGUR(char* message);
+void logGLM(char* message);
 void logSAG(char* message);
 void logSG(char* message);
 void logULS(char* message);

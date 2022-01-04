@@ -123,7 +123,7 @@ void handleRequests(userData *user, serverData *server){
             processRequestUDP(user, server, input, parseUnsubscribe, logGUR, NULL);
 
         } else if(!strcmp(command,"my_groups") || !strcmp(command,"mgl")){
-            processRequestUDP(user, server, input, parseMyGroups, logGLS, NULL);
+            processRequestUDP(user, server, input, parseMyGroups, logGLM, NULL);
 
         } else if(!strcmp(command,"select") || !strcmp(command,"sag")){
             processSelect(user, input);
@@ -149,6 +149,8 @@ void handleRequests(userData *user, serverData *server){
             close(user->fd);
             user->res = NULL;
         }
+        memset(command,0,MAXSIZE);
+        memset(extra,0,MAXSIZE);
         colorReset();
     }
 }
