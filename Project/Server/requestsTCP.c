@@ -259,8 +259,8 @@ void processPST(userData user, serverData server, int fd){
     }
 
     // Create Message dir, author file and text file
-    if(CreateMessageDir(UserID,GroupID)){
-        strcpy(errorBuffer,"RPT 2\n");
+    if(!CreateMessageDir(UserID,GroupID)){
+        strcpy(errorBuffer,"ERR\n");
         sendTCP(fd,errorBuffer,strlen(errorBuffer));
         return;
     }
