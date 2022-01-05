@@ -269,12 +269,15 @@ void logSG(char* message){
     colorReset();
 }
 
+//TODO - this is just wrong
 void logULS(char* message){
 
     char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
     char userIDTemp[6];
     int length;
     
+    memset(suffix, 0, EXTRAMAXSIZE);
+    memset(suffixCopy, 0, EXTRAMAXSIZE);
     sscanf(message, "%s %s %s %[^\n]s", prefix, status, GName, suffix);
 
     if(!strcmp(message, "RUL\n")){
@@ -286,19 +289,19 @@ void logULS(char* message){
     }
     else{
         colorGreen();
-        printf("List of UIDs: %s\n", GName);
         strcpy(suffixCopy, suffix);
 
         length = (strlen(suffix) + 1) / 6;
         // Verifies if users given by server are valid
         for (int i = 0; i < length; i++){
             sscanf(suffixCopy, "%s %[^\n]s", userIDTemp, suffixCopy);
-            if(!checkStringIsNumber(userIDTemp)){
+            if(!checkStringIsNumber(userIDTemp) || strlen(userIDTemp) != 5){
                 logError("ulist: Unexpected message from server.");
                 return;
             }
         }  
         // Prints groups 
+        printf("List of UIDs: %s\n", GName);
         for (int i = 0; i < length; i++){
             i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
             sscanf(suffix, "%s %[^\n]s", userIDTemp, suffix);

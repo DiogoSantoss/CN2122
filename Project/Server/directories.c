@@ -419,6 +419,23 @@ int checkGroupName(char* GID, char* GName){
     }
 }
 
+// Fills GName with the group name that corresponds to the specified GID
+int getGroupName(char* GID, char* GName){
+
+    FILE* fptr;
+    char path[50];
+
+    sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
+
+    if(!(fptr = fopen(path, "r"))){
+        //Failed to open path
+        return FALSE;
+    }
+
+    fread(GName, sizeof(char), 25, fptr);
+    fclose(fptr);
+}
+
 // Add user to subscribed users of group
 int SubscribeUser(char* UID, char* GID){
 
@@ -468,55 +485,47 @@ int checkUserSubscribedToGroup(char* UID, char* GID){
     return TRUE;
 }
 
-// Return number of useres subscribed to GID
-int NumberUsersSub(char* GID){
+int CreateMessageDir(char* UID, char* GID){
+
+    FILE *fptr;
     
-    DIR *d;
-    FILE *fp;
-    char path[10];
-    struct dirent *dir;
-    int numberUsers = 0;
+    int ret;
+    int messageNumber;
+    char group_dirname[19];
+    char pathAuthor[35];
+    char pathText[35];
 
-    sprintf(path, "GROUPS/%s", GID);
+    messageNumber = GroupLastMessage(GID);
+    if(messageNumber == -1)
+        return FALSE;
 
-    d = opendir(path);
-    if (d)
-    {
-        while ((dir = readdir(d)))
-        {   
-            // 12345.txt
-            if(strlen(dir->d_name) == 9){
-                numberUsers++;
-            }
-        }
-        return numberUsers;
+    // Next message
+    messageNumber ++;
+
+    // New message directory
+    sprintf(group_dirname,"GROUPS/%s/MSG/%04d",GID,messageNumber);
+    ret=mkdir(group_dirname,0700);
+    if(ret==-1)
+        return FALSE;
+
+    // Create author file
+    sprintf(pathAuthor, "%s/A U T H O R.txt",group_dirname);
+    if(!(fptr = fopen(pathAuthor, "w"))){
+        unlink(group_dirname);
+        return FALSE;
     }
-    else
-        return -1;
-}
+        
+    fwrite(UID, sizeof(char), strlen(UID), fptr);
+    fclose(fptr);
 
-int ListSubscribedUsers(char** usersSubscribed, int GID){
+    // Create text file
+    sprintf(pathText, "%s/T E X T.txt",group_dirname);
+    if(!(fptr = fopen(pathText, "w"))){
+        unlink(pathAuthor);
+        unlink(group_dirname);
+        return FALSE;
+    }   
+    fclose(fptr);
 
-    DIR *d;
-    FILE *fp;
-    char path[10];
-    struct dirent *dir;
-    int i = 0;
-
-    sprintf(path, "GROUPS/%d", GID);
-
-    d = opendir(path);
-    if (d)
-    {
-        while ((dir = readdir(d)))
-        {   
-            if(strlen(dir->d_name) == 9){
-                strcpy(usersSubscribed[i], dir->d_name);
-                i ++;
-            }
-        }
-        return 1;
-    }
-    else
-        return -1;
+    return TRUE;
 }

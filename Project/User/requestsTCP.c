@@ -155,7 +155,7 @@ int skipSpace(int fd){
 }
 
 /**
- * Reads a word of size maxRead from fd
+ * Reads a word of max size maxRead from fd
  * @param[in] fd File descriptor
  * @param[in] buffer array to read word to
  * @param[in] maxRead number of bytes to read
@@ -311,8 +311,10 @@ void processPost(userData* user, serverData* server, char* input){
 
     char* response;
     response = receiveWholeTCP(user->fd);
+    if(response == NULL)
+        return;
+    
     logPST(response);
-
     free(response);
 }
 
@@ -540,6 +542,7 @@ void processUlist(
     if(!connectTCP(server, &(user->fd), user->res)) return;
     if(!sendTCP(user->fd, message, strlen(message))) return;
     response = receiveWholeTCP(user->fd);
+    // SHOULD CHECK IF RESPONSE IS NULL AND DO ERROR
 
     if(helper != NULL){
         (*helper)(user,response);

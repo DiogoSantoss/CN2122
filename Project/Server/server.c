@@ -206,13 +206,18 @@ void handleRequests(userData* user, serverData* server){
                 ptr += nRead;
                 toRead -= nRead;
             }
+
             printf("Message from TCP:\n");
-            printf("%s",command);
+            printf("%d\n",addr.sin_addr.s_addr);
+            printf("%d\n",addr.sin_port);
+            printf("Command:%s\n",command);
+
 
             if(!strcmp(command,"ULS ")){
                 processULS(*user, *server, fdNew);
 
             } else if(!strcmp(command,"PST ")){
+                processPST(*user, *server, fdNew);
 
             } else if(!strcmp(command,"RTV ")){
 
@@ -220,7 +225,8 @@ void handleRequests(userData* user, serverData* server){
                 logError("Command not found.");
                 //sendErrorMessage();
             }
-        
+
+            printf("-------------------------\n");
             close(fdNew);
         }
 
