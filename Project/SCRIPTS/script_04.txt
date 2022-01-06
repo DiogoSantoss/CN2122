@@ -1,0 +1,4 @@
+login 10001 pword001
+logout
+exit
+

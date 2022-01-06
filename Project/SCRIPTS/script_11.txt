@@ -1,0 +1,6 @@
+groups
+login 10002 pword002
+subscribe 02 One-msg-text-and-photo
+logout
+exit
+

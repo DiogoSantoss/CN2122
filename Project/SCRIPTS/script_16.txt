@@ -1,0 +1,11 @@
+login 10001 pword001
+my_groups
+unsubscribe 01
+my_groups
+subscribe 01 A-group-name
+my_groups
+subscribe 01 Two-messages-text-only
+my_groups
+logout
+exit
+

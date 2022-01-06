@@ -1,0 +1,12 @@
+groups
+login 10009 pword009
+my_groups
+logout
+login 10001 pword001
+my_groups
+logout
+login 10005 pword005
+my_groups
+logout
+exit
+

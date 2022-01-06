@@ -1,0 +1,29 @@
+groups
+login 10007 pword007
+select 07
+post "The siege of Dapur occured as part of Pharaoh Ramesses II's campaign to supress Galilee and conquer Syria in 1269 BC. He described his campaign on the wall of his mortuary temple, the Ramesseum in Thebes, Egypt"
+post "The Battle of Marathon took place in 490BC during the first Persion invasion of Greece. It was fought between the citizens of Athens, aided by Plataea, and a Persian force commanded by Datis and Artaphernes." Marathon.jpg
+post "The Battle of Plataea was the final land battle during the second Persion invasion of Greece. It took place in 479BC near the city of Plataea in Boeotia, and was fought between an alliance of the Greek city-states and the Persian Empire."
+post "The Battle of Actium was a naval battle fought between a maritime fleet led by Octavian and the combined fleets of both Mark Anthony and Cleopatra VII Philopator. The battle took place on 2 September 31BC in the Ionian Sea." Actium.jpg
+post "The Battle of Mons-en-Pevele was fought on 18 August 1304 between the French and the Flemish. The French were led by King Philip IV 'the Fair' in person."
+post "The Battle of Rio Salado (30 October 1340) was a battle of the armies of King Afonso IV of Portugal and King Alfonso XI of Castile against those of Sultan Abu al-Hasan'Ali of the Marinid dynasty and Yusuf I of Granada." Batalla_del_Salado.jpg
+post "The Battle of Poitiers was a major English victory in the Hundred Years' War. It was fought on 19 September 1356 in Nouaille, near the city of Poitiers in Aquitaine, western France."
+post "The Siege of Lisbon was a siege of the city of Lisbon from 29 May to 3 September 1384, between the Portuguese defenders of the city led by John I of Portugal and the Castillian army led by King John I of Castile." Siege_of_Lisbon_1384.JPG
+post "The Battle of Aljubarrota was fought between the King of Portugal and the Crown of Castile on 14 August 1385. The result was a decisive victory of the Portuguese, ruling out Castillian ambitions to the Portuguese throne."
+post "The Hundred Years' War was a series of armed conflicts between the kingdoms of England and France during the Late Middle Ages." Hundred_years_war.jpg
+post "On the morning of 21 August 1415, John I of Portugal led his sons and their assembled forces in a surprise assault on Ceuta, landing on Playa San Amaro. By nightfall the town was captured."
+post "The Granada War was a series of military campaigns between 1482 and 1491, during the reign of the Catholic Monarchs Isabella I of Castile and Ferdinand II of Aragon, against the Nasrid dynasty's Emirate of Granada." Granada.jpg
+post "The naval Battle of Ponta Delgada took place on 26 July 1582, off the coast of the island of Sao Miguel in the Portuguese archipelago of the Azores, during the War of the Portuguese Succession."
+post "The French invasion of Russia, was begun by Napoleon to force Russia back into the Continental blockade of the United Kingdom." France_Russia_war.jpg
+post "The Battle of Waterloo was fought on Sunday, 18 June 1815, near Waterloo in Belgium, part of the United Kingdom of Netherlands at the time. The battle marked the end of the Napoleonic Wars."
+post "The Battle of Guadalcanal, was a military campaign fought between 7 August 1942 and 9 February 1943 on and around the island of Guadalcanal in the Pacific theater of World War II." Battle_Guadalcanal.jpg
+post "In the Battle of Stalingrad, Germans and its allies fought the Soviet Union for control of the city of Stalingrad in Southern Russia."
+post "The Battle of the Atlantic, ran from 1939 to the defeat of Nazi Germany in 1945, covering a major part of the naval history of World War II. The campaign peaked from mid-1940 through the end of 1943." Battle_Atlantic.jpg
+post "The Battle of Abu-Ageila was a military confrontation between the Israel Defense Forces and The Egyptian Army in the Six-Day War of June 1967."
+post "On Oct. 18, 2001, Capt. Mark Nutsch and a team of other Green Berets with the 5th Special Forces Group's Operational Detachment Alpha 595 were inserted into Afghanistan to liberate the region from the Taliban without tanks. Just horses." Fall_of_Mazar_Sharif.jpg
+post "The Fall of Kabul was the capture of Afghanistan's capital city Kabul by the Taliban. The city fell of 15 August 2021, the culmination of a military offensive which began in May 2021."
+groups
+logout
+exit
+
+ 

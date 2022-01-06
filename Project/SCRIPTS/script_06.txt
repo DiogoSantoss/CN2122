@@ -1,0 +1,11 @@
+reg 10001 pword001
+reg 10002 pword002
+reg 10003 pword003
+reg 10004 pword004
+reg 10005 pword005
+reg 10006 pword006
+reg 10007 pword007
+reg 10008 pword008
+reg 10009 pword009
+exit
+

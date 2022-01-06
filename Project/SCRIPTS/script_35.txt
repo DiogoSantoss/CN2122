@@ -1,0 +1,18 @@
+login 10001 pword001
+select 06
+retrieve 0001
+pidcomp Siege_of_Dapur.jpg Siege_of_Dapur.jpg
+pidcomp Spartans_at_Plataea.jpg Spartans_at_Plataea.jpg
+pidcomp Mons-en-Pevele.jpg Mons-en-Pevele.jpg
+pidcomp Battle_Poitiers.jpg Battle_Poitiers.jpg
+pidcomp Batalha_Aljubarrota.jpg Batalha_Aljubarrota.jpg
+pidcomp Conquest_of_Ceuta.JPG Conquest_of_Ceuta.JPG
+pidcomp Ponta_Delgada.jpg Ponta_Delgada.jpg
+pidcomp Battle_of_Waterloo.PNG Battle_of_Waterloo.PNG
+pidcomp Stalingrad.jpg Stalingrad.jpg
+pidcomp Battle_of_Abu_Ageila.jpg Battle_of_Abu_Ageila.jpg
+retrieve 0021
+pidcomp Fall_of_Kabul.png Fall_of_Kabul.png
+logout
+exit
+

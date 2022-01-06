@@ -216,11 +216,8 @@ int CheckUserLogin(char* UID){
 int maxGroupNumber(){
 
     DIR *d;
-    struct dirent *dir;
-
-    FILE *fp;
-
     int groupMax = 0;
+    struct dirent *dir;
 
     d = opendir("GROUPS");
     if (d)
@@ -485,7 +482,7 @@ int checkUserSubscribedToGroup(char* UID, char* GID){
     return TRUE;
 }
 
-int CreateMessageDir(char* UID, char* GID){
+int CreateMessageDir(char* UID, char* GID, char* message){
 
     FILE *fptr;
     
@@ -497,7 +494,7 @@ int CreateMessageDir(char* UID, char* GID){
 
     messageNumber = GroupLastMessage(GID);
     if(messageNumber == -1)
-        return FALSE;
+        return -1;
 
     // Next message
     messageNumber ++;
@@ -506,13 +503,13 @@ int CreateMessageDir(char* UID, char* GID){
     sprintf(group_dirname,"GROUPS/%s/MSG/%04d",GID,messageNumber);
     ret=mkdir(group_dirname,0700);
     if(ret==-1)
-        return FALSE;
+        return -1;
 
     // Create author file
     sprintf(pathAuthor, "%s/A U T H O R.txt",group_dirname);
     if(!(fptr = fopen(pathAuthor, "w"))){
         unlink(group_dirname);
-        return FALSE;
+        return -1;
     }
         
     fwrite(UID, sizeof(char), strlen(UID), fptr);
@@ -523,9 +520,11 @@ int CreateMessageDir(char* UID, char* GID){
     if(!(fptr = fopen(pathText, "w"))){
         unlink(pathAuthor);
         unlink(group_dirname);
-        return FALSE;
-    }   
+        return -1;
+    }  
+
+    fwrite(message, sizeof(char), strlen(message), fptr);
     fclose(fptr);
 
-    return TRUE;
+    return messageNumber;
 }

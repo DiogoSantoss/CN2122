@@ -1,0 +1,8 @@
+login 10001 pword001
+select 04
+retrieve 0001
+pidcomp BA_Concorde_G-BOAC_3.jpg BA_Concorde_G-BOAC_3.jpg
+pidcomp Tu-144.jpg Tu-144.jpg
+logout
+exit
+

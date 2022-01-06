@@ -1,0 +1,13 @@
+login 10001 pword001
+subscribe 00 Two-messages-text-only
+subscribe 00 One-msg-text-and-photo
+subscribe 00 Two-msg-Text-Photo
+subscribe 00 Supersonic-planes
+subscribe 00 Great-Battles
+subscribe 00 Great-Battles-Pics-ODD
+subscribe 00 Great-Battles-Pics-EVEN
+subscribe 00 Battle-of-Lake-Peipus
+subscribe 00 9
+logout
+exit
+

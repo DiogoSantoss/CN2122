@@ -1,0 +1,28 @@
+login 10001 pword001
+select 05
+retrieve 0001
+pidcomp Siege_of_Dapur.jpg Siege_of_Dapur.jpg
+pidcomp Marathon.jpg Marathon.jpg
+pidcomp Spartans_at_Plataea.jpg Spartans_at_Plataea.jpg
+pidcomp Actium.jpg Actium.jpg
+pidcomp Mons-en-Pevele.jpg Mons-en-Pevele.jpg
+pidcomp Batalla_del_Salado.jpg Batalla_del_Salado.jpg
+pidcomp Battle_Poitiers.jpg Battle_Poitiers.jpg
+pidcomp Siege_of_Lisbon_1384.JPG Siege_of_Lisbon_1384.JPG
+pidcomp Batalha_Aljubarrota.jpg Batalha_Aljubarrota.jpg
+pidcomp Hundred_years_war.jpg Hundred_years_war.jpg
+pidcomp Conquest_of_Ceuta.JPG Conquest_of_Ceuta.JPG
+pidcomp Granada.jpg Granada.jpg
+pidcomp Ponta_Delgada.jpg Ponta_Delgada.jpg
+pidcomp France_Russia_war.jpg France_Russia_war.jpg
+pidcomp Battle_of_Waterloo.PNG Battle_of_Waterloo.PNG
+pidcomp Battle_Guadalcanal.jpg Battle_Guadalcanal.jpg
+pidcomp Stalingrad.jpg Stalingrad.jpg
+pidcomp Battle_Atlantic.jpg Battle_Atlantic.jpg
+pidcomp Battle_of_Abu_Ageila.jpg Battle_of_Abu_Ageila.jpg
+pidcomp Fall_of_Mazar_Sharif.jpg Fall_of_Mazar_Sharif.jpg
+retrieve 0021
+pidcomp Fall_of_Kabul.png Fall_of_Kabul.png
+logout
+exit
+

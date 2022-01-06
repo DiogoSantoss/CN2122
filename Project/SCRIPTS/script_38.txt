@@ -1,0 +1,10 @@
+groups
+login 10008 pword008
+select 08
+post "The Battle of Lake Peipus, took place on April 5, 1242. Here is a film - large file with 53MBytes" Lake_Peipus_1.mp4
+post "The Battle of Lake Peipus, took place on April 5, 1242. Here is a film - short file with 2MBytes" Lake_Peipus_2.mp4
+groups
+logout
+exit
+
+ 

@@ -1,0 +1,9 @@
+groups
+login 10004 pword004
+select 04
+post "The Concorde is a British-French turbojet-powered supersonic passenger airliner operated from 1976 until 2003. Max. speed was over twice the speed of sound, at Mach 2.04, with seating for 92 to 128 passengers. Service altitude was 18.000 m." BA_Concorde_G-BOAC_3.jpg
+post "The Tupolev Tu-144 is a Soviet supersonic passenger airliner designed by Tupolev in operation from 1968 to 1999. The Tu-144 conducted 102 commercial flights, of which only 55 carried passengers, at an average service altitude of 16000 m." Tu-144.jpg
+groups
+logout
+exit
+

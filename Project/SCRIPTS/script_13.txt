@@ -1,0 +1,15 @@
+groups
+login 10002 pword002
+my_groups
+subscribe 02 One-msg-text-and-photo
+subscribe 03 Two-msg-Text-Photo
+subscribe 04 Supersonic-planes
+subscribe 05 Great-Battles
+subscribe 06 Great-Battles-Pics-ODD
+subscribe 07 Great-Battles-Pics-EVEN
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+exit
+

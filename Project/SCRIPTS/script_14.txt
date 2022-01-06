@@ -1,0 +1,62 @@
+login 10002 pword002
+subscribe 02 One-msg-text-and-photo
+subscribe 03 Two-msg-Text-Photo
+subscribe 04 Supersonic-planes
+subscribe 05 Great-Battles
+subscribe 06 Great-Battles-Pics-ODD
+subscribe 07 Great-Battles-Pics-EVEN
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+login 10003 pword003
+subscribe 03 Two-msg-Text-Photo
+subscribe 04 Supersonic-planes
+subscribe 05 Great-Battles
+subscribe 06 Great-Battles-Pics-ODD
+subscribe 07 Great-Battles-Pics-EVEN
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+login 10004 pword004
+subscribe 04 Supersonic-planes
+subscribe 05 Great-Battles
+subscribe 06 Great-Battles-Pics-ODD
+subscribe 07 Great-Battles-Pics-EVEN
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+login 10005 pword005
+subscribe 05 Great-Battles
+subscribe 06 Great-Battles-Pics-ODD
+subscribe 07 Great-Battles-Pics-EVEN
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+login 10006 pword006
+subscribe 06 Great-Battles-Pics-ODD
+subscribe 07 Great-Battles-Pics-EVEN
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+login 10007 pword007
+subscribe 07 Great-Battles-Pics-EVEN
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+login 10008 pword008
+subscribe 08 Battle-of-Lake-Peipus
+subscribe 09 9
+my_groups
+logout
+login 10009 pword009
+subscribe 09 9
+my_groups
+logout
+exit
+

@@ -1,0 +1,9 @@
+groups
+login 10001 pword001
+select 01
+ulist
+post "1"
+groups
+logout
+exit
+

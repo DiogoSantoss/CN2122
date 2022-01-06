@@ -1,0 +1,10 @@
+groups
+login 10003 pword003
+select 03
+ulist
+post "This message is only composed of text. Total length is 64 Bytes."
+post "The Metropolitan City of Rome, with a population of 4,355,725 residents, is the most populous metropolitan city in Italy. Its metropolitan area is the third-most populous within Italy. --- The photo file is 17.878.139 bytes long ---" Rome.jpg
+groups
+logout
+exit
+

@@ -228,41 +228,125 @@ void processPST(userData user, serverData server, int fd){
     char GroupID[3];
     char Tsize[4];
     char Fsize[11];
-    char errorBuffer[9];
     char Text[241];
+    char fileName[25];
+
+    char response[10];
+
+    char buffer[512];
+    char singleChar[1];
+    FILE *fptr;
+    char filePath[44];
+
+    int messageID, sent, fileSize, actuallyRead;
+
+    memset(Text,0,241);
+    memset(fileName,0,25);
 
     // Reads User ID
     if(!readWord(fd,UserID,5) || strlen(UserID) != 5 || !checkStringIsNumber(UserID)){
-        strcpy(errorBuffer,"ERR\n");
-        sendTCP(fd,errorBuffer,strlen(errorBuffer));
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
         return;
     }
 
     // Reads Group ID
     if(!readWord(fd,GroupID,2) || strlen(GroupID) != 2 || !checkStringIsNumber(GroupID)){
-        strcpy(errorBuffer,"ERR\n");
-        sendTCP(fd,errorBuffer,strlen(errorBuffer));
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
         return;
     }
 
     if(!UserExists(UserID) || !GroupExists(GroupID)){
-        strcpy(errorBuffer,"RPT NOK\n");
-        sendTCP(fd,errorBuffer,strlen(errorBuffer));
+        strcpy(response,"RPT NOK\n");
+        sendTCP(fd,response,strlen(response));
         return;
     }
 
-    // Reads text size
-    if(!readWord(fd,Tsize,3) || strlen(Tsize) > 3 || !checkStringIsNumber(Tsize)){
-        strcpy(errorBuffer,"ERR\n");
-        sendTCP(fd,errorBuffer,strlen(errorBuffer));
+    // Read text size
+    if(!readWord(fd,Tsize,3) || strlen(Tsize) > 3 || !checkStringIsNumber(Tsize) || atoi(Tsize) > 240){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    // Read text
+    if(!receiveNSizeTCP(fd,Text,atoi(Tsize))){
+        strcpy(response,"RPT NOK\n");
+        sendTCP(fd,response,strlen(response));
         return;
     }
 
     // Create Message dir, author file and text file
-    if(!CreateMessageDir(UserID,GroupID)){
-        strcpy(errorBuffer,"ERR\n");
-        sendTCP(fd,errorBuffer,strlen(errorBuffer));
+    messageID = CreateMessageDir(UserID,GroupID,Text);
+    if(messageID == -1){
+        strcpy(response,"RPT NOK\n");
+        sendTCP(fd,response,strlen(response));
         return;
     }
 
+    if(receiveNSizeTCP(fd, singleChar, 1) == -1){
+        strcpy(response,"RPT NOK\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    } 
+    
+    // Check what to do after reading text
+    if(singleChar[0] == '\n'){
+        sprintf(response,"RPT %04d\n",messageID);
+        sendTCP(fd,response,strlen(response));
+        return;
+
+    }else if(singleChar[0] != ' '){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    // Read filename
+    if(!readWord(fd,fileName,24) || !checkStringIsAlphaNum(fileName)){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    // Read file size
+    if(!readWord(fd,Fsize,24) || !checkStringIsNumber(Fsize)){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    // Create file
+    sprintf(filePath,"GROUPS/%s/MSG/%04d/%s",GroupID,messageID,fileName);
+    if(!(fptr = fopen(filePath, "wb"))){
+        strcpy(response,"RPT NOK\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    sent = 0;
+    actuallyRead = 0;
+    fileSize = atoi(Fsize);
+
+    while(sent < fileSize){
+
+        memset(buffer, 0, 512);
+        // Read from socket
+        actuallyRead = receiveNSizeTCP(fd,buffer,512);
+        // Write to file
+        fwrite(buffer, sizeof(char), actuallyRead, fptr);
+        sent += actuallyRead;
+    }
+
+    if(!checkEndLine(fd)){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+
+    } else {
+        sprintf(response,"RPT %04d\n",messageID);
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
 }

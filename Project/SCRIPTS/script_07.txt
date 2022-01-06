@@ -1,0 +1,11 @@
+unregister 10001 pword001
+unregister 10002 pword002
+unregister 10003 pword003
+unregister 10004 pword004
+unregister 10005 pword005
+unregister 10006 pword006
+unregister 10007 pword007
+unregister 10008 pword008
+unregister 10009 pword009
+exit
+

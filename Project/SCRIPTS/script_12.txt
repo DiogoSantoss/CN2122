@@ -1,0 +1,6 @@
+groups
+login 10002 pword002
+my_groups
+logout
+exit
+

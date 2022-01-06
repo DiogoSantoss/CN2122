@@ -1,0 +1,41 @@
+login 10001 pword001
+my_groups
+unsubscribe 01
+my_groups
+unsubscribe 02
+my_groups
+unsubscribe 03
+my_groups
+unsubscribe 04
+my_groups
+unsubscribe 05
+my_groups
+unsubscribe 06
+my_groups
+unsubscribe 07
+my_groups
+unsubscribe 08
+my_groups
+unsubscribe 09
+my_groups
+subscribe 01 Two-messages-text-only
+my_groups
+subscribe 02 One-msg-text-and-photo
+my_groups
+subscribe 03 Two-msg-Text-Photo
+my_groups
+subscribe 04 Supersonic-planes
+my_groups
+subscribe 05 Great-Battles
+my_groups
+subscribe 06 Great-Battles-Pics-ODD
+my_groups
+subscribe 07 Great-Battles-Pics-EVEN
+my_groups
+subscribe 08 Battle-of-Lake-Peipus
+my_groups
+subscribe 09 9
+my_groups
+logout
+exit
+

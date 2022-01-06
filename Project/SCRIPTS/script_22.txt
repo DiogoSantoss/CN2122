@@ -1,0 +1,16 @@
+select 01
+ulist
+login 10001 pword001
+unsubscribe 01
+ulist
+subscribe 01 Two-messages-text-only
+ulist
+select 09
+ulist
+unsubscribe 09
+ulist
+subscribe 09 9
+ulist
+logout
+exit
+

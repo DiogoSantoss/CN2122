@@ -1,0 +1,20 @@
+select 01
+ulist
+select 02
+ulist
+select 03
+ulist
+select 04
+ulist
+select 05
+ulist
+select 06
+ulist
+select 07
+ulist
+select 08
+ulist
+select 09
+ulist
+exit
+

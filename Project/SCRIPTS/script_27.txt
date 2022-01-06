@@ -1,0 +1,6 @@
+login 10001 pword001
+select 01
+retrieve 0001
+logout
+exit
+

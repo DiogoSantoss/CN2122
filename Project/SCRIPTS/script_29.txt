@@ -1,0 +1,7 @@
+login 10001 pword001
+select 03
+retrieve 0001
+pidcomp Rome.jpg Rome.jpg
+logout
+exit
+

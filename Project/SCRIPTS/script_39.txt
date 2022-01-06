@@ -1,0 +1,10 @@
+groups
+login 10001 pword001
+select 08
+retrieve 0001
+pidcomp Lake_Peipus_1.mp4 Lake_Peipus_1.mp4
+pidcomp Lake_Peipus_2.mp4 Lake_Peipus_2.mp4
+logout
+exit
+
+ 

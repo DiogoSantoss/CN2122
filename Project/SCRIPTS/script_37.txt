@@ -1,0 +1,16 @@
+login 10001 pword001
+select 07
+retrieve 0001
+pidcomp Marathon.jpg Marathon.jpg
+pidcomp Actium.jpg Actium.jpg
+pidcomp Batalla_del_Salado.jpg Batalla_del_Salado.jpg
+pidcomp Siege_of_Lisbon_1384.JPG Siege_of_Lisbon_1384.JPG
+pidcomp Hundred_years_war.jpg Hundred_years_war.jpg
+pidcomp Granada.jpg Granada.jpg
+pidcomp France_Russia_war.jpg France_Russia_war.jpg
+pidcomp Battle_Guadalcanal.jpg Battle_Guadalcanal.jpg
+pidcomp Battle_Atlantic.jpg Battle_Atlantic.jpg
+pidcomp Fall_of_Mazar_Sharif.jpg Fall_of_Mazar_Sharif.jpg
+logout
+exit
+
