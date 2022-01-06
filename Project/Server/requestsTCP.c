@@ -78,7 +78,7 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
 /** 
  * Checks if reads end of line (\n)
  * @param[in] fd File descriptor
- * @param[out] TRUE or FALSE depending if it was a space or not
+ * @param[out] TRUE or FALSE depending if it was a endline or not
 */
 int checkEndLine(int fd){
 
@@ -298,13 +298,15 @@ void processPST(userData user, serverData server, int fd){
         return;
 
     }else if(singleChar[0] != ' '){
+        printf("here3\n");
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     // Read filename
-    if(!readWord(fd,fileName,24) || !checkStringIsAlphaNum(fileName)){
+    if(!readWord(fd,fileName,24)){
+        printf("here2\n");
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -312,6 +314,7 @@ void processPST(userData user, serverData server, int fd){
 
     // Read file size
     if(!readWord(fd,Fsize,24) || !checkStringIsNumber(Fsize)){
+        printf("here1\n");
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -319,7 +322,7 @@ void processPST(userData user, serverData server, int fd){
 
     // Create file
     sprintf(filePath,"GROUPS/%s/MSG/%04d/%s",GroupID,messageID,fileName);
-    if(!(fptr = fopen(filePath, "wb"))){
+    if(!(fptr = fopen(filePath, "w"))){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -333,13 +336,18 @@ void processPST(userData user, serverData server, int fd){
 
         memset(buffer, 0, 512);
         // Read from socket
-        actuallyRead = receiveNSizeTCP(fd,buffer,512);
+        if(fileSize - sent > 512){
+            actuallyRead = receiveNSizeTCP(fd,buffer,512);
+        }else {
+            actuallyRead = receiveNSizeTCP(fd,buffer,fileSize - sent);
+        }
         // Write to file
         fwrite(buffer, sizeof(char), actuallyRead, fptr);
         sent += actuallyRead;
     }
 
     if(!checkEndLine(fd)){
+        printf("here\n");
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
