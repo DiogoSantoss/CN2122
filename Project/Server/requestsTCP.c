@@ -298,7 +298,6 @@ void processPST(userData user, serverData server, int fd){
         return;
 
     }else if(singleChar[0] != ' '){
-        printf("here3\n");
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -306,22 +305,21 @@ void processPST(userData user, serverData server, int fd){
 
     // Read filename
     if(!readWord(fd,fileName,24)){
-        printf("here2\n");
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     // Read file size
-    if(!readWord(fd,Fsize,24) || !checkStringIsNumber(Fsize)){
-        printf("here1\n");
+    if(!readWord(fd,Fsize,10) || !checkStringIsNumber(Fsize)){
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
-
+    
     // Create file
     sprintf(filePath,"GROUPS/%s/MSG/%04d/%s",GroupID,messageID,fileName);
+
     if(!(fptr = fopen(filePath, "w"))){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
@@ -347,7 +345,6 @@ void processPST(userData user, serverData server, int fd){
     }
 
     if(!checkEndLine(fd)){
-        printf("here\n");
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;

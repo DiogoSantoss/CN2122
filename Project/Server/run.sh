@@ -2,4 +2,4 @@
 
 make clean
 make
-./Server -p 25550
+./Server -p 25555
