@@ -216,7 +216,7 @@ char* parseUlist(userData* user, char* input){
 }
 
 /**
- * @brief Process post command
+ * @brief Process ulist command
  * @param[in] user User data
  * @param[in] server Server data
  * @param[in] input User input to be parsed
