@@ -301,7 +301,7 @@ void logULS(char* message){
             }
         }  
         // Prints groups 
-        printf("List of UIDs: %s\n", GName);
+        printf("List of UIDs subscribed to %s\n", GName);
         for (int i = 0; i < length; i++){
             i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
             sscanf(suffix, "%s %[^\n]s", userIDTemp, suffix);

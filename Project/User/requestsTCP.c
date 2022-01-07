@@ -5,8 +5,9 @@
 #include <stdio.h>
 
 #include "log.h"
-#include "structs.h"
 #include "common.h"
+#include "structs.h"
+
 
 // Booleans
 #define TRUE  1
@@ -21,11 +22,11 @@
 #define FILEBUFFERSIZE 512
 #define FILESIZEMAXDIGITS 10
 
-
 /**
- * Connect via TCP socket to server.
+ * @brief Connect via TCP socket to server.
  * @param[in] fd File descriptor of UDP socket
  * @param[in] res Information about server 
+ * @return 1 for success or 0 for errors
 */
 int connectTCP(serverData *server, int* fd, struct addrinfo* res){
     int errcode,n;
@@ -57,10 +58,11 @@ int connectTCP(serverData *server, int* fd, struct addrinfo* res){
 }
 
 /**
- * Send message via TCP socket to server.
+ * @brief Send message via TCP socket to server.
  * @param[in] fd File descriptor of TCP socket
  * @param[in] message Message to be sent
  * @param[in] messageLen Message length
+ * @return 1 for success or 0 for errors
 */
 int sendTCP(int fd, char* message, int messageLen){
     int nLeft = messageLen;
@@ -83,9 +85,9 @@ int sendTCP(int fd, char* message, int messageLen){
 }
 
 /**
- * Receive the whole message via TCP socket from server.
+ * @brief Receive the whole message via TCP socket from server.
  * @param[in] fd File descriptor of TCP socket
- * @param[out] message Message from server
+ * @return message from server (needs to be freed) or NULl for errors
 */
 char* receiveWholeTCP(int fd){
     int nRead = 1; // This can't be initialized as 0
@@ -108,11 +110,11 @@ char* receiveWholeTCP(int fd){
 }
 
 /**
- * Receive messageSize message via TCP socket from server.
+ * @brief Receive message with length messageSize via TCP socket from server.
  * @param[in] fd File descriptor of UDP socket
  * @param[in] buffer Buffer to be filled with message from the server
  * @param[in] messageSize Size of the desired message
- * @param[out] number of bytes read
+ * @return number of bytes read or -1 for errors
 */
 int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     
@@ -137,9 +139,9 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
 }
 
 /**
- * Skips a space when reading a file/socket
+ * @brief Skips a space when reading a file/socket
  * @param[in] fd File descriptor
- * @param[out] TRUE or FALSE depending if it was a space or not
+ * @return 1 for success or 0 for errors
 */
 int skipSpace(int fd){
 
@@ -155,11 +157,11 @@ int skipSpace(int fd){
 }
 
 /**
- * Reads a word of max size maxRead from fd
+ * @brief Reads a word of max size maxRead from fd and checks for a space after
  * @param[in] fd File descriptor
  * @param[in] buffer array to read word to
  * @param[in] maxRead number of bytes to read
- * @param[out] TRUE or FALSE depending if word was correctly read
+ * @return 1 for success or 0 for errors
 */
 int readWord(int fd, char* buffer, int maxRead){
 
@@ -179,10 +181,10 @@ int readWord(int fd, char* buffer, int maxRead){
 }
 
 /**
- * Parse ulist command
+ * @brief Parse ulist command
  * @param[in] user User data
  * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @return message to send to server (needs to be freed) or NULL for errors
 */
 char* parseUlist(userData* user, char* input){
     
@@ -214,7 +216,35 @@ char* parseUlist(userData* user, char* input){
 }
 
 /**
- * Process post command
+ * @brief Process post command
+ * @param[in] user User data
+ * @param[in] server Server data
+ * @param[in] input User input to be parsed
+*/
+void processUlist(userData *user, serverData *server, char* input){
+
+    int msgSize;
+    char *message, *response;
+
+    message = parseUlist(user,input);
+    if(message == NULL) return;
+
+    if(!connectTCP(server, &(user->fd), user->res)) return;
+    if(!sendTCP(user->fd, message, strlen(message))) return;
+    response = receiveWholeTCP(user->fd);
+    if(response == NULL){
+        free(message);
+        return; 
+    } 
+
+    logULS(response);
+
+    free(message);
+    free(response);
+}
+
+/**
+ * @brief Process post command
  * @param[in] user User data
  * @param[in] server Server data
  * @param[in] input User input to be parsed
@@ -230,12 +260,9 @@ void processPost(userData* user, serverData* server, char* input){
     //Is this too much allocated memory?
     char message[MAXSIZE * 3];
 
-    //----------------------------VERIFY USER INPUT-----------------------------
-
     memset(extra,0,sizeof extra);
     memset(filename,0,sizeof filename);
     sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
-
 
     if(!strcmp(user->ID,"")){
         logError("No user logged in.");
@@ -260,8 +287,6 @@ void processPost(userData* user, serverData* server, char* input){
         }
     }
 
-    //----------------------------SEND USER INPUT-----------------------------
-
     if(!connectTCP(server, &(user->fd), user->res)) return;
 
     if(strlen(filename)){
@@ -279,13 +304,11 @@ void processPost(userData* user, serverData* server, char* input){
         // Send PST UID GID textSize text Fname Fsize
         if(!sendTCP(user->fd,message,strlen(message))) return;
 
-        // Send data from file
-
         int sent = 0;
         char buffer[FILEBUFFERSIZE];   
         int actuallyRead = 0;
 
-        // Send "packages" of size FILEBUFFERSIZE at a time
+        // Send "packages" of size FILEBUFFERSIZE at a time from given file
         while(sent < fsize){
             printf("\rUploading file... %d out of %ld bytes", sent, fsize);
             fflush(stdout);
@@ -309,6 +332,7 @@ void processPost(userData* user, serverData* server, char* input){
         if(!sendTCP(user->fd,message,strlen(message))) return;
     }
 
+    // Receive response from server
     char* response;
     response = receiveWholeTCP(user->fd);
     if(response == NULL)
@@ -319,10 +343,10 @@ void processPost(userData* user, serverData* server, char* input){
 }
 
 /**
- * Parse retrieve command
+ * @brief Parse retrieve command
  * @param[in] user User data
  * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @return message from server (needs to be freed) or NULl for errors
 */
 char* parseRetrieve(userData* user, char* input){
     
@@ -351,10 +375,10 @@ char* parseRetrieve(userData* user, char* input){
 }
 
 /**
- * Process retrieve command
+ * @brief Process retrieve command
  * @param[in] user User data
+ * @param[in] server Server data
  * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
 */
 void processRetrieve(userData* user, serverData* server, char* input){
 
@@ -392,7 +416,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
         read(user->fd,readChar,1);
     }
 
-    
     char info[11];
     char MessID[5], UserID[6], textSizeDigits[4];
     char text[TEXTSIZE + 1];
@@ -424,12 +447,12 @@ void processRetrieve(userData* user, serverData* server, char* input){
         memset(text, 0, TEXTSIZE + 1);
         if(receiveNSizeTCP(user->fd, text, textSize) == -1) return;
 
-        printf("Message: %s", text);
+        printf("Message: %s\n", text);
 
         // Skips spaces between messages and if its \n then all messages are read
         if(receiveNSizeTCP(user->fd, readChar, 1) == -1) return;
         if (readChar[0] == '\n') return;
-
+     
         // Next char can be a number (representing the start of the next message)
         // or can be a dash (\) which means this message has a file appended
         if(receiveNSizeTCP(user->fd, readChar, 1) == -1) return;
@@ -457,9 +480,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             char fileSizeDigits[FILESIZEMAXDIGITS + 1];
 
             readWord(user->fd, fileSizeDigits, FILESIZEMAXDIGITS);
-
             int fileSize = atoi(fileSizeDigits);
-
             printf("File size: %d\nFile name: %s\n", fileSize, fileName);
 
             // Open file
@@ -512,44 +533,4 @@ void processRetrieve(userData* user, serverData* server, char* input){
             info[0] = readChar[0];
         }
     }
-}
-
-/**
- * Generic function to proccess commands that access the server via TCP protocol.
- * This function receives the user input and a set of function specific for each
- * command.
- * @param[in] input User input
- * @param[in] parser Function to parse the command
- * @param[in] logger Function to log the messages related to the command
- * @param[in] helper "Optional" function when processRequest needs to do additional tasks
- * 
-*/
-void processUlist(
-    userData *user, 
-    serverData *server, 
-    char* input, 
-    char* (*parser)(userData*,char*), 
-    void (*logger)(char*), 
-    void (*helper)(userData*,char*)
-    ){
-
-    int msgSize;
-    char *message, *response;
-
-    message = (*parser)(user,input);
-    if(message == NULL) return;
-
-    if(!connectTCP(server, &(user->fd), user->res)) return;
-    if(!sendTCP(user->fd, message, strlen(message))) return;
-    response = receiveWholeTCP(user->fd);
-    // SHOULD CHECK IF RESPONSE IS NULL AND DO ERROR
-
-    if(helper != NULL){
-        (*helper)(user,response);
-    }
-
-    (*logger)(response);
-
-    free(message);
-    free(response);
 }
