@@ -3,6 +3,7 @@
 
 void createDirectories();
 
+char* requestErrorUDP(userData user, serverData server);
 char* processREG(userData user, serverData server, char* request);
 char* processURN(userData user, serverData server, char* request);
 char* processLOG(userData user, serverData server, char* request);

@@ -18,6 +18,12 @@
 
 #define MAXGROUPS 99
 
+char* requestErrorUDP(userData user, serverData server){
+    char* message = calloc(5, sizeof(char));
+    strcpy(message, "ERR\n");
+    return message;
+}   
+
 /**
  * Process register request.
  * @param[in] user User data
@@ -34,18 +40,14 @@ char* processREG(userData user, serverData server, char* request){
 
     sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
 
-    printf("Request: %s", request);
-
     if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
         // Wrong size parameters
-        //printf("sizesufix: %d\nsizeUID: %d\nsizepassword: %d\n", strlen(sufix), strlen(UserID), strlen(password));
-        //printf("sufix: %s\n", sufix);
-        strcpy(message, "RRG NOK\n");
+        strcpy(message, "ERR\n");
         return message;
     }
     else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)){
         // Forbidden character in parameters
-        strcpy(message, "RRG NOK\n");
+        strcpy(message, "ERR\n");
         return message;
     }
     else if (UserExists(UserID)){

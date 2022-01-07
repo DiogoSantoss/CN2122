@@ -133,6 +133,16 @@ int readWord(int fd, char* buffer, int maxRead){
     return skipSpace(fd);
 }
 
+void requestErrorTCP(userData user, serverData server, int fd){
+
+    char buffer[5];
+
+    strcpy(buffer,"ERR\n");
+    sendTCP(fd,buffer,strlen(buffer));
+
+    return;
+}
+
 /**
  * Process ulist request.
  * @param[in] user User data
