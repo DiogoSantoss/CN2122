@@ -160,12 +160,14 @@ int DelPassFile(char *UID){
 
     sprintf(pathname,"USERS/%s/%s_pass.txt",UID,UID);
 
-    if(unlink(pathname) != 0){
+    if(unlink(pathname) == 0){
+        return TRUE;
+
+    } else{
         logError("Failed to delete user password file.");
         return FALSE;
     }
 
-    return FALSE;
 }
 
 /**
@@ -228,12 +230,14 @@ int DelLoginFile(char *UID){
 
     sprintf(pathname,"USERS/%s/%s_login.txt",UID,UID);
 
-    if(unlink(pathname) != 0){
+    if(unlink(pathname) == 0){
+        return TRUE;
+
+    }else {
         logError("Failed to delete user login file.");
         return FALSE;
     }
 
-    return FALSE;
 }
  
 /**
@@ -532,12 +536,14 @@ int UnsubscribeUser(char* UID, char* GID){
     char pathname[50];
     sprintf(pathname,"GROUPS/%s/%s.txt",GID,UID);
 
-    if(unlink(pathname)==0)
-        // Success
+    if(unlink(pathname) == 0){
         return TRUE;
-    else
-        // Failed to unsubcribe user
+
+    } else{
+        logError("Failed to unsubscribe user.");
         return FALSE;
+    }
+
 }
 
 // Check if user is subscribe to group
