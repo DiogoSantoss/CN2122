@@ -348,6 +348,7 @@ int logRTV(char* message){
         logError("retrieve: A fatal error has ocurred.");
     }
     else if(!strcmp(message,"RRT EOF\n")){
+        colorGreen();
         printf("retrieve: 0 messages retrieved.\n");
     }
     else if(strcmp(rrt,"RRT") && strcmp(status,"OK") && !checkStringIsNumber(numberOfMessages)){

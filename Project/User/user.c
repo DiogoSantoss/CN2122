@@ -25,6 +25,7 @@ void initializeData(userData *user, serverData *server){
     strcpy(user->groupID,"");
     user->res = NULL;
 
+    // SHOULD BE LOCALHOST
     strcpy(server->ipAddress,"tejo.tecnico.ulisboa.pt");
     strcpy(server->port,"58011");
 }

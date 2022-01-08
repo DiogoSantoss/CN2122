@@ -122,7 +122,7 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     int sum = 0;
     int nRead = 0;
 
-    while (messageSize > sum){
+    while (messageSize  != 0){
         nRead = read(fd, ptr, messageSize);
         if (nRead == -1){
             logError("Couldn't receive message via TCP socket.");
@@ -401,17 +401,18 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
     // Reads header
     if(receiveNSizeTCP(user->fd, header, 9) == -1) return;
-    // Verifies if server response is valid
+    // Verifies if server response is valid and log it
     if(!logRTV(header)) return;
 
     // Parse header
     sscanf(header,"%s %s %s", aux, aux, numOfMessagesString);
 
     // Get number of messages
-    if(numOfMessagesString[1] == ' '){
+    if(header[strlen(header)-1] == ' '){
         numOfMessages = numOfMessagesString[0];
     }
     else {
+        // number of message has 2 digits so we didn't read the space after
         numOfMessages = atoi(numOfMessagesString);
         read(user->fd,readChar,1);
     }
