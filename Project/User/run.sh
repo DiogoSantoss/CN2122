@@ -2,4 +2,4 @@
 
 make clean
 make
-./User -p 25555 -n localhost
+./user -p 25555 -n localhost
