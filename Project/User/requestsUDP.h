@@ -3,10 +3,11 @@
 
 char* parseRegister(userData* user, char* input);
 char* parseUnregister(userData* user, char* input);
+void helperUnregister(userData* user, char* input, char* response);
 char* parseLogin(userData* user, char* input);
-void helperLogin(userData* user, char *response);
+void helperLogin(userData* user, char* input, char* response);
 char* parseLogout(userData* user, char* input);
-void helperLogout(userData* user, char* response);
+void helperLogout(userData* user, char* input, char* response);
 void processShowUID(userData* user, char* input);
 char* parseSubscribe(userData* user, char* input);
 char* parseUnsubscribe(userData* user, char* input);
@@ -18,6 +19,6 @@ void processShowGID(userData* user, char* input);
 int connectUDP(serverData* server, int* fd, struct addrinfo** res);
 int sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen);
 char* receiveMessageUDP(int fd);
-void processRequestUDP(userData* user, serverData* server, char* input, char* (*parser)(userData*,char*), void (*logger)(char*), void (*helper)(userData*,char*));
+void processRequestUDP(userData* user, serverData* server, char* input, char* (*parser)(userData*,char*), void (*logger)(char*), void (*helper)(userData*,char*,char*));
 
 #endif

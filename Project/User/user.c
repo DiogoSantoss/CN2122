@@ -100,7 +100,7 @@ void handleRequests(userData *user, serverData *server){
             processRequestUDP(user, server, input, parseRegister, logREG, NULL);
             
         } else if(!strcmp(command,"unregister") || !strcmp(command,"unr")){
-            processRequestUDP(user, server, input, parseUnregister, logUNR, NULL);
+            processRequestUDP(user, server, input, parseUnregister, logUNR, helperUnregister);
             
         } else if(!strcmp(command,"login")){
             processRequestUDP(user, server, input, parseLogin, logLOG, helperLogin);

@@ -25,7 +25,8 @@ void initializeData(userData *user, serverData *server){
     strcpy(user->groupID,"");
     user->res = NULL;
 
-    strcpy(server->ipAddress,"tejo.tecnico.ulisboa.pt");
+    //strcpy(server->ipAddress,"tejo.tecnico.ulisboa.pt");
+    strcpy(server->ipAddress,"localhost");
     strcpy(server->port,"58011");
 }
 
@@ -98,7 +99,6 @@ void handleRequests(int argc, userData *user, serverData *server){
     }
 
     while(1){
-
         fgets(input, MAXSIZE, stdin);
 
         int msgSize;

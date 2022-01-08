@@ -32,21 +32,19 @@ char* requestErrorUDP(userData user, serverData server){
 */
 char* processREG(userData user, serverData server, char* request){
 
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
     char UserID[6], password[9];
 
-    memset(sufix, 0, MAXSIZEUDP);
+    memset(suffix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
+    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
 
-    if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
+    if (
+        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+    ){
         // Wrong size parameters
-        strcpy(message, "ERR\n");
-        return message;
-    }
-    else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)){
-        // Forbidden character in parameters
         strcpy(message, "ERR\n");
         return message;
     }
@@ -74,22 +72,20 @@ char* processREG(userData user, serverData server, char* request){
 */
 char* processURN(userData user, serverData server, char* request){
 
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
     char UserID[6], password[9];
 
-    memset(sufix, 0, MAXSIZEUDP);
+    memset(suffix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
+    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
 
-    if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
-        // Wrong size parameters
-        strcpy(message, "RUN NOK\n");
-        return message;
-    }
-    else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)){
-        // Forbidden character in parameters
-        strcpy(message, "RUN NOK\n");
+    if (
+        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+    ){
+        // Wrong format parameters
+        strcpy(message, "ERR\n");
         return message;
     }
     else if (!UserExists(UserID) || !checkUserPassword(UserID,password)){
@@ -101,9 +97,15 @@ char* processURN(userData user, serverData server, char* request){
         // Everything ok
         strcpy(message, "RUN OK\n");
 
-        if (!DelPassFile(UserID)) strcpy(message, "ERR\n");
-        if (!DelLoginFile(UserID)) strcpy(message, "ERR\n");
-        if (!DelUserDir(UserID)) strcpy(message, "ERR\n");
+        if (!DelUserFromGroups(UserID)) strcpy(message, "RUN NOK\n");
+        if (!DelPassFile(UserID)) strcpy(message, "RUN NOK\n");
+
+        if(CheckUserLogin(UserID)){
+            if(!DelLoginFile(UserID)) 
+                strcpy(message, "RUN NOK\n");
+        }
+
+        if (!DelUserDir(UserID)) strcpy(message, "RUN NOK\n");
     }
 
     return message;
@@ -117,22 +119,20 @@ char* processURN(userData user, serverData server, char* request){
 */
 char* processLOG(userData user, serverData server, char* request){
 
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
     char UserID[6], password[9];
 
-    memset(sufix, 0, MAXSIZEUDP);
+    memset(suffix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
+    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
 
-    if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
-        // Wrong size parameters
-        strcpy(message, "RLO NOK\n");
-        return message;
-    }
-    else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)){
-        // Forbidden character in parameters
-        strcpy(message, "RLO NOK\n");
+    if (
+        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+    ){
+        // Wrong format parameters
+        strcpy(message, "ERR\n");
         return message;
     }
     else if (!UserExists(UserID) || !checkUserPassword(UserID,password)){
@@ -144,7 +144,7 @@ char* processLOG(userData user, serverData server, char* request){
         // Everything ok
         strcpy(message, "RLO OK\n");
 
-        if(!createLoginFile(UserID)) strcpy(message, "ERR\n");
+        if(!createLoginFile(UserID)) strcpy(message, "RLO NOK\n");
     }
 
     return message;
@@ -158,23 +158,20 @@ char* processLOG(userData user, serverData server, char* request){
 */
 char* processOUT(userData user, serverData server, char* request){
 
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
     char UserID[6], password[9];
 
-    memset(sufix, 0, MAXSIZEUDP);
+    memset(suffix, 0, MAXSIZEUDP);
     char* message = calloc(9, sizeof(char));
 
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, sufix);
+    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
 
-    // sufix is ERR
-    if (strlen(sufix) != 0 || strlen(UserID) != 5 || strlen(password) != 8){
-        // Wrong size parameters
-        strcpy(message, "ROU NOK\n");
-        return message;
-    }
-    else if (!checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)){
-        // Forbidden character in parameters
-        strcpy(message, "ROU NOK\n");
+    if (
+        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+    ){
+        // Wrong format parameters
+        strcpy(message, "ERR\n");
         return message;
     }
     else if (!UserExists(UserID) || !checkUserPassword(UserID,password)){
@@ -202,19 +199,18 @@ char* processGLS(userData user, serverData server, char* request){
 
     int numberGroups;
     Group list[MAXGROUPS];;
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
 
     char* message = calloc(EXTRAMAXSIZE, sizeof(char));
     
-    memset(sufix, 0, MAXSIZEUDP);
-    sscanf(request, "%s %s", prefix, sufix);
+    memset(suffix, 0, MAXSIZEUDP);
+    sscanf(request, "%s %s", prefix, suffix);
 
-    // TODO - think about this (ERR in all strlen(sufix) != 0)
-    /*if (strlen(sufix) != 0){
+    if (strlen(suffix) != 0){
         // Wrong size parameters
         strcpy(message, "ERR\n");
         return message;
-    }*/
+    }
 
     // Fill list data structure with groups info
     numberGroups = ListGroupsDir(list);
@@ -244,37 +240,30 @@ char* processGLS(userData user, serverData server, char* request){
 */
 char* processGSR(userData user, serverData server, char* request){
 
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
     char UserID[6], GroupID[3], GroupName[25];
 
-    memset(sufix, 0, MAXSIZEUDP);
+    memset(suffix, 0, MAXSIZEUDP);
     char* message = calloc(13, sizeof(char));
 
-    sscanf(request, "%s %s %s %s %s", prefix, UserID, GroupID, GroupName, sufix);
+    sscanf(request, "%s %s %s %s %s", prefix, UserID, GroupID, GroupName, suffix);
     int groupMax = maxGroupNumber();
 
     if(strlen(GroupID) == 1){
         sprintf(GroupID, "%02d", atoi(GroupID));
     }
 
-    if (strlen(sufix) != 0){
+    if (
+        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(GroupID) != 2 || strlen(GroupName) > 24 || 
+        !checkStringIsNumber(UserID) ||  !checkStringIsNumber(GroupID) || !checkStringIsGroupName(GroupName)
+    ){
         // Wrong size parameters
-        strcpy(message, "RGS NOK\n");
+        strcpy(message, "ERR\n");
         return message;
     }
-    if (strlen(UserID) != 5 || !checkStringIsNumber(UserID) || !UserExists(UserID)){
+    if (!UserExists(UserID) || !CheckUserLogin(UserID)){
         // Invalid UID
         strcpy(message, "RGS E_USR\n");
-        return message;
-    }
-    else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID)){
-        // Invalid GID
-        strcpy(message, "RGS E_GRP\n");
-        return message;
-    }
-    else if (strlen(GroupName) > 24 || !checkStringIsGroupName(GroupName)){
-        // Invalid Gname
-        strcpy(message, "RGS E_GNAME\n");
         return message;
     }
     // User want to create and subscribe to new group
@@ -339,25 +328,28 @@ char* processGSR(userData user, serverData server, char* request){
 */
 char* processGUR(userData user, serverData server, char* request){
 
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
     char UserID[6], GroupID[3];
 
-    memset(sufix, 0, MAXSIZEUDP);
+    memset(suffix, 0, MAXSIZEUDP);
     char* message = calloc(13, sizeof(char));
 
-    sscanf(request, "%s %s %s %s", prefix, UserID, GroupID, sufix);
+    sscanf(request, "%s %s %s %s", prefix, UserID, GroupID, suffix);
     
-    if (strlen(sufix) != 0){
+    if (
+        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(GroupID) != 2 ||
+        !checkStringIsNumber(UserID) || !checkStringIsNumber(GroupID)
+    ){
         // Wrong size parameters
-        strcpy(message, "RGU NOK\n");
+        strcpy(message, "ERR\n");
         return message;
     }
-    else if (strlen(UserID) != 5 || !checkStringIsNumber(UserID) || !UserExists(UserID)){
+    else if (!UserExists(UserID) || !CheckUserLogin(UserID)){
         // Invalid UID
         strcpy(message, "RGU E_USR\n");
         return message;
     }
-    else if(strlen(GroupID) != 2 || !checkStringIsNumber(GroupID) || !GroupExists(GroupID)){
+    else if(!GroupExists(GroupID)){
         // Invalid GID
         strcpy(message, "RGU E_GRP\n");
         return message;
@@ -394,20 +386,20 @@ char* processGLM(userData user, serverData server, char* request){
     int numberGroups;
     int subscribedGroups = 0;
     Group list[MAXGROUPS];
-    char prefix[4], sufix[MAXSIZEUDP];
+    char prefix[4], suffix[MAXSIZEUDP];
     char UserID[6];
 
     char* message = calloc(EXTRAMAXSIZE, sizeof(char));
     
-    memset(sufix, 0, MAXSIZEUDP);
-    sscanf(request, "%s %s %s", prefix, UserID, sufix);
+    memset(suffix, 0, MAXSIZEUDP);
+    sscanf(request, "%s %s %s", prefix, UserID, suffix);
 
-    if (strlen(sufix) != 0){
+    if (strlen(suffix) != 0 || strlen(UserID) != 5 || !checkStringIsNumber(UserID)){
         // Wrong size parameters
-        strcpy(message, "RGM NOK\n");
+        strcpy(message, "ERR\n");
         return message;
     }
-    else if (strlen(UserID) != 5 || !checkStringIsNumber(UserID) || !UserExists(UserID) || !CheckUserLogin(UserID)){
+    else if (!UserExists(UserID) || !CheckUserLogin(UserID)){
         // Invalid UID
         strcpy(message, "RGM E_USR\n");
         return message;

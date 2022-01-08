@@ -184,7 +184,7 @@ void handleRequests(userData* user, serverData* server){
             logError("Select error.");
             break;
         }
-
+        // TCP Request
         if(FD_ISSET(fdTcp,&rfds)){
 
             addrlen=sizeof(addr);
@@ -229,10 +229,8 @@ void handleRequests(userData* user, serverData* server){
 
             close(fdNew);
         }
-
+        // UDP Request
         if(FD_ISSET(fdUdp,&rfds)){
-
-            // RECEIVE UDP MESSAGE
 
             ssize_t n;
             char request[MAXSIZEUDP],command[MAXSIZEUDP],extra[MAXSIZEUDP];
@@ -248,7 +246,7 @@ void handleRequests(userData* user, serverData* server){
             } 
 
             if(request[strlen(request)-1] != '\n'){
-                logError("Client message doesn't end with \\n.");
+                logError("Client message too big or doesn't end with \\n.");
                 // TODO IMPROVE THIS
                 response = requestErrorUDP(*user, *server);
                 sendto(fdUdp, response, strlen(response), 0, (struct sockaddr*)&addr, addrlen);
@@ -301,7 +299,7 @@ void handleRequests(userData* user, serverData* server){
         }
     }
 
-    //freeaddrinfo(res);
+    freeaddrinfo(res);
     close(fdTcp);
     close(fdUdp);
 }

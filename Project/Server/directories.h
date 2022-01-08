@@ -21,6 +21,7 @@ int getGroupName(char* GID, char* GName);
 int SubscribeUser(char* UID, char* GID);
 int UnsubscribeUser(char* UID, char* GID);
 int checkUserSubscribedToGroup(char* UID, char* GID);
+int DelUserFromGroups(char* UID);
 int CreateMessageDir(char* UID, char* GID, char* message);
 
 #endif

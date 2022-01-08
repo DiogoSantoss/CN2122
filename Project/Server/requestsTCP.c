@@ -257,7 +257,7 @@ void processPST(userData user, serverData server, int fd){
         return;
     }
 
-    if(!UserExists(UserID) || !GroupExists(GroupID)){
+    if(!UserExists(UserID) || !CheckUserLogin(UserID) || !GroupExists(GroupID)){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -395,7 +395,7 @@ void processRTV(userData user, serverData server, int fd){
         return;
     }
 
-    if(!UserExists(userID) || !GroupExists(groupID)){
+    if(!UserExists(userID) || !CheckUserLogin(userID) || !GroupExists(groupID)){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -409,6 +409,6 @@ void processRTV(userData user, serverData server, int fd){
     }
 
 
-
+    // TODO FINISH RETRIEVE
 
 }

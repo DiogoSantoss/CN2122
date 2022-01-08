@@ -233,7 +233,7 @@ int DelLoginFile(char *UID){
     if(unlink(pathname) == 0){
         return TRUE;
 
-    }else {
+    } else {
         logError("Failed to delete user login file.");
         return FALSE;
     }
@@ -253,7 +253,6 @@ int CheckUserLogin(char* UID){
     sprintf(path, "USERS/%s/%s_login.txt", UID, UID);
 
     if(!(fptr = fopen(path, "r"))){
-        logError("Failed to open user login file.");
         return FALSE;
     }
 
@@ -428,7 +427,12 @@ int ListGroupsDir(Group* list){
     return(numberGroups);
 }
 
-// Create group file in group directory
+/**
+ * Create group file in group directory.
+ * @param GID group ID
+ * @param Gname group name
+ * @return 1 for success or 0 for errors
+*/
 int CreateGroupFile(char* GID, char* Gname){
 
     FILE *fptr;
@@ -437,7 +441,7 @@ int CreateGroupFile(char* GID, char* Gname){
     sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
 
     if(!(fptr = fopen(path, "w"))){
-        //Failed to open path
+        logError("Failed to create group name file");
         return FALSE;
     }
   
@@ -447,7 +451,11 @@ int CreateGroupFile(char* GID, char* Gname){
     return TRUE;
 }
 
-// Check if group exists
+/**
+ * Check if group exists.
+ * @param GID group ID
+ * @return 1 for success or 0 for errors
+*/
 int GroupExists(char* GID){
 
     DIR *d;
@@ -464,11 +472,18 @@ int GroupExists(char* GID){
         }
         return FALSE;
     }
-    else
+    else{
+        logError("Failed to open groups directory.");
         return FALSE;
+    }
 }
 
-// Check if group name is correct
+/**
+ * Check if group name is correct.
+ * @param GID group ID
+ * @param Gname group name
+ * @return 1 for success or 0 for errors
+*/
 int checkGroupName(char* GID, char* GName){
 
     FILE* fptr;
@@ -478,7 +493,7 @@ int checkGroupName(char* GID, char* GName){
     sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
 
     if(!(fptr = fopen(path, "r"))){
-        //Failed to open path
+        logError("Failed to open group name file.");
         return FALSE;
     }
 
@@ -495,7 +510,12 @@ int checkGroupName(char* GID, char* GName){
     }
 }
 
-// Fills GName with the group name that corresponds to the specified GID
+/**
+ * Fills GName with the group name that corresponds to the specified GID.
+ * @param GID group ID
+ * @param Gname group name
+ * @return 1 for success or 0 for errors
+*/
 int getGroupName(char* GID, char* GName){
 
     FILE* fptr;
@@ -504,15 +524,22 @@ int getGroupName(char* GID, char* GName){
     sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
 
     if(!(fptr = fopen(path, "r"))){
-        //Failed to open path
+        logError("Failed to open group name file.");
         return FALSE;
     }
 
     fread(GName, sizeof(char), 25, fptr);
     fclose(fptr);
+
+    return TRUE;
 }
 
-// Add user to subscribed users of group
+/**
+ * Add user to subscribed users of group.
+ * @param UID user ID
+ * @param GID group ID
+ * @return 1 for success or 0 for errors
+*/
 int SubscribeUser(char* UID, char* GID){
 
     FILE *fptr;
@@ -521,7 +548,7 @@ int SubscribeUser(char* UID, char* GID){
     sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
 
     if(!(fptr = fopen(path, "w"))){
-        //Failed to open path
+        logError("Failed to create subscription file.");
         return FALSE;
     }
 
@@ -530,7 +557,12 @@ int SubscribeUser(char* UID, char* GID){
     return TRUE;
 }
 
-// Remove user from group
+/**
+ * Remove user from group.
+ * @param UID user ID
+ * @param GID group ID
+ * @return 1 for success or 0 for errors
+*/
 int UnsubscribeUser(char* UID, char* GID){
 
     char pathname[50];
@@ -540,13 +572,18 @@ int UnsubscribeUser(char* UID, char* GID){
         return TRUE;
 
     } else{
-        logError("Failed to unsubscribe user.");
+        logError("Failed to remove subscription file.");
         return FALSE;
     }
 
 }
 
-// Check if user is subscribe to group
+/**
+ * Check if user is subscribe to group.
+ * @param UID user ID
+ * @param GID group ID
+ * @return 1 for success or 0 for errors
+*/
 int checkUserSubscribedToGroup(char* UID, char* GID){
 
     FILE *fptr;
@@ -556,13 +593,39 @@ int checkUserSubscribedToGroup(char* UID, char* GID){
     sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
 
     if(!(fptr = fopen(path, "r"))){
-        //Failed to open path
         return FALSE;
     }
     fclose(fptr);
     return TRUE;
 }
 
+/**
+ * Deletes user from subscribed groups.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
+int DelUserFromGroups(char* UID){
+
+    char GID[3];
+    int maxGroup = maxGroupNumber();
+
+    for(int i = 1; i <= maxGroup; i++){
+        sprintf(GID,"%02d",i);
+        if(checkUserSubscribedToGroup(UID,GID)){
+            UnsubscribeUser(UID,GID);
+        }
+    }
+
+    return TRUE;
+}
+
+/**
+ * Check if user is subscribe to group.
+ * @param UID user ID
+ * @param GID group ID
+ * @param message message to be copied to file
+ * @return 1 for success or 0 for errors
+*/
 int CreateMessageDir(char* UID, char* GID, char* message){
 
     FILE *fptr;

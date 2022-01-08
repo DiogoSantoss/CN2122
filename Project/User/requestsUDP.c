@@ -75,6 +75,24 @@ char* parseUnregister(userData* user, char* input){
 } 
 
 /**
+ * If logged in user was unregister then logout.
+ * @param user User data
+ * @param input Client response
+ * @param response Server response
+*/
+void helperUnregister(userData* user, char* input, char* response){
+
+    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE];
+
+    sscanf(input,"%s %s %s\n",command,UID,pass);
+
+    if(!strcmp(user->ID,UID) && !strcmp(response,"RUN OK\n")){
+        strcpy(user->ID,"");
+        strcpy(user->password,"");
+    }
+}
+
+/**
  * Parse login command.
  * @param user User data
  * @param input User input to be parsed
@@ -100,10 +118,6 @@ char* parseLogin(userData* user, char* input){
     if(strcmp(user->ID,"")){
         logError("A user is already logged in.");
         return NULL;
-
-    } else {
-        strcpy(user->ID,UID);
-        strcpy(user->password,pass);
     }
 
     message = malloc(sizeof(char)*18);
@@ -113,14 +127,20 @@ char* parseLogin(userData* user, char* input){
 }
 
 /**
- * Resets UID if server gives bad response.
+ * Logins user.
  * @param user User data
+ * @param input Client input
  * @param response Server response
 */
-void helperLogin(userData *user, char *response){
-    if(strcmp(response,"RLO OK\n")){
-        strcpy(user->ID,"");
-        strcpy(user->password,"");
+void helperLogin(userData* user, char* input, char* response){
+
+    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE];
+
+    sscanf(input,"%s %s %s\n",command,UID,pass);
+
+    if(!strcmp(response,"RLO OK\n")){
+        strcpy(user->ID,UID);
+        strcpy(user->password,pass);
     }
 }
 
@@ -157,9 +177,10 @@ char* parseLogout(userData* user, char* input){
 /**
  * Resets UID and password if server gives good response.
  * @param user User data
+ * @param input Client input
  * @param response Server response
 */
-void helperLogout(userData* user, char* response){
+void helperLogout(userData* user, char* input, char* response){
     if(!strcmp(response,"ROU OK\n")){
         strcpy(user->ID,"");
         strcpy(user->password,"");
@@ -344,7 +365,7 @@ void processSelect(userData* user, char* input){
         return;
     }
 
-    strcpy(user->groupID, GID);
+    sprintf(user->groupID,"%02d",atoi(GID));
     logSAG(user->groupID);
 }
 
@@ -499,7 +520,7 @@ void processRequestUDP(
     char* input, 
     char* (*parser)(userData*,char*), 
     void (*logger)(char*), 
-    void (*helper)(userData*,char*)
+    void (*helper)(userData*,char*,char*)
     ){
 
     int msgSize;
@@ -514,7 +535,7 @@ void processRequestUDP(
     if(response == NULL) return;
 
     if(helper != NULL){
-        (*helper)(user,response);
+        (*helper)(user,input,response);
     }
 
     (*logger)(response);
