@@ -15,24 +15,25 @@
 
 #define MAXGROUPS 99
 
-//Create initial USERS and GROUPS directories
+/**
+ * Create initial USERS and GROUPS directories.
+*/
 void createDirectories(){
     
     char users[6];
     char groups[7]; 
-    int retUsers, retGroups;
+
+    DIR* dir;
 
     strcpy(users, "USERS");
     strcpy(groups, "GROUPS");
 
-    DIR* dir = opendir("USERS");
-    if(dir){
+    if(dir = opendir("USERS")){
         //Do nothing
         closedir(dir);
     }
     else if(ENOENT == errno){
-        retUsers = mkdir(users, 0700);
-        if(retUsers == -1){
+        if(mkdir(users, 0700) == -1){
             logError("Couldn't create USERS directory.");
             exit(1);
         }
@@ -42,14 +43,12 @@ void createDirectories(){
         exit(1);
     }
 
-    dir = opendir("GROUPS");
-    if(dir){
+    if(dir = opendir("GROUPS")){
         //Do nothing
         closedir(dir);
     }
     else if(ENOENT == errno){
-        retGroups = mkdir(groups, 0700);
-        if(retGroups == -1){
+        if(mkdir(groups, 0700) == -1){
             logError("Couldn't create GROUPS directory.");
             exit(1);
         }
@@ -60,35 +59,49 @@ void createDirectories(){
     }
 }
 
-// Create user directory in USERS
+/**
+ * Create user directory in USERS.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
 int CreateUserDir(char *UID){
 
     char user_dirname[20];
-    int ret;
 
     sprintf(user_dirname,"USERS/%s",UID);
-    ret=mkdir(user_dirname,0700);
-
-    if(ret==-1)
+    if(mkdir(user_dirname,0700) == -1){
+        logError("Failed to create user directory.");
         return FALSE;
+    }
 
     return TRUE;
 }
 
-// Delete user directory in USERS
+
+/**
+ * Delete user directory in USERS.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
 int DelUserDir(char *UID){
 
     char user_dirname[20];
 
     sprintf(user_dirname,"USERS/%s",UID);
 
-    if(rmdir(user_dirname)==0)
-        return TRUE;
-    else
+    if(rmdir(user_dirname) != 0){
+        logError("Failed to delete user directory.");
         return FALSE;
+    }
+
+    return TRUE;
 }
 
-// Check if user exists
+/**
+ * Check if user exists.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
 int UserExists(char* UID){
 
     char path[31];
@@ -98,6 +111,7 @@ int UserExists(char* UID){
 
     if(dir = opendir(path)){
         // User exists
+        close(dir);
         return TRUE;
     }
     else if (ENOENT == errno) {
@@ -110,7 +124,13 @@ int UserExists(char* UID){
     }
 }
 
-// Create pass file in user directory
+
+/**
+ * Create pass file in user directory.
+ * @param UID user ID
+ * @param password user password
+ * @return 1 for success or 0 for errors
+*/
 int CreatePassFile(char* UID, char* password){
 
     FILE *fptr;
@@ -119,7 +139,7 @@ int CreatePassFile(char* UID, char* password){
     sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
 
     if(!(fptr = fopen(path, "w"))){
-        //Failed to open path
+        logError("Failed to create user password file.");
         return FALSE;
     }
 
@@ -129,30 +149,41 @@ int CreatePassFile(char* UID, char* password){
     return TRUE;
 }
 
-// Delete pass file in user directory
+/**
+ * Delete pass file in user directory.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
 int DelPassFile(char *UID){
 
     char pathname[50];
 
     sprintf(pathname,"USERS/%s/%s_pass.txt",UID,UID);
 
-    if(unlink(pathname)==0)
-        return TRUE;
-    else
+    if(unlink(pathname) != 0){
+        logError("Failed to delete user password file.");
         return FALSE;
+    }
+
+    return FALSE;
 }
 
-// Check if password is correct
+/**
+ * Check if password is correct.
+ * @param UID user ID
+ * @param password user password
+ * @return 1 for success or 0 for errors
+*/
 int checkUserPassword(char* UID, char* password){
 
     FILE *fptr;
     char path[31];
-    char userPassword[9]; // 8+1
+    char userPassword[9];
 
     sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
 
     if(!(fptr = fopen(path, "r"))){
-        //Failed to open path
+        logError("Failed to open user password file.");
         return FALSE;
     }
 
@@ -165,7 +196,11 @@ int checkUserPassword(char* UID, char* password){
         return FALSE;
 }
 
-// Create login file in user directory
+/**
+ * Create login file in user directory.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
 int createLoginFile(char* UID){
 
     FILE* fptr;
@@ -174,7 +209,7 @@ int createLoginFile(char* UID){
     sprintf(path, "USERS/%s/%s_login.txt", UID, UID);
 
     if(!(fptr = fopen(path, "w"))){
-        //Failed to open path
+        logError("Failed to create user login file.");
         return FALSE;
     }
 
@@ -182,20 +217,30 @@ int createLoginFile(char* UID){
     return TRUE;
 }
 
-// Delete login file in user directory
+/**
+ * Delete login file in user directory.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
 int DelLoginFile(char *UID){
 
     char pathname[50];
 
     sprintf(pathname,"USERS/%s/%s_login.txt",UID,UID);
 
-    if(unlink(pathname)==0)
-        return TRUE;
-    else
+    if(unlink(pathname) != 0){
+        logError("Failed to delete user login file.");
         return FALSE;
-}
+    }
 
-// Verify if user is logged in
+    return FALSE;
+}
+ 
+/**
+ * Verify if user is logged in.
+ * @param UID user ID
+ * @return 1 for success or 0 for errors
+*/
 int CheckUserLogin(char* UID){
 
     FILE* fptr;
@@ -204,7 +249,7 @@ int CheckUserLogin(char* UID){
     sprintf(path, "USERS/%s/%s_login.txt", UID, UID);
 
     if(!(fptr = fopen(path, "r"))){
-        //Failed to read file
+        logError("Failed to open user login file.");
         return FALSE;
     }
 
@@ -212,15 +257,43 @@ int CheckUserLogin(char* UID){
     return TRUE;
 }
 
-// Return biggest group number
+/**
+ * Create group directory in GROUPS and MSG directory inside.
+ * @param GID group ID
+ * @return 1 for success or 0 for errors
+*/
+int CreateGroupDir(char *GID){
+
+    char group_dirname[20];
+
+    sprintf(group_dirname,"GROUPS/%s",GID);
+
+    if(mkdir(group_dirname,0700) == -1){
+        logError("Failed to create group directory.");
+        return FALSE;
+    }
+
+    sprintf(group_dirname,"GROUPS/%s/MSG",GID);
+
+    if(mkdir(group_dirname,0700) == -1){
+        logError("Failed to create message directory.");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+ * Return biggest group number.
+ * @return max group number for success or -1 for errors
+*/
 int maxGroupNumber(){
 
     DIR *d;
     int groupMax = 0;
     struct dirent *dir;
 
-    d = opendir("GROUPS");
-    if (d)
+    if (d = opendir("GROUPS"))
     {
         while ((dir = readdir(d)))
         {
@@ -233,42 +306,27 @@ int maxGroupNumber(){
         }
         return groupMax;
     }
-    else
+    else{   
+        logError("Failed to open groups directory.");
         return -1;
+    }
 }
 
-// Create group directory in GROUPS and MSG directory inside
-int CreateGroupDir(char *GID){
-
-    char group_dirname[20];
-    int ret;
-
-    sprintf(group_dirname,"GROUPS/%s",GID);
-    ret=mkdir(group_dirname,0700);
-
-    if(ret==-1)
-        return FALSE;
-
-    sprintf(group_dirname,"GROUPS/%s/MSG",GID);
-    ret=mkdir(group_dirname,0700);
-
-    if(ret==-1)
-        return FALSE;
-
-    return TRUE;
-}
-
+/**
+ * Get group last messsage ID.
+ * @param GID group ID
+ * @return message ID for success or -1 for errors
+*/
 int GroupLastMessage(char *GID){
 
-    DIR *d;
     int messageNumber ,max = 0;
     struct dirent *dir;
     char path[14];
+    DIR* d;
 
     sprintf(path,"GROUPS/%s/MSG",GID);
-    d = opendir(path);
 
-    if(d){
+    if(d = opendir(path)){
         while((dir = readdir(d)) != NULL){
             if(dir->d_name[0] == '.' || strlen(dir->d_name) > 4)
                 continue;
@@ -280,12 +338,20 @@ int GroupLastMessage(char *GID){
 
         return max;
     } 
-    else
-        return (-1);
+    else{
+        logError("Failed to open message directory.");
+        return -1;
+    }
     
 }
 
-// Sort list of groups by name
+/**
+ * Auxiliary function for qsort
+ * Compares two group IDs
+ * @param name1 group ID
+ * @param name2 group ID
+ * @return integer 
+*/
 int compName(const void* name1, const void* name2){
 
     Group* group1 = (Group*) name1;
@@ -294,24 +360,31 @@ int compName(const void* name1, const void* name2){
     return (atoi(group1->groupNumber)-atoi(group2->groupNumber));
 }
 
-// Helper function
+/**
+ * Quick sort function to sort list of groups by group ID
+ * @param list list of groups
+ * @param numberGroups number of groups in that list
+*/
 void SortGList(Group* list, int numberGroups){
     qsort(list,numberGroups,sizeof(Group),compName);
 }
 
-//Fill GROUPSLIST struct with all groups info
+/**
+ * Fill Group struct with all groups info
+ * @param list list of groups
+ * @return 1 for success or 0 for errors 
+*/
 int ListGroupsDir(Group* list){
     
     DIR *d;
-    struct dirent *dir;
-    int i=0;
-    int lastMessage;
     FILE *fp;
+    struct dirent *dir;
     char GIDname[30];
-
+    int lastMessage;
+    int i=0;
     int numberGroups = 0;
-    d = opendir("GROUPS");
-    if(d){
+
+    if(d = opendir("GROUPS")){
         while((dir = readdir(d)) != NULL){
             if(dir->d_name[0] == '.')
                 continue;
@@ -339,8 +412,10 @@ int ListGroupsDir(Group* list){
         numberGroups = i;
         closedir(d);
     }
-    else
-        return(-1);
+    else{
+        logError("Failed to open groups directory.");
+        return -1;
+    }
         
     if(numberGroups>1){
         SortGList(list,numberGroups);

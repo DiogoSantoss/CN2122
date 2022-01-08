@@ -22,9 +22,10 @@
 
 /**
  * Send message via TCP socket to user.
- * @param[in] fd File descriptor of TCP socket
- * @param[in] message Message to be sent
- * @param[in] messageLen Message length
+ * @param fd File descriptor of TCP socket
+ * @param message Message to be sent
+ * @param messageLen Message length
+ * @return 1 for success or 0 for errors
 */
 int sendTCP(int fd, char* message, int messageLen){
     int nLeft = messageLen;
@@ -48,10 +49,10 @@ int sendTCP(int fd, char* message, int messageLen){
 
 /**
  * Receive messageSize message via TCP socket from user.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] buffer Buffer to be filled with message from the user
- * @param[in] messageSize Size of the desired message
- * @param[out] number of bytes read
+ * @param fd File descriptor of UDP socket
+ * @param buffer Buffer to be filled with message from the user
+ * @param messageSize Size of the desired message
+ * @return number of bytes read
 */
 int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     
@@ -77,8 +78,8 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
 
 /** 
  * Checks if reads end of line (\n)
- * @param[in] fd File descriptor
- * @param[out] TRUE or FALSE depending if it was a endline or not
+ * @param fd File descriptor
+ * @return 1 for success or 0 for errors
 */
 int checkEndLine(int fd){
 
@@ -94,8 +95,8 @@ int checkEndLine(int fd){
 
 /**
  * Skips a space when reading a file/socket
- * @param[in] fd File descriptor
- * @param[out] TRUE or FALSE depending if it was a space or not
+ * @param fd File descriptor
+ * @return 1 for success or 0 for errors
 */
 int skipSpace(int fd){
 
@@ -111,10 +112,10 @@ int skipSpace(int fd){
 
 /**
  * Reads a word of max size maxRead from fd
- * @param[in] fd File descriptor
- * @param[in] buffer array to read word to
- * @param[in] maxRead number of bytes to read
- * @param[out] TRUE or FALSE depending if word was correctly read
+ * @param fd File descriptor
+ * @param buffer array to read word to
+ * @param maxRead number of bytes to read
+ * @return 1 for success or 0 for errors
 */
 int readWord(int fd, char* buffer, int maxRead){
 
@@ -145,9 +146,9 @@ void requestErrorTCP(userData user, serverData server, int fd){
 
 /**
  * Process ulist request.
- * @param[in] user User data
- * @param[in] server User data
- * @param[in] fd File descriptor
+ * @param user User data
+ * @param server User data
+ * @param fd File descriptor
 */
 void processULS(userData user, serverData server, int fd){
 
@@ -217,22 +218,11 @@ void processULS(userData user, serverData server, int fd){
 
 /**
  * Process post request.
- * @param[in] user User data
- * @param[in] server User data
- * @param[in] fd File descriptor
+ * @param user User data
+ * @param server User data
+ * @param fd File descriptor
 */
 void processPST(userData user, serverData server, int fd){
-
-    //INCOMING
-    //PST UID GID Tsize text [Fname Fsize data]
-    //OUTGOING
-    //RPT status
-
-    //UID GID Tsize text [Fname Fsize data]
-
-    // readUntilSpace()
-    // UID , GID , Tsize , 
-
 
     char UserID[6];
     char GroupID[3];
@@ -301,7 +291,7 @@ void processPST(userData user, serverData server, int fd){
         return;
     } 
     
-    // Check what to do after reading text
+    // Checks if needs to read file
     if(singleChar[0] == '\n'){
         sprintf(response,"RPT %04d\n",messageID);
         sendTCP(fd,response,strlen(response));
@@ -364,4 +354,61 @@ void processPST(userData user, serverData server, int fd){
         sendTCP(fd,response,strlen(response));
         return;
     }
+}
+
+/**
+ * Process retrieve request.
+ * @param user User data
+ * @param server User data
+ * @param fd File descriptor
+*/
+void processRTV(userData user, serverData server, int fd){
+
+    // RTV UID GID MID
+
+    // RRT status [N[ MID UID Tsize text[ / Fname Fsize data]]*]
+
+    /**
+     * Notas:
+     * se messageID > qualquer mensagem no servidro => devolve 0 messages retrieved
+     * se nao existirem mensagem => RRT EOF
+    */
+
+    char userID[6];
+    char groupID[3];
+    char messageID[5];
+
+    char response[10];
+
+
+    // Reads User ID
+    if(!readWord(fd,userID,5) || strlen(userID) != 5 || !checkStringIsNumber(userID)){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    // Reads Group ID
+    if(!readWord(fd,groupID,2) || strlen(groupID) != 2 || !checkStringIsNumber(groupID)){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    if(!UserExists(userID) || !GroupExists(groupID)){
+        strcpy(response,"RPT NOK\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    // Reads Message ID
+    if(!readWord(fd,messageID,4) || strlen(messageID) != 4 || !checkStringIsNumber(messageID)){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+
+
+
 }

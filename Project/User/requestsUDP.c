@@ -18,9 +18,9 @@
 
 /**
  * Parse register command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message to send to server
 */
 char* parseRegister(userData* user, char* input){
 
@@ -47,9 +47,9 @@ char* parseRegister(userData* user, char* input){
 
 /**
  * Parse unregister command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message Formarted message to send to server
 */
 char* parseUnregister(userData* user, char* input){
 
@@ -76,9 +76,9 @@ char* parseUnregister(userData* user, char* input){
 
 /**
  * Parse login command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message Formarted message to send to server
 */
 char* parseLogin(userData* user, char* input){
 
@@ -114,8 +114,8 @@ char* parseLogin(userData* user, char* input){
 
 /**
  * Resets UID if server gives bad response.
- * @param[in] user User data
- * @param[in] response Server response
+ * @param user User data
+ * @param response Server response
 */
 void helperLogin(userData *user, char *response){
     if(strcmp(response,"RLO OK\n")){
@@ -126,9 +126,9 @@ void helperLogin(userData *user, char *response){
 
 /**
  * Parse logout command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message Formarted message to send to server
 */
 char* parseLogout(userData* user, char* input){
 
@@ -156,8 +156,8 @@ char* parseLogout(userData* user, char* input){
 
 /**
  * Resets UID and password if server gives good response.
- * @param[in] user User data
- * @param[in] response Server response
+ * @param user User data
+ * @param response Server response
 */
 void helperLogout(userData* user, char* response){
     if(!strcmp(response,"ROU OK\n")){
@@ -168,8 +168,8 @@ void helperLogout(userData* user, char* response){
 
 /**
  * Process showUID command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
+ * @param user User data
+ * @param input User input to be parsed
 */
 void processShowUID(userData* user, char* input){
 
@@ -194,9 +194,9 @@ void processShowUID(userData* user, char* input){
 
 /**
  * Parse groups command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message Formarted message to send to server
 */
 char* parseGroups(userData* user, char* input){
     char* message;
@@ -218,9 +218,9 @@ char* parseGroups(userData* user, char* input){
 
 /**
  * Parse subscribe command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message Formarted message to send to server
 */
 char* parseSubscribe(userData* user, char* input){
 
@@ -252,9 +252,9 @@ char* parseSubscribe(userData* user, char* input){
 
 /**
  * Parse unsubscribe command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message Formarted message to send to server
 */
 char* parseUnsubscribe(userData* user, char* input){
 
@@ -286,9 +286,9 @@ char* parseUnsubscribe(userData* user, char* input){
 
 /**
  * Parse my_groups command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
- * @param[out] message Formarted message to send to server
+ * @param user User data
+ * @param input User input to be parsed
+ * @return message Formarted message to send to server
 */
 char* parseMyGroups(userData* user, char* input){
 
@@ -316,8 +316,8 @@ char* parseMyGroups(userData* user, char* input){
 
 /**
  * Process select command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
+ * @param user User data
+ * @param input User input to be parsed
 */
 void processSelect(userData* user, char* input){
 
@@ -350,8 +350,8 @@ void processSelect(userData* user, char* input){
 
 /**
  * Parse showGID command.
- * @param[in] user User data
- * @param[in] input User input to be parsed
+ * @param user User data
+ * @param input User input to be parsed
 */
 void processShowGID(userData* user, char* input){
 
@@ -381,9 +381,9 @@ void processShowGID(userData* user, char* input){
 
 /**
  * Connect via UDP socket to server.
- * @param[in] server Data about the server
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
+ * @param server Data about the server
+ * @param fd File descriptor of UDP socket
+ * @param res Information about server 
 */
 int connectUDP(serverData *server, int* fd, struct addrinfo** res){
     int errcode;
@@ -410,10 +410,10 @@ int connectUDP(serverData *server, int* fd, struct addrinfo** res){
 
 /**
  * Send message via UDP socket to server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
- * @param[in] message Message to be sent
- * @param[in] messageLen Message length
+ * @param fd File descriptor of UDP socket
+ * @param res Information about server 
+ * @param message Message to be sent
+ * @param messageLen Message length
 */
 int sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen){
     int n;
@@ -445,8 +445,8 @@ int TimerOFF(int sd){
 
 /**
  * Receive message via UDP socket from server.
- * @param[in] fd File descriptor of UDP socket
- * @param[out] message Message from server
+ * @param fd File descriptor of UDP socket
+ * @return message Message from server
 */
 char* receiveMessageUDP(int fd){
     int n;
@@ -485,12 +485,12 @@ char* receiveMessageUDP(int fd){
  * Generic function to proccess commands that access the server via UDP protocol.
  * This function receives the user input and a set of function specific for each
  * command.
- * @param[in] user User data
- * @param[in] server Server data
- * @param[in] input User input
- * @param[in] parser Function to parse the command
- * @param[in] logger Function to log the messages related to the command
- * @param[in] helper "Optional" function when processRequest needs to do additional tasks
+ * @param user User data
+ * @param server Server data
+ * @param input User input
+ * @param parser Function to parse the command
+ * @param logger Function to log the messages related to the command
+ * @param helper "Optional" function when processRequest needs to do additional tasks
  * 
 */
 void processRequestUDP(
