@@ -111,7 +111,7 @@ int UserExists(char* UID){
 
     if(dir = opendir(path)){
         // User exists
-        close(dir);
+        closedir(dir);
         return TRUE;
     }
     else if (ENOENT == errno) {
