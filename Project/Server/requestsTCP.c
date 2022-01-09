@@ -350,11 +350,13 @@ void processPST(userData user, serverData server, int fd){
     }
 
     if(!checkEndLine(fd)){
+        fclose(fptr);
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
 
     } else {
+        fclose(fptr);
         sprintf(response,"RPT %04d\n",messageID);
         sendTCP(fd,response,strlen(response));
         return;
