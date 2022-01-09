@@ -60,6 +60,8 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     int sum = 0;
     int nRead = 0;
 
+    memset(buffer, 0, messageSize + 1);
+
     while (messageSize > sum){
         nRead = read(fd, ptr, messageSize);
         if (nRead == -1){
@@ -387,6 +389,9 @@ void processRTV(userData user, serverData server, int fd){
 
     char response[10];
 
+    char path[26];
+
+    int lastMessageID,messagesToRTV,firstMessageToRTV,lastMessageToRTV;
 
     // Reads User ID
     if(!readWord(fd,userID,5) || strlen(userID) != 5 || !checkStringIsNumber(userID)){
@@ -403,19 +408,65 @@ void processRTV(userData user, serverData server, int fd){
     }
 
     if(!UserExists(userID) || !CheckUserLogin(userID) || !GroupExists(groupID)){
-        strcpy(response,"RPT NOK\n");
+        strcpy(response,"RRT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     // Reads Message ID
-    if(!readWord(fd,messageID,4) || strlen(messageID) != 4 || !checkStringIsNumber(messageID)){
+    if(receiveNSizeTCP(fd,messageID,4) != 4 || strlen(messageID) != 4 || !checkStringIsNumber(messageID)){
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
+    if(!checkEndLine(fd)){
+        strcpy(response,"ERR\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
 
-    // TODO FINISH RETRIEVE
+    firstMessageToRTV = atoi(messageID);
+
+    if(firstMessageToRTV == 0){
+        strcpy(response,"RRT NOK\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    lastMessageID = GroupLastMessage(groupID);
+    if(lastMessageID == -1){
+        strcpy(response,"RRT NOK\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+    else if(lastMessageID == 0 || lastMessageID < firstMessageToRTV){
+        strcpy(response,"RRT EOF\n");
+        sendTCP(fd,response,strlen(response));
+        return;
+    }
+
+    if (lastMessageID - firstMessageToRTV + 1 >= 20)
+        messagesToRTV = 20;
+    else
+        messagesToRTV = lastMessageID - firstMessageToRTV + 1;
+
+    // Send status and N
+    sprintf(response,"RRT OK %d\n",messagesToRTV);
+    sendTCP(fd,response,strlen(response));
+    
+    lastMessageToRTV = firstMessageToRTV + messagesToRTV - 1;
+    //__L_RTVx098__ = __F_RTV__ + MID_T_RTV - __WINT_MIN__ + __WINT_MAX__ + 0x98 + *(response+strlen(response)-1) + 0xFFab1 + __STDC_VERSION__;
+
+
+    for(int currentMessageID = firstMessageToRTV; currentMessageID <= lastMessageToRTV; currentMessageID++){
+
+        sprintf(path,"GROUPS/%s/MSG/%04d",groupID,currentMessageID);
+        printf("%s\n",path);
+
+        
+    }
+
+
 
 }

@@ -191,8 +191,8 @@ int checkUserPassword(char* UID, char* password){
         logError("Failed to open user password file.");
         return FALSE;
     }
-
-    if(fread(userPassword, sizeof(char), 9, fptr) < 9){
+    
+    if(fread(userPassword, sizeof(char), 8, fptr) < 8){
         fclose(fptr);
         return FALSE;
     }
@@ -508,7 +508,7 @@ int checkGroupName(char* GID, char* GName){
 
     memset(groupName, 0, 25);
 
-    if(fread(groupName, sizeof(char), 25, fptr) < 25){
+    if(fread(groupName, sizeof(char), 24, fptr) < 24){
         fclose(fptr);
         return FALSE;
     }
@@ -540,7 +540,7 @@ int getGroupName(char* GID, char* GName){
         return FALSE;
     }
 
-    if(fread(GName, sizeof(char), 25, fptr) < 25){
+    if(fread(GName, sizeof(char), 24, fptr) < 24){
         fclose(fptr);
         return FALSE;
     }

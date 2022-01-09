@@ -12,6 +12,7 @@ int createLoginFile(char* UID);
 int DelLoginFile(char *UID);
 int CheckUserLogin(char* UID);
 int maxGroupNumber();
+int GroupLastMessage(char *GID);
 int CreateGroupDir(char* GID);
 int ListGroupsDir(Group* list);
 int CreateGroupFile(char* UID, char* password);

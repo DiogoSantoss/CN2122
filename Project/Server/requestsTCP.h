@@ -4,5 +4,6 @@
 void requestErrorTCP(userData user, serverData server, int fd);
 void processULS(userData user, serverData server, int fd);
 void processPST(userData user, serverData server, int fd);
+void processRTV(userData user, serverData server, int fd);
 
 #endif

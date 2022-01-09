@@ -222,7 +222,7 @@ void handleRequests(userData* user, serverData* server){
                 processPST(*user, *server, fdNew);
 
             } else if(!strcmp(command,"RTV ")){
-                //processRTV(*user, *server, fdNew);
+                processRTV(*user, *server, fdNew);
             } else{
                 requestErrorTCP(*user, *server, fdNew);
             }

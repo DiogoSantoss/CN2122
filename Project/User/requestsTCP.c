@@ -260,8 +260,9 @@ void processPost(userData* user, serverData* server, char* input){
     //Is this too much allocated memory?
     char message[MAXSIZE * 3];
 
-    memset(extra,0,sizeof extra);
-    memset(filename,0,sizeof filename);
+    memset(extra,0,MAXSIZE);
+    memset(text,0,MAXSIZE);
+    memset(filename,0,MAXSIZE);
     sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
 
     if(!strcmp(user->ID,"")){
