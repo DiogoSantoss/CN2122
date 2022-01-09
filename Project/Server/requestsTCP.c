@@ -340,7 +340,12 @@ void processPST(userData user, serverData server, int fd){
             actuallyRead = receiveNSizeTCP(fd,buffer,fileSize - sent);
         }
         // Write to file
-        fwrite(buffer, sizeof(char), actuallyRead, fptr);
+        if(fwrite(buffer, sizeof(char), actuallyRead, fptr) < actuallyRead){
+            fclose(fptr);
+            strcpy(response,"RPT NOK\n");
+            sendTCP(fd,response,strlen(response));
+            return;
+        }
         sent += actuallyRead;
     }
 

@@ -143,7 +143,10 @@ int CreatePassFile(char* UID, char* password){
         return FALSE;
     }
 
-    fwrite(password, sizeof(char), 8, fptr);
+    if(fwrite(password, sizeof(char), 8, fptr) < 8){
+        fclose(fptr);
+        return FALSE;
+    }
     fclose(fptr);
 
     return TRUE;
@@ -189,7 +192,10 @@ int checkUserPassword(char* UID, char* password){
         return FALSE;
     }
 
-    fread(userPassword, sizeof(char), 9, fptr);
+    if(fread(userPassword, sizeof(char), 9, fptr) < 9){
+        fclose(fptr);
+        return FALSE;
+    }
     fclose(fptr);
 
     if(!strcmp(userPassword,password))
@@ -445,7 +451,10 @@ int CreateGroupFile(char* GID, char* Gname){
         return FALSE;
     }
   
-    fwrite(Gname, sizeof(char), strlen(Gname), fptr);
+    if(fwrite(Gname, sizeof(char), strlen(Gname), fptr) < strlen(Gname)){
+        fclose(fptr);
+        return FALSE;
+    }
     fclose(fptr);
 
     return TRUE;
@@ -499,7 +508,10 @@ int checkGroupName(char* GID, char* GName){
 
     memset(groupName, 0, 25);
 
-    fread(groupName, sizeof(char), 25, fptr);
+    if(fread(groupName, sizeof(char), 25, fptr) < 25){
+        fclose(fptr);
+        return FALSE;
+    }
     fclose(fptr);
 
     if(!strcmp(groupName, GName)){
@@ -528,7 +540,10 @@ int getGroupName(char* GID, char* GName){
         return FALSE;
     }
 
-    fread(GName, sizeof(char), 25, fptr);
+    if(fread(GName, sizeof(char), 25, fptr) < 25){
+        fclose(fptr);
+        return FALSE;
+    }
     fclose(fptr);
 
     return TRUE;
@@ -656,7 +671,10 @@ int CreateMessageDir(char* UID, char* GID, char* message){
         return -1;
     }
         
-    fwrite(UID, sizeof(char), strlen(UID), fptr);
+    if(fwrite(UID, sizeof(char), strlen(UID), fptr) < strlen(UID)){
+        fclose(fptr);
+        return FALSE;
+    }
     fclose(fptr);
 
     // Create text file
@@ -667,7 +685,10 @@ int CreateMessageDir(char* UID, char* GID, char* message){
         return -1;
     }  
 
-    fwrite(message, sizeof(char), strlen(message), fptr);
+    if(fwrite(message, sizeof(char), strlen(message), fptr) < strlen(message)){
+        fclose(fptr);
+        return FALSE;
+    }
     fclose(fptr);
 
     return messageNumber;
