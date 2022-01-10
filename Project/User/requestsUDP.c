@@ -453,7 +453,7 @@ int TimerON(int sd){
 
     struct timeval tmout;
     memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
-    tmout.tv_sec=15; /* Wait for 15 sec for a reply from server. */
+    tmout.tv_sec=10; /* Wait for 15 sec for a reply from server. */
     return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
 }
 
@@ -483,6 +483,7 @@ char* receiveMessageUDP(int fd){
         TimerOFF(fd);
         return NULL;
     }
+
     n = recvfrom(fd,message,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
     if(n==-1){
         logError("Couldn't receive message via UDP socket.");
@@ -523,16 +524,29 @@ void processRequestUDP(
     void (*helper)(userData*,char*,char*)
     ){
 
-    int msgSize;
+    int msgSize, attempts;
     char *message, *response;
 
     message = (*parser)(user,input);
     if(message == NULL) return;
 
     if(!connectUDP(server, &(user->fd), &(user->res))) return;
+
     if(!sendMessageUDP(user->fd, user->res, message, strlen(message))) return;
     response = receiveMessageUDP(user->fd);
-    if(response == NULL) return;
+
+    attempts = 1;
+    // Resend message in case of failure/lost packages
+    while(response == NULL && attempts < 3){
+        logError("Trying to resend...");
+        if(!sendMessageUDP(user->fd, user->res, message, strlen(message))) return;
+        response = receiveMessageUDP(user->fd);
+        attempts++;
+    }
+    if(response == NULL && attempts == 3){
+        logError("Stopped trying to send after 3 attemps.");
+        return;
+    }
 
     if(helper != NULL){
         (*helper)(user,input,response);

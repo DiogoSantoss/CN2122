@@ -287,7 +287,7 @@ void handleRequests(userData* user, serverData* server){
             } else{
                 response = requestErrorUDP(*user, *server);
             }
-            
+
             n = sendto(fdUdp, response, strlen(response), 0, (struct sockaddr*)&addr, addrlen);
             free(response);
 

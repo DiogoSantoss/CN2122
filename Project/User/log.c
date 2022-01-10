@@ -279,14 +279,14 @@ void logULS(char* message){
     memset(suffixCopy, 0, EXTRAMAXSIZE);
     sscanf(message, "%s %s %s %[^\n]s", prefix, status, GName, suffix);
 
-    if(!strcmp(message, "RUL\n")){
+    if(!strcmp(message, "RUL NOK\n")){
         colorYellow();
         printf("ulist: This group does not exist.\n");
     }
     else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("ulist: A fatal error has ocurred.");
     }
-    else{
+    else if(!strcmp(prefix,"RUL") && !strcmp(status,"OK")){
         colorGreen();
         strcpy(suffixCopy, suffix);
 
@@ -307,13 +307,16 @@ void logULS(char* message){
             printf("%s\n", userIDTemp);
         }   
     }
+    else{
+        logError("ulist: Failed to list the users.");
+    }
     colorReset();
 }
 
 void logPST(char* message){
 
-    char rpt[4], status[8], extra[MAXSIZE];
-    sscanf(message, "%s %s %s\n", rpt, status, extra);
+    char prefix[4], status[8], extra[MAXSIZE];
+    sscanf(message, "%s %s %s\n", prefix, status, extra);
 
     if(!strcmp(message, "RPT NOK\n")){
         colorYellow();
@@ -322,12 +325,12 @@ void logPST(char* message){
     else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("post: A fatal error has ocurred.");
     }
-    else if(strlen(status) != 4 || !checkStringIsNumber(status)){
-        logError("post: A fatal error has ocurred with the message number.");
-    }
-    else{
+    else if(strlen(status) == 4 && checkStringIsNumber(status)){
         colorGreen();
         printf("post: Message with number %s was successfully posted.\n", status);
+    }
+    else{
+        logError("post: A fatal error has ocurred with the message number.");  
     }
     colorReset();
 }
@@ -350,13 +353,13 @@ int logRTV(char* message){
         colorGreen();
         printf("retrieve: 0 messages retrieved.\n");
     }
-    else if(strcmp(rrt,"RRT") && strcmp(status,"OK") && !checkStringIsNumber(numberOfMessages)){
-        logError("retrieve: Server response wrongly formatted");
-    }
-    else{
+    else if(!strcmp(rrt,"RRT") && !strcmp(status,"OK") && checkStringIsNumber(numberOfMessages)){
         colorGreen();
         printf("%s message(s) retrieved:\n", numberOfMessages);
         success = TRUE;
+    }
+    else{
+        logError("retrieve: Server response wrongly formatted");
     }
     colorReset();
     return success;
