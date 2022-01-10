@@ -24,5 +24,6 @@ int UnsubscribeUser(char* UID, char* GID);
 int checkUserSubscribedToGroup(char* UID, char* GID);
 int DelUserFromGroups(char* UID);
 int CreateMessageDir(char* UID, char* GID, char* message);
+int getMessageFilePath(char* GID, char* MID, char* fileName);
 
 #endif

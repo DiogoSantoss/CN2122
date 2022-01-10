@@ -408,7 +408,8 @@ void processRTV(userData user, serverData server, int fd){
     char groupID[3];
     char messageID[5];
     char response[10];
-    char path[42];
+    char path[51];
+    char fileName[25];
 
     memset(messageID, 0, 5);
 
@@ -480,10 +481,11 @@ void processRTV(userData user, serverData server, int fd){
     //__L_RTVx098__ = __F_RTV__ + MID_T_RTV - __WINT_MIN__ + __WINT_MAX__ + 0x98 + *(response+strlen(response)-1) + 0xFFab1 + __STDC_VERSION__;
 
     FILE *fptr;
+    int textSize;
     int fileSize;
     char authorID[6];
     char text[241];
-    char test[272];
+    char buffer[512];
     for(int currentMessageID = firstMessageToRTV; currentMessageID <= lastMessageToRTV; currentMessageID++){
 
         memset(authorID, 0, 6);
@@ -504,35 +506,72 @@ void processRTV(userData user, serverData server, int fd){
         }
         fclose(fptr);
 
-        // Get file size
+        // Open text file
         sprintf(path,"GROUPS/%s/MSG/%04d/T E X T.txt",groupID,currentMessageID);
         if(!(fptr = fopen(path, "r"))){
             logError("Failed to open text file.");
             return;
         }
+
+        // Get text size
         fseek(fptr,0L,SEEK_END);
-        fileSize = ftell(fptr);
+        textSize = ftell(fptr);
         rewind(fptr);
 
         // Read text
-        if(fread(text, sizeof(char), fileSize, fptr) < fileSize){
+        if(fread(text, sizeof(char), textSize, fptr) < textSize){
             fclose(fptr);
             return;
         }
         fclose(fptr);
 
-        memset(test,0,272);
-        sprintf(test," %04d %s %d %s",currentMessageID,authorID,fileSize,text);
-        sendTCP(fd,test,strlen(test));
+        memset(buffer,0,272);
+        sprintf(buffer," %04d %s %d %s",currentMessageID,authorID,textSize,text);
+        sendTCP(fd,buffer,strlen(buffer));
+
+        if(!getMessageFilePath(groupID,messageID,fileName)){
+            // There is no file in this message
+            continue;
+        }
+        
+        printf("Filename: %s", fileName);
+
+        sprintf(path,"GROUPS/%s/MSG/%04d/%s",groupID,currentMessageID,fileName);
+        if(!(fptr = fopen(path, "r"))){
+            logError("Failed to open message file.");
+            return;
+        }
+
+        // Get message file size
+        fseek(fptr,0L,SEEK_END);
+        fileSize = ftell(fptr);
+        rewind(fptr);
+
+        memset(buffer,0,272);
+        sprintf(buffer," / %s %d ",fileName,fileSize);
+        sendTCP(fd,buffer,strlen(buffer));
+
+        int read = 0;
+        int actuallyRead = 0;
+
+        while(read < fileSize){
+
+            memset(buffer, 0, 512);
+            // Read from file
+            if(fileSize - read > 512){
+                actuallyRead = fread(buffer,sizeof(char),512,fptr);
+            }else {
+                actuallyRead = fread(buffer,sizeof(char),fileSize - read,fptr);
+            }
+            // Send to socket
+            sendTCP(fd,buffer,strlen(buffer));
+
+            read += actuallyRead;
+        }
+        fclose(fptr);
 
         //[ MID UID Tsize text[ / Fname Fsize data]]*]
-
     }
-
-    char buffer[2];
     strcpy(buffer,"\n");
     sendTCP(fd,buffer,strlen(buffer));
-
-
-
 }

@@ -695,3 +695,34 @@ int CreateMessageDir(char* UID, char* GID, char* message){
 
     return messageNumber;
 }
+
+// Fills path with the path of the file on message
+int getMessageFilePath(char* GID, char* MID, char* fileName){
+    
+    DIR* d;
+    struct dirent *dir;
+    char path[19];
+
+    sprintf(path,"GROUPS/%s/MSG/%s", GID, MID);
+    d = opendir(path);
+    if (d){
+        
+        while ((dir = readdir(d))){
+
+            printf("Current dirent: %s\n",dir->d_name);
+
+            if(dir->d_name[0] == '.')
+                continue;
+
+            if(strcmp("A U T H O R.txt",dir->d_name) && strcmp("T E X T.txt",dir->d_name)){
+                strcpy(fileName,dir->d_name);
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
+    else{
+        logError("Failed to open message directory.");
+        return FALSE;
+    }   
+}
