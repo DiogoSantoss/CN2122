@@ -281,7 +281,6 @@ void processPST(userData user, serverData server, int fd){
         sendTCP(fd,response,strlen(response));
         return;
     }
-    printf("%s\n",GroupID);
 
     if(!UserExists(UserID) || !CheckUserLogin(UserID) || !GroupExists(GroupID)){
         strcpy(response,"RPT NOK\n");
@@ -395,16 +394,22 @@ void processPST(userData user, serverData server, int fd){
 */
 void processRTV(userData user, serverData server, int fd){
 
+    FILE *fptr;
+
     char userID[6];
     char groupID[3];
     char messageID[5];
     char response[10];
     char path[51];
     char fileName[25];
+    char authorID[6];
+    char text[241];
+    char buffer[512];
+
+    int textSize, fileSize;
+    int lastMessageID, messagesToRTV, firstMessageToRTV, lastMessageToRTV;
 
     memset(messageID, 0, 5);
-
-    int lastMessageID,messagesToRTV,firstMessageToRTV,lastMessageToRTV;
 
     // Reads User ID
     if(!readWord(fd,userID,5) || strlen(userID) != 5 || !checkStringIsNumber(userID)){
@@ -471,12 +476,6 @@ void processRTV(userData user, serverData server, int fd){
     lastMessageToRTV = firstMessageToRTV + messagesToRTV - 1;
     //__L_RTVx098__ = __F_RTV__ + MID_T_RTV - __WINT_MIN__ + __WINT_MAX__ + 0x98 + *(response+strlen(response)-1) + 0xFFab1 + __STDC_VERSION__;
 
-    FILE *fptr;
-    int textSize;
-    int fileSize;
-    char authorID[6];
-    char text[241];
-    char buffer[512];
     for(int currentMessageID = firstMessageToRTV; currentMessageID <= lastMessageToRTV; currentMessageID++){
 
         memset(authorID, 0, 6);
@@ -552,14 +551,13 @@ void processRTV(userData user, serverData server, int fd){
             }else {
                 actuallyRead = fread(buffer,sizeof(char),fileSize - read,fptr);
             }
-            // Send to socket
-            sendTCP(fd,buffer,strlen(buffer));
 
+            // Send to socket
+            sendTCP(fd,buffer,actuallyRead);
             read += actuallyRead;
         }
         fclose(fptr);
 
-        //[ MID UID Tsize text[ / Fname Fsize data]]*]
     }
     strcpy(buffer,"\n");
     sendTCP(fd,buffer,strlen(buffer));
