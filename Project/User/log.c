@@ -269,7 +269,6 @@ void logSG(char* message){
     colorReset();
 }
 
-//TODO - this is just wrong
 void logULS(char* message){
 
     char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
