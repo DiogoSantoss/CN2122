@@ -238,6 +238,7 @@ void processULS(userData user, serverData server, int fd){
         strcpy(buffer,"ERR\n");
         sendTCP(fd,buffer,strlen(buffer));
     }
+    closedir(d);
 }
 
 /**
@@ -394,16 +395,6 @@ void processPST(userData user, serverData server, int fd){
 */
 void processRTV(userData user, serverData server, int fd){
 
-    // RTV UID GID MID
-
-    // RRT status [N[ MID UID Tsize text[ / Fname Fsize data]]*]
-
-    /**
-     * Notas:
-     * se messageID > qualquer mensagem no servidro => devolve 0 messages retrieved
-     * se nao existirem mensagem => RRT EOF
-    */
-
     char userID[6];
     char groupID[3];
     char messageID[5];
@@ -466,7 +457,7 @@ void processRTV(userData user, serverData server, int fd){
         strcpy(response,"RRT EOF\n");
         sendTCP(fd,response,strlen(response));
         return;
-    }
+    }   
 
     if (lastMessageID - firstMessageToRTV + 1 >= 20)
         messagesToRTV = 20;
@@ -492,7 +483,6 @@ void processRTV(userData user, serverData server, int fd){
         memset(text, 0, 241);
 
         sprintf(path,"GROUPS/%s/MSG/%04d",groupID,currentMessageID);
-        printf("%s\n",path);
 
         // Read author of message
         sprintf(path,"GROUPS/%s/MSG/%04d/A U T H O R.txt",groupID,currentMessageID);
@@ -529,12 +519,11 @@ void processRTV(userData user, serverData server, int fd){
         sprintf(buffer," %04d %s %d %s",currentMessageID,authorID,textSize,text);
         sendTCP(fd,buffer,strlen(buffer));
 
-        if(!getMessageFilePath(groupID,messageID,fileName)){
+        // Verify if there is a file in the message
+        if(!getMessageFilePath(groupID,currentMessageID,fileName)){
             // There is no file in this message
             continue;
         }
-        
-        printf("Filename: %s", fileName);
 
         sprintf(path,"GROUPS/%s/MSG/%04d/%s",groupID,currentMessageID,fileName);
         if(!(fptr = fopen(path, "r"))){

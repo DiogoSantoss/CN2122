@@ -315,10 +315,12 @@ int maxGroupNumber(){
             if (atoi(dir->d_name) > groupMax)
                 groupMax = atoi(dir->d_name);
         }
+        closedir(d);
         return groupMax;
     }
     else{   
         logError("Failed to open groups directory.");
+        closedir(d);
         return -1;
     }
 }
@@ -346,11 +348,12 @@ int GroupLastMessage(char *GID){
             if(messageNumber > max)
                 max = messageNumber;
         }
-
+        closedir(d);
         return max;
     } 
     else{
         logError("Failed to open message directory.");
+        closedir(d);
         return -1;
     }
     
@@ -424,6 +427,7 @@ int ListGroupsDir(Group* list){
         closedir(d);
     }
     else{
+        closedir(d);
         logError("Failed to open groups directory.");
         return -1;
     }
@@ -697,32 +701,36 @@ int CreateMessageDir(char* UID, char* GID, char* message){
 }
 
 // Fills path with the path of the file on message
-int getMessageFilePath(char* GID, char* MID, char* fileName){
+int getMessageFilePath(char* GID, int MID, char* fileName){
     
     DIR* d;
-    struct dirent *dir;
     char path[19];
 
-    sprintf(path,"GROUPS/%s/MSG/%s", GID, MID);
+    sprintf(path,"GROUPS/%s/MSG/%04d", GID, MID);
     d = opendir(path);
     if (d){
         
-        while ((dir = readdir(d))){
-
-            printf("Current dirent: %s\n",dir->d_name);
+        while (1){
+            struct dirent *dir;
+            if(!(dir = readdir(d))){
+                break;
+            }
 
             if(dir->d_name[0] == '.')
                 continue;
 
             if(strcmp("A U T H O R.txt",dir->d_name) && strcmp("T E X T.txt",dir->d_name)){
                 strcpy(fileName,dir->d_name);
+                closedir(d);
                 return TRUE;
             }
         }
+        closedir(d);
         return FALSE;
     }
     else{
         logError("Failed to open message directory.");
+        closedir(d);
         return FALSE;
-    }   
+    }  
 }
