@@ -4,6 +4,9 @@
 #include <string.h>
 #include <netdb.h>
 #include <errno.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 #include "log.h"
@@ -26,8 +29,6 @@
  * @param[in] server Server data
 */
 void initializeData(userData *user, serverData *server){
-    strcpy(user->port,"");
-    strcpy(user->ipAddress,"");
 
     server->verbose = FALSE;
     strcpy(server->port,"58011");
@@ -212,7 +213,7 @@ void handleRequests(userData* user, serverData* server){
             }
 
             if(server->verbose){
-                logTCP(addr.sin_addr.s_addr,addr.sin_port,command);
+                logTCP(inet_ntoa(user->addr->sin_addr),addr.sin_port);
             }
 
             if(!strcmp(command,"ULS ")){
@@ -245,56 +246,49 @@ void handleRequests(userData* user, serverData* server){
                 break;
             } 
 
+            user->fd = fdUdp;
+            user->addr = &addr;
+            user->addrlen = addrlen;
+
             if(request[strlen(request)-1] != '\n'){
                 logError("Client message too big or doesn't end with \\n.");
-                // TODO IMPROVE THIS
-                response = requestErrorUDP(*user, *server);
-                sendto(fdUdp, response, strlen(response), 0, (struct sockaddr*)&addr, addrlen);
-                free(response);
+                requestErrorUDP(*user, *server);
                 continue;
             }
 
             sscanf(request,"%s %s",command,extra);
 
             if(server->verbose){
-                logUDP(addr.sin_addr.s_addr,addr.sin_port,command);
+                logUDP(inet_ntoa(user->addr->sin_addr), user->addr->sin_port);
+                
             }
 
             if(!strcmp(command,"REG")){
-                response = processREG(*user, *server, request);
+                processREG(*user, *server, request);
 
             } else if(!strcmp(command,"UNR")){
-                response = processURN(*user, *server, request);
+                processURN(*user, *server, request);
 
             } else if(!strcmp(command,"LOG")){
-                response = processLOG(*user, *server, request);
+                processLOG(*user, *server, request);
 
             } else if(!strcmp(command,"OUT")){
-                response = processOUT(*user, *server, request);
+                processOUT(*user, *server, request);
 
             } else if(!strcmp(command,"GLS")){
-                response = processGLS(*user, *server, request);
+                processGLS(*user, *server, request);
 
             } else if(!strcmp(command,"GSR")){
-                response = processGSR(*user, *server, request);
+                processGSR(*user, *server, request);
 
             } else if(!strcmp(command,"GUR")){
-                response = processGUR(*user, *server, request);
+                processGUR(*user, *server, request);
                 
             } else if(!strcmp(command,"GLM")){
-                response = processGLM(*user, *server, request);
+                processGLM(*user, *server, request);
 
             } else{
-                response = requestErrorUDP(*user, *server);
-            }
-            
-            n = sendto(fdUdp, response, strlen(response), 0, (struct sockaddr*)&addr, addrlen);
-            free(response);
-
-            if(n == -1){
-                printf("sendto: Error %s (%d)\n", strerror(errno), errno);
-                logError("Couldn't send message via UDP socket");
-                break;
+                requestErrorUDP(*user, *server);
             }
         }
     }

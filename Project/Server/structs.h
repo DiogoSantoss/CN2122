@@ -7,8 +7,9 @@ struct serverData {
 } typedef serverData;
 
 struct userData {
-    char port[6];
-    char ipAddress[513];
+    int fd;
+    socklen_t addrlen;
+    struct sockaddr_in* addr;
 } typedef userData;
 
 struct Group {

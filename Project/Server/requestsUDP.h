@@ -3,14 +3,14 @@
 
 void createDirectories();
 
-char* requestErrorUDP(userData user, serverData server);
-char* processREG(userData user, serverData server, char* request);
-char* processURN(userData user, serverData server, char* request);
-char* processLOG(userData user, serverData server, char* request);
-char* processOUT(userData user, serverData server, char* request);
-char* processGLS(userData user, serverData server, char* request);
-char* processGSR(userData user, serverData server, char* request);
-char* processGUR(userData user, serverData server, char* request);
-char* processGLM(userData user, serverData server, char* request);
+void requestErrorUDP(userData user, serverData server);
+void processREG(userData user, serverData server, char* request);
+void processURN(userData user, serverData server, char* request);
+void processLOG(userData user, serverData server, char* request);
+void processOUT(userData user, serverData server, char* request);
+void processGLS(userData user, serverData server, char* request);
+void processGSR(userData user, serverData server, char* request);
+void processGUR(userData user, serverData server, char* request);
+void processGLM(userData user, serverData server, char* request);
 
 #endif

@@ -20,18 +20,34 @@ void logError(char* message){
     colorReset();
 }
 
-void logTCP(int IP, int port, char* command){
-    printf("Received request to TCP socket.\n");
-    printf("IP: %d\n",IP);
+void logTCP(char* IP, int port){
+    printf("Received request to TCP socket from:\n");
+    printf("IP: %s\n",IP);
     printf("Port: %d\n",port);
-    printf("Command: %s\n",command);
-    printf("-------------------------------\n");
 }
 
-void logUDP(int IP, int port, char* command){
-    printf("Received request to UDP socket.\n");
-    printf("IP: %d\n",IP);
+void logUDP(char* IP, int port){
+    printf("Received request to UDP socket from:\n");
+    printf("IP: %s\n",IP);
     printf("Port: %d\n",port);
-    printf("Command: %s\n",command);
-    printf("-------------------------------\n");
+}
+
+void logREG(char* UID){
+    printf("Registered user %s\n",UID);
+}
+
+void logUNR(char* UID){
+    printf("Unregistered user %s\n",UID);
+}
+
+void logLOG(char* UID){
+    printf("User %s logged in\n",UID);
+}
+
+void logOUT(char* UID){
+    printf("User %s logged out\n",UID);
+}
+
+void logGLS(char* UID){
+    // TODO
 }
