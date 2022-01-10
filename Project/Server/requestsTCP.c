@@ -60,8 +60,6 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     int sum = 0;
     int nRead = 0;
 
-    memset(buffer, 0, messageSize + 1);
-
     while (messageSize > sum){
         nRead = read(fd, ptr, messageSize);
         if (nRead == -1){
@@ -134,6 +132,30 @@ int readWord(int fd, char* buffer, int maxRead){
     }
     // Read max size, next should be space if not, error
     return skipSpace(fd);
+}
+
+/**
+ * Reads a word of max size (that ends with a \\n) maxRead from fd
+ * @param fd File descriptor
+ * @param buffer array to read word to
+ * @param maxRead number of bytes to read
+ * @return 1 for success or 0 for errors
+*/
+int readEndWord(int fd, char* buffer, int maxRead){
+
+    char readChar[1];
+    memset(buffer, 0, maxRead + 1);
+
+    for (int i = 0; i < maxRead; i++){
+        // Reads one char
+        if(receiveNSizeTCP(fd, readChar, 1) == -1) return FALSE;
+        // If space is found in buffer boundaries, return TRUE
+        if (readChar[0] == '\n') return TRUE;
+        // Save char to buffer
+        buffer[i] = readChar[0];
+    }
+    // Read max size, next should be space if not, error
+    return checkEndLine(fd);
 }
 
 void requestErrorTCP(userData user, serverData server, int fd){
@@ -258,6 +280,7 @@ void processPST(userData user, serverData server, int fd){
         sendTCP(fd,response,strlen(response));
         return;
     }
+    printf("%s\n",GroupID);
 
     if(!UserExists(UserID) || !CheckUserLogin(UserID) || !GroupExists(GroupID)){
         strcpy(response,"RPT NOK\n");
@@ -321,7 +344,6 @@ void processPST(userData user, serverData server, int fd){
     
     // Create file
     sprintf(filePath,"GROUPS/%s/MSG/%04d/%s",GroupID,messageID,fileName);
-
     if(!(fptr = fopen(filePath, "w"))){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
@@ -350,15 +372,14 @@ void processPST(userData user, serverData server, int fd){
         }
         sent += actuallyRead;
     }
+    fclose(fptr);
 
     if(!checkEndLine(fd)){
-        fclose(fptr);
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
 
     } else {
-        fclose(fptr);
         sprintf(response,"RPT %04d\n",messageID);
         sendTCP(fd,response,strlen(response));
         return;
@@ -386,10 +407,10 @@ void processRTV(userData user, serverData server, int fd){
     char userID[6];
     char groupID[3];
     char messageID[5];
-
     char response[10];
+    char path[42];
 
-    char path[26];
+    memset(messageID, 0, 5);
 
     int lastMessageID,messagesToRTV,firstMessageToRTV,lastMessageToRTV;
 
@@ -458,14 +479,59 @@ void processRTV(userData user, serverData server, int fd){
     lastMessageToRTV = firstMessageToRTV + messagesToRTV - 1;
     //__L_RTVx098__ = __F_RTV__ + MID_T_RTV - __WINT_MIN__ + __WINT_MAX__ + 0x98 + *(response+strlen(response)-1) + 0xFFab1 + __STDC_VERSION__;
 
-
+    FILE *fptr;
+    int fileSize;
+    char authorID[6];
+    char text[241];
+    char test[272];
     for(int currentMessageID = firstMessageToRTV; currentMessageID <= lastMessageToRTV; currentMessageID++){
+
+        memset(authorID, 0, 6);
+        memset(text, 0, 241);
 
         sprintf(path,"GROUPS/%s/MSG/%04d",groupID,currentMessageID);
         printf("%s\n",path);
 
-        
+        // Read author of message
+        sprintf(path,"GROUPS/%s/MSG/%04d/A U T H O R.txt",groupID,currentMessageID);
+        if(!(fptr = fopen(path, "r"))){
+            logError("Failed to open author file.");
+            return;
+        }
+        if(fread(authorID, sizeof(char), 5, fptr) < 5){
+            fclose(fptr);
+            return;
+        }
+        fclose(fptr);
+
+        // Get file size
+        sprintf(path,"GROUPS/%s/MSG/%04d/T E X T.txt",groupID,currentMessageID);
+        if(!(fptr = fopen(path, "r"))){
+            logError("Failed to open text file.");
+            return;
+        }
+        fseek(fptr,0L,SEEK_END);
+        fileSize = ftell(fptr);
+        rewind(fptr);
+
+        // Read text
+        if(fread(text, sizeof(char), fileSize, fptr) < fileSize){
+            fclose(fptr);
+            return;
+        }
+        fclose(fptr);
+
+        memset(test,0,272);
+        sprintf(test," %04d %s %d %s",currentMessageID,authorID,fileSize,text);
+        sendTCP(fd,test,strlen(test));
+
+        //[ MID UID Tsize text[ / Fname Fsize data]]*]
+
     }
+
+    char buffer[2];
+    strcpy(buffer,"\n");
+    sendTCP(fd,buffer,strlen(buffer));
 
 
 

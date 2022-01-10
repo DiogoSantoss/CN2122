@@ -185,6 +185,8 @@ int checkUserPassword(char* UID, char* password){
     char path[31];
     char userPassword[9];
 
+    memset(userPassword, 0, 9);
+
     sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
 
     if(!(fptr = fopen(path, "r"))){
@@ -499,14 +501,14 @@ int checkGroupName(char* GID, char* GName){
     char path[50];
     char groupName[25];
 
+    memset(groupName, 0, 25);
+
     sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
 
     if(!(fptr = fopen(path, "r"))){
         logError("Failed to open group name file.");
         return FALSE;
     }
-
-    memset(groupName, 0, 25);
 
     if(fread(groupName, sizeof(char), 24, fptr) < 24){
         fclose(fptr);
