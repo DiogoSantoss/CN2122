@@ -48,6 +48,30 @@ void logOUT(char* UID){
     printf("User %s logged out\n",UID);
 }
 
-void logGLS(char* UID){
-    // TODO
+void logGLS(){
+    printf("Listed all created groups\n");
+}
+
+void logGSR(char* UID, char* GID){
+    printf("User %s subscribed to group %s\n", UID, GID);
+}
+
+void logGUR(char* UID, char* GID){
+    printf("User %s unsubscribed from group %s\n", UID, GID);
+}
+
+void logGLM(char* UID){
+    printf("Listed groups that user %s subscribes to\n", UID);
+}
+
+void logULS(char* GID){
+    printf("Listed all users subscribed to group %s\n", GID);
+}
+
+void logPST(char* UID, char* GID){
+    printf("User %s successfully posted to group %s\n", UID, GID);
+}
+
+void logRTV(char* UID, char* GID){
+    printf("User %s has retrieved 1 or more messages from group %s\n", UID, GID);
 }
