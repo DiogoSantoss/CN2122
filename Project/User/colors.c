@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-// Pretty colors
+// Used to color the stdout
+
 void colorRed() {
   printf("\033[1;31m");
 }

@@ -27,7 +27,7 @@ void initializeData(userData *user, serverData *server){
 
     //strcpy(server->ipAddress,"tejo.tecnico.ulisboa.pt");
     strcpy(server->ipAddress,"localhost");
-    strcpy(server->port,"58011");
+    strcpy(server->port,"58027");
 }
 
 /**

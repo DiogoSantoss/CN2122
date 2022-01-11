@@ -13,8 +13,8 @@
 #define TRUE  1
 #define FALSE 0
 
-#define MAXSIZEUDP 39 //GSR is the biggest command 
-#define EXTRAMAXSIZE 3169
+#define MAXSIZEUDP 39       //GSR is the biggest command 
+#define EXTRAMAXSIZE 3169   // TODO better name?
 
 #define MAXGROUPS 99
 
@@ -25,24 +25,20 @@
 */
 void sendUDP(userData user, char* response){
 
-    int n;
-    n = sendto(user.fd, response, strlen(response), 0, (struct sockaddr*)user.addr, user.addrlen);
-
-    if(n == -1){
-        logError("Couldn't send message via UDP socket");
+    if(sendto(user.fd, response, strlen(response), 0, (struct sockaddr*)user.addr, user.addrlen) == -1){
+        logError("Couldn't send response via UDP socket");
     }
 }
 
 /**
- * Send error message.
+ * Send error response.
  * @param user User data
  * @param server Server data
 */
 void requestErrorUDP(userData user, serverData server){
-    char* message = calloc(5, sizeof(char));
-    strcpy(message, "ERR\n");
-    sendUDP(user,message);
-    free(message);
+    char response[5];
+    strcpy(response, "ERR\n");
+    sendUDP(user,response);
 }   
 
 /**
@@ -53,41 +49,38 @@ void requestErrorUDP(userData user, serverData server){
 */
 void processREG(userData user, serverData server, char* request){
 
-    char prefix[4], suffix[MAXSIZEUDP];
-    char UserID[6], password[9];
+    char command[4], userID[6], password[9], extra[MAXSIZEUDP];
+    char response[9];
+    memset(response,0,9);
+    memset(extra, 0, MAXSIZEUDP);
 
-    memset(suffix, 0, MAXSIZEUDP);
-    char* message = calloc(9, sizeof(char));
-
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
+    sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
     if (
-        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
-        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+        strlen(extra) != 0 || strlen(userID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)
     ){
         // Wrong size parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user,response);
         return;
     }
-    else if (UserExists(UserID)){
-        // User exists
-        strcpy(message, "RRG DUP\n");
-        sendUDP(user,message);
-        free(message);
+    else if (UserExists(userID)){
+        // User already exists
+        strcpy(response, "RRG DUP\n");
+        sendUDP(user,response);
         return;
     }
-    else{
-        // Everything ok
-        strcpy(message, "RRG OK\n");
-
-        if (!CreateUserDir(UserID)) strcpy(message, "RRG NOK\n");
-        if (!CreatePassFile(UserID, password)) strcpy(message, "RRG NOK\n");
+    // Create user directory and password file
+    if (CreateUserDir(userID) && CreatePassFile(userID, password)){
+        strcpy(response, "RRG OK\n");
+        logREG(userID);
+    } else{
+        // TODO log
+        strcpy(response, "RRG NOK\n");
     }
 
-    sendUDP(user, message);
-    free(message);
+    sendUDP(user, response);
 }
 
 /**
@@ -98,48 +91,43 @@ void processREG(userData user, serverData server, char* request){
 */
 void processURN(userData user, serverData server, char* request){
 
-    char prefix[4], suffix[MAXSIZEUDP];
-    char UserID[6], password[9];
+    char command[4], userID[6], password[9], extra[MAXSIZEUDP];
+    char response[9];
+    memset(response,0,9);
+    memset(extra, 0, MAXSIZEUDP);
 
-    memset(suffix, 0, MAXSIZEUDP);
-    char* message = calloc(9, sizeof(char));
-
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
+    sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
     if (
-        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
-        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+        strlen(extra) != 0 || strlen(userID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)
     ){
         // Wrong format parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user,response);
         return;
     }
-    else if (!UserExists(UserID) || !checkUserPassword(UserID,password)){
+    else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
-        strcpy(message, "RUN NOK\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "RUN NOK\n");
+        sendUDP(user,response);
         return;
     }
-    else{
-        // Everything ok
-        strcpy(message, "RUN OK\n");
 
-        if (!DelUserFromGroups(UserID)) strcpy(message, "RUN NOK\n");
-        if (!DelPassFile(UserID)) strcpy(message, "RUN NOK\n");
+    strcpy(response, "RUN OK\n");
 
-        if(CheckUserLogin(UserID)){
-            if(!DelLoginFile(UserID)) 
-                strcpy(message, "RUN NOK\n");
-        }
+    if (!DelUserFromGroups(userID))                     strcpy(response, "RUN NOK\n");
+    if (!DelPassFile(userID))                           strcpy(response, "RUN NOK\n");
+    if(CheckUserLogin(userID) && !DelLoginFile(userID)) strcpy(response, "RUN NOK\n");
+    if (!DelUserDir(userID))                            strcpy(response, "RUN NOK\n");
 
-        if (!DelUserDir(UserID)) strcpy(message, "RUN NOK\n");
+    if(strcmp(response,"RUN OK\n")){
+        logUNR(userID);
+    }else{
+        // TODO log
     }
 
-    sendUDP(user, message);
-    free(message);
+    sendUDP(user, response);
 }
 
 /**
@@ -150,40 +138,38 @@ void processURN(userData user, serverData server, char* request){
 */
 void processLOG(userData user, serverData server, char* request){
 
-    char prefix[4], suffix[MAXSIZEUDP];
-    char UserID[6], password[9];
 
-    memset(suffix, 0, MAXSIZEUDP);
-    char* message = calloc(9, sizeof(char));
+    char command[4], userID[6], password[9], extra[MAXSIZEUDP];
+    char response[9];
+    memset(response,0,9);
+    memset(extra, 0, MAXSIZEUDP);
 
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
+    sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
     if (
-        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
-        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+        strlen(extra) != 0 || strlen(userID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)
     ){
         // Wrong format parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user,response);
         return;
     }
-    else if (!UserExists(UserID) || !checkUserPassword(UserID,password)){
+    else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
-        strcpy(message, "RLO NOK\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "RLO NOK\n");
+        sendUDP(user,response);
         return;
     }
-    else{
-        // Everything ok
-        strcpy(message, "RLO OK\n");
 
-        if(!createLoginFile(UserID)) strcpy(message, "RLO NOK\n");
-    }
-
-    sendUDP(user, message);
-    free(message);
+    if(createLoginFile(userID)){
+        strcpy(response, "RLO OK\n"); 
+        logLOG(userID);   
+    }else{
+        strcpy(response, "RLO NOK\n");
+    } 
+  
+    sendUDP(user, response);
 }
 
 /**
@@ -194,40 +180,37 @@ void processLOG(userData user, serverData server, char* request){
 */
 void processOUT(userData user, serverData server, char* request){
 
-    char prefix[4], suffix[MAXSIZEUDP];
-    char UserID[6], password[9];
+    char command[4], userID[6], password[9],  extra[MAXSIZEUDP];
+    char response[9];
+    memset(response,0,9);
+    memset(extra, 0, MAXSIZEUDP);
 
-    memset(suffix, 0, MAXSIZEUDP);
-    char* message = calloc(9, sizeof(char));
-
-    sscanf(request, "%s %s %s %s", prefix, UserID, password, suffix);
+    sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
     if (
-        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(password) != 8 ||
-        !checkStringIsNumber(UserID) || !checkStringIsAlphaNum(password)
+        strlen(extra) != 0 || strlen(userID) != 5 || strlen(password) != 8 ||
+        !checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)
     ){
         // Wrong format parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user,response);
         return;
     }
-    else if (!UserExists(UserID) || !checkUserPassword(UserID,password)){
+    else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
-        strcpy(message, "ROU NOK\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "ROU NOK\n");
+        sendUDP(user,response);
         return;
     }
-    else{
-        // Everything ok
-        strcpy(message, "ROU OK\n");
 
-        if (!DelLoginFile(UserID)) strcpy(message, "ROU NOK\n");
+    if (DelLoginFile(userID)){
+        strcpy(response, "ROU OK\n");
+        logOUT(userID);
+    } else{
+        strcpy(response, "ROU NOK\n");
     }
-
-    sendUDP(user, message);
-    free(message);
+    
+    sendUDP(user, response);
 }
 
 /**
@@ -239,45 +222,44 @@ void processOUT(userData user, serverData server, char* request){
 void processGLS(userData user, serverData server, char* request){
 
     int numberGroups;
-    Group list[MAXGROUPS];;
-    char prefix[4], suffix[MAXSIZEUDP];
+    Group groupsList[MAXGROUPS];
 
-    char* message = calloc(EXTRAMAXSIZE, sizeof(char));
-    
-    memset(suffix, 0, MAXSIZEUDP);
-    sscanf(request, "%s %s", prefix, suffix);
+    char command[4], extra[MAXSIZEUDP];
+    char response[EXTRAMAXSIZE]; // TODO BEST APPROACH ? SHOULDNT DO SPRINTF TO THE SAME
+    memset(response,0,EXTRAMAXSIZE);
+    memset(extra, 0, MAXSIZEUDP);
 
-    if (strlen(suffix) != 0){
+    sscanf(request, "%s %s", command, extra);
+
+    if (strlen(extra) != 0){
         // Wrong size parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user,response);
         return;
     }
 
-    // Fill list data structure with groups info
-    numberGroups = ListGroupsDir(list);
+    // Fill data structure with groups info
+    numberGroups = ListGroupsDir(groupsList);
     if(numberGroups == -1){
-        strcpy(message,"ERR\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response,"ERR\n");
+        sendUDP(user,response);
         return;
     }
     else if(numberGroups == 0){
-        strcpy(message, "RGL 0\n");
-        sendUDP(user,message);
-        free(message);
+        strcpy(response, "RGL 0\n");
+        sendUDP(user,response);
         return;
     }
 
-    sprintf(message, "RGL %d", numberGroups);
+    sprintf(response, "RGL %d", numberGroups);
     for(int i = 0; i < numberGroups; i++){
-        sprintf(message, "%s %s %s %s", message, list[i].groupNumber, list[i].groupName, list[i].groupLastMsg);
+        sprintf(response, "%s %s %s %s", response, groupsList[i].number, groupsList[i].name, groupsList[i].lastMsg);
     }
-    sprintf(message, "%s\n", message);
+    sprintf(response, "%s\n", response);
 
-    sendUDP(user, message);
-    free(message);
+    logGLS();
+
+    sendUDP(user, response);
 }
 
 /**
@@ -288,105 +270,97 @@ void processGLS(userData user, serverData server, char* request){
 */
 void processGSR(userData user, serverData server, char* request){
 
-    char prefix[4], suffix[MAXSIZEUDP];
-    char UserID[6], GroupID[3], GroupName[25];
+    int maxGroupID;
 
-    memset(suffix, 0, MAXSIZEUDP);
-    char* message = calloc(13, sizeof(char));
+    char command[4], userID[6], groupID[3], groupName[25], extra[MAXSIZEUDP];
+    char newGroupID[3];
+    char response[13];
+    memset(response,0,13);
+    memset(extra, 0, MAXSIZEUDP);
 
-    sscanf(request, "%s %s %s %s %s", prefix, UserID, GroupID, GroupName, suffix);
-    int groupMax = maxGroupNumber();
+    sscanf(request, "%s %s %s %s %s", command, userID, groupID, groupName, extra);
 
-    if(strlen(GroupID) == 1){
-        sprintf(GroupID, "%02d", atoi(GroupID));
+    if(strlen(groupID) == 1){
+        sprintf(groupID, "%02d", atoi(groupID));
     }
 
     if (
-        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(GroupID) != 2 || strlen(GroupName) > 24 || 
-        !checkStringIsNumber(UserID) ||  !checkStringIsNumber(GroupID) || !checkStringIsGroupName(GroupName)
+        strlen(extra) != 0 || strlen(userID) != 5 || strlen(groupID) != 2 || strlen(groupName) > 24 || 
+        !checkStringIsNumber(userID) ||  !checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName)
     ){
         // Wrong size parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user, response);
         return;
     }
-    if (!UserExists(UserID) || !CheckUserLogin(UserID)){
+    if (!UserExists(userID) || !CheckUserLogin(userID)){
         // Invalid UID
-        strcpy(message, "RGS E_USR\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "RGS E_USR\n");
+        sendUDP(user, response);
         return;
     }
     // User want to create and subscribe to new group
-    else if (strcmp(GroupID, "00") == 0){
-       
-        if (groupMax >= MAXGROUPS){
+    else if (strcmp(groupID, "00") == 0){
+
+        maxGroupID = maxGroupNumber();
+        if(maxGroupID >= MAXGROUPS){
             // Max number of groups, can't create more
-            strcpy(message, "RGS E_FULL\n");
-            sendUDP(user, message);
-            free(message);
+            strcpy(response, "RGS E_FULL\n");
+            sendUDP(user, response);
             return;
         }
 
-        char newGroupID[3];
-        sprintf(newGroupID, "%02d", groupMax + 1);
+        sprintf(newGroupID, "%02d", maxGroupID + 1);
 
         if(!CreateGroupDir(newGroupID)){
-            strcpy(message,"ERR\n");
-            sendUDP(user, message);
-            free(message);
+            strcpy(response,"ERR\n");
+            sendUDP(user, response);
             return;
         }
 
-        if(!CreateGroupFile(newGroupID,GroupName)){
-            strcpy(message,"ERR\n");
-            sendUDP(user, message);
-            free(message);
+        if(!CreateGroupFile(newGroupID,groupName)){
+            strcpy(response,"ERR\n");
+            sendUDP(user, response);
             return;
         }
 
-        if(!SubscribeUser(UserID, newGroupID)){
+        if(!SubscribeUser(userID, newGroupID)){
             // Failed to subscribe user to newly created group
-            strcpy(message, "RGS NOK\n");
-            sendUDP(user, message);
-            free(message);
+            strcpy(response, "RGS NOK\n");
+            sendUDP(user, response);
             return;
         }
         // Created and subscribed to new group
-        sprintf(message, "RGS NEW %s\n", newGroupID);
-        sendUDP(user, message);
-        free(message);
-        return;
+        sprintf(response, "RGS NEW %s\n", newGroupID);
+        logGSR(userID,newGroupID);
+
+        sendUDP(user, response);
     }  
     // User wants to subscribe to group 
     else{ 
-        if(!GroupExists(GroupID)){
+        if(!GroupExists(groupID)){
             // Invalid GID
-            strcpy(message, "RGS E_GRP\n");
-            sendUDP(user, message);
-            free(message);
+            strcpy(response, "RGS E_GRP\n");
+            sendUDP(user, response);
             return;
         }
-        if(!checkGroupName(GroupID, GroupName)){
+        if(!checkGroupName(groupID, groupName)){
             // Invalid Gname
-            strcpy(message, "RGS E_GNAME\n");
-            sendUDP(user, message);
-            free(message);
+            strcpy(response, "RGS E_GNAME\n");
+            sendUDP(user, response);
             return;
         }
-        if(!SubscribeUser(UserID, GroupID)){
+        if(!SubscribeUser(userID, groupID)){
             // Failed to subscribe user
-            strcpy(message, "RGS NOK\n");
-            sendUDP(user, message);
-            free(message);
+            strcpy(response, "RGS NOK\n");
+            sendUDP(user, response);
             return;
         }
         // Subscribed user 
-        strcpy(message, "RGS OK\n");
-        sendUDP(user, message);
-        free(message);
-        return;
+        strcpy(response, "RGS OK\n");
+        logGSR(userID,groupID);
+
+        sendUDP(user, response);
     }
 }
 
@@ -398,61 +372,58 @@ void processGSR(userData user, serverData server, char* request){
 */
 void processGUR(userData user, serverData server, char* request){
 
-    char prefix[4], suffix[MAXSIZEUDP];
-    char UserID[6], GroupID[3];
+    char command[4], userID[6], groupID[3], extra[MAXSIZEUDP];
+    char response[13];
+    memset(response,0,13);
+    memset(extra, 0, MAXSIZEUDP);
 
-    memset(suffix, 0, MAXSIZEUDP);
-    char* message = calloc(13, sizeof(char));
-
-    sscanf(request, "%s %s %s %s", prefix, UserID, GroupID, suffix);
+    sscanf(request, "%s %s %s %s", command, userID, groupID, extra);
     
     if (
-        strlen(suffix) != 0 || strlen(UserID) != 5 || strlen(GroupID) != 2 ||
-        !checkStringIsNumber(UserID) || !checkStringIsNumber(GroupID)
+        strlen(extra) != 0 || strlen(userID) != 5 || strlen(groupID) != 2 ||
+        !checkStringIsNumber(userID) || !checkStringIsNumber(groupID)
     ){
         // Wrong size parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user, response);
         return;
     }
-    else if (!UserExists(UserID) || !CheckUserLogin(UserID)){
+    else if (!UserExists(userID) || !CheckUserLogin(userID)){
         // Invalid UID
-        strcpy(message, "RGU E_USR\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "RGU E_USR\n");
+        sendUDP(user, response);
         return;
     }
-    else if(!GroupExists(GroupID)){
+    else if(!GroupExists(groupID)){
         // Invalid GID
-        strcpy(message, "RGU E_GRP\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "RGU E_GRP\n");
+        sendUDP(user, response);
         return;
     }
+
     // User is actually subscribed to group
-    else if(checkUserSubscribedToGroup(UserID, GroupID)){
+    if(checkUserSubscribedToGroup(userID, groupID)){
         
-        if(UnsubscribeUser(UserID, GroupID)){
-            strcpy(message, "RGU OK\n");
-            sendUDP(user, message);
-            free(message);
+        if(UnsubscribeUser(userID, groupID)){
+            strcpy(response, "RGU OK\n");
+            logGUR(userID,groupID);
+
+            sendUDP(user, response);
             return;
         }
         else{
-            strcpy(message, "RGU NOK\n");
-            sendUDP(user, message);
-            free(message);
+            strcpy(response, "RGU NOK\n");
+            sendUDP(user, response);
             return;
         }
     }
     // In this case the user is not subscribed to the group
     // But it returns success nonetheless
-    else if(!checkUserSubscribedToGroup(UserID, GroupID)){
-        
-        strcpy(message, "RGU OK\n");
-        sendUDP(user, message);
-        free(message);
+    else {
+        strcpy(response, "RGU OK\n");
+        logGUR(userID,groupID);
+
+        sendUDP(user, response);
         return;
     }
 }
@@ -465,63 +436,60 @@ void processGUR(userData user, serverData server, char* request){
 */
 void processGLM(userData user, serverData server, char* request){
 
-    int numberGroups;
-    int subscribedGroups = 0;
-    Group list[MAXGROUPS];
-    char prefix[4], suffix[MAXSIZEUDP];
-    char UserID[6];
-
-    char* message = calloc(EXTRAMAXSIZE, sizeof(char));
+    Group groupsList[MAXGROUPS];
+    int numberGroups, subscribedGroups;
     
-    memset(suffix, 0, MAXSIZEUDP);
-    sscanf(request, "%s %s %s", prefix, UserID, suffix);
+    char command[4], userID[6], extra[MAXSIZEUDP];
+    char response[EXTRAMAXSIZE];
+    memset(response,0,EXTRAMAXSIZE);
+    memset(extra, 0, MAXSIZEUDP);
 
-    if (strlen(suffix) != 0 || strlen(UserID) != 5 || !checkStringIsNumber(UserID)){
+    sscanf(request, "%s %s %s", command, userID, extra);
+
+    if (strlen(extra) != 0 || strlen(userID) != 5 || !checkStringIsNumber(userID)){
         // Wrong size parameters
-        strcpy(message, "ERR\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "ERR\n");
+        sendUDP(user, response);
         return;
     }
-    else if (!UserExists(UserID) || !CheckUserLogin(UserID)){
+    else if (!UserExists(userID) || !CheckUserLogin(userID)){
         // Invalid UID
-        strcpy(message, "RGM E_USR\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "RGM E_USR\n");
+        sendUDP(user, response);
         return;
     }
 
-    // Fill list data structure with groups info
-    numberGroups = ListGroupsDir(list);
+    // Fill groupsList data structure with groups info
+    numberGroups = ListGroupsDir(groupsList);
     if(numberGroups == -1){
-        strcpy(message,"ERR\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response,"ERR\n");
+        sendUDP(user, response);
         return;
     }
     else if(numberGroups == 0){
-        strcpy(message, "RGM 0\n");
-        sendUDP(user, message);
-        free(message);
+        strcpy(response, "RGM 0\n");
+        logULS(userID);
+        sendUDP(user, response);
         return;
     }
 
+    subscribedGroups = 0;
     for (int i = 0; i < numberGroups; i++){
-        if(checkUserSubscribedToGroup(UserID, list[i].groupNumber)){
+        if(checkUserSubscribedToGroup(userID, groupsList[i].number)){
             subscribedGroups ++;
         }
     }
     
-    sprintf(message, "RGM %d", subscribedGroups);
-    
+    sprintf(response, "RGM %d", subscribedGroups);
     for(int i = 0; i < numberGroups; i++){
-        if(checkUserSubscribedToGroup(UserID, list[i].groupNumber)){
-            sprintf(message, "%s %s %s %s", message, list[i].groupNumber, list[i].groupName, list[i].groupLastMsg);
+        if(checkUserSubscribedToGroup(userID, groupsList[i].number)){
+            sprintf(response, "%s %s %s %s", response, groupsList[i].number, groupsList[i].name, groupsList[i].lastMsg);
         }
     }
-    sprintf(message, "%s\n",message);
-        
-    sendUDP(user, message);
-    free(message);
+    sprintf(response, "%s\n",response);
+
+    logULS(userID);
+    
+    sendUDP(user, response);
     return; 
 }

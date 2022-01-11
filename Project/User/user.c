@@ -16,8 +16,8 @@
 
 /**
  * Initialize data about user and server
- * @param[in] user User data
- * @param[in] server Server data
+ * @param user User data
+ * @param server Server data
 */
 void initializeData(userData *user, serverData *server){
     strcpy(user->ID,"");
@@ -25,9 +25,8 @@ void initializeData(userData *user, serverData *server){
     strcpy(user->groupID,"");
     user->res = NULL;
 
-    // SHOULD BE LOCALHOST
-    strcpy(server->ipAddress,"tejo.tecnico.ulisboa.pt");
-    strcpy(server->port,"58011");
+    strcpy(server->ipAddress,"localhost");
+    strcpy(server->port,"58027");
 }
 
 /**
@@ -35,8 +34,8 @@ void initializeData(userData *user, serverData *server){
  * Only two available arguments:
  *  -n DSIP where DSIP is the IP address of the machine where the server runs
  *  -p DSport where DSport is the well-known port where server accepts requests
- * @param[in] argc Number of elements in argv
- * @param[in] argv Array of command-line arguments
+ * @param argc Number of elements in argv
+ * @param argv Array of command-line arguments
 */
 void parseArguments(serverData *server, int argc, char *argv[]){
 
@@ -84,14 +83,17 @@ void parseArguments(serverData *server, int argc, char *argv[]){
 
 /**
  * Main loop where user's commands are processed
- * @param[in] user User data
- * @param[in] server Server data
+ * @param user User data
+ * @param server Server data
 */
 void handleRequests(userData *user, serverData *server){
 
     char input[MAXSIZE],command[MAXSIZE],extra[MAXSIZE];
 
     while(1){
+
+        memset(command,0,MAXSIZE);
+        memset(extra,0,MAXSIZE);
 
         fgets(input, MAXSIZE, stdin);
         sscanf(input,"%s %s\n",command,extra);
@@ -150,8 +152,6 @@ void handleRequests(userData *user, serverData *server){
             close(user->fd);
             user->res = NULL;
         }
-        memset(command,0,MAXSIZE);
-        memset(extra,0,MAXSIZE);
         colorReset();
     }
 }

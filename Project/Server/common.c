@@ -7,8 +7,8 @@
 
 /**
  * Check if string is a number
- * @param[in] value String to be checked
- * @param[out] IsNumber TRUE if is number else FALSE
+ * @param value String to be checked
+ * @return 1 if is number else 0
 */
 int checkStringIsNumber(char* value){
     int IsNumber = TRUE;
@@ -23,8 +23,8 @@ int checkStringIsNumber(char* value){
 
 /**
  * Check if string is alphanumeric
- * @param[in] value String to be checked
- * @param[out] IsAlphaNumberic TRUE if is alphanumeric else FALSE
+ * @param value String to be checked
+ * @return 1 if is alphanumeric else 0
 */
 int checkStringIsAlphaNum(char* value){
     int IsAlphaNumeric = TRUE;
@@ -39,8 +39,8 @@ int checkStringIsAlphaNum(char* value){
 
 /**
  * Check if string is valid group name
- * @param[in] value String to be checked
- * @param[out] IsNumber TRUE if is valid group name else FALSE
+ * @param value String to be checked
+ * @return 1 if is valid group name else 0
 */
 int checkStringIsGroupName(char* value){
     int IsGroupName = TRUE;
@@ -55,8 +55,8 @@ int checkStringIsGroupName(char* value){
 
 /**
  * Check if string is valid filename
- * @param[in] value String to be checked
- * @param[out] TRUE if is valaid filename else FALSE
+ * @param value String to be checked
+ * @return 1 is valaid filename else 0
 */
 int checkStringIsFileName(char* value){
     if(!checkStringIsAlphaNum(value)){

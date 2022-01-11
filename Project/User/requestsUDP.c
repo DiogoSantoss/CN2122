@@ -26,8 +26,8 @@ char* parseRegister(userData* user, char* input){
 
     char* message;
     char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
-
     memset(extra,0,sizeof extra);
+    
     sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
 
     if((strlen(extra) != 0) || (strlen(input) != 19) || (strlen(UID) != 5) || (strlen(pass) != 8)){

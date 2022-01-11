@@ -16,7 +16,6 @@
 void logError(char* message){
     colorRed();
     printf("%s\n", message);
-    printf("-------------------------------\n");
     colorReset();
 }
 
@@ -49,7 +48,7 @@ void logOUT(char* UID){
 }
 
 void logGLS(){
-    printf("Listed all created groups\n");
+    printf("Listed all existing groups\n"); // TODO NEED TO LIST ALL GROUPS ?
 }
 
 void logGSR(char* UID, char* GID){
@@ -61,7 +60,7 @@ void logGUR(char* UID, char* GID){
 }
 
 void logGLM(char* UID){
-    printf("Listed groups that user %s subscribes to\n", UID);
+    printf("Listed groups that user %s is subscribed to\n", UID);
 }
 
 void logULS(char* GID){
@@ -69,9 +68,9 @@ void logULS(char* GID){
 }
 
 void logPST(char* UID, char* GID){
-    printf("User %s successfully posted to group %s\n", UID, GID);
+    printf("User %s successfully posted to group %s\n", UID, GID); // TODO NEED SHOW MESSAGE ?
 }
 
-void logRTV(char* UID, char* GID){
-    printf("User %s has retrieved 1 or more messages from group %s\n", UID, GID);
+void logRTV(char* UID, char* GID, int numberOfMessages){
+    printf("User %s has retrieved %d message(s) from group %s\n", UID, numberOfMessages, GID); // TODO NEED SHOW MESSAGES ?
 }

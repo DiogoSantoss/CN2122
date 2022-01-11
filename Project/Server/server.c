@@ -25,8 +25,8 @@
 
 /**
  * Initialize data about user and server
- * @param[in] user User data
- * @param[in] server Server data
+ * @param user User data
+ * @param server Server data
 */
 void initializeData(userData *user, serverData *server){
 
@@ -39,8 +39,8 @@ void initializeData(userData *user, serverData *server){
  * Only two available arguments:
  *  -p PORT where PORT is the port number of the machine where the server runs
  *  -v which activates verbose mode
- * @param[in] argc Number of elements in argv
- * @param[in] argv Array of command-line arguments
+ * @param argc Number of elements in argv
+ * @param argv Array of command-line arguments
 */
 void parseArguments(serverData *server, int argc, char *argv[]){
 
@@ -80,10 +80,10 @@ void parseArguments(serverData *server, int argc, char *argv[]){
 }
 
 /**
- * @brief Create UDP socket
- * @param[in] server Server data
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
+ * Create UDP socket
+ * @param server Server data
+ * @param fd File descriptor of UDP socket
+ * @param res Information about server 
  * @return 1 for success or 0 for errors
 */
 int createSocketUDP(serverData *server, int* fd, struct addrinfo* res){
@@ -116,10 +116,10 @@ int createSocketUDP(serverData *server, int* fd, struct addrinfo* res){
 }
 
 /**
- * @brief Create TCP socket
- * @param[in] server Server data
- * @param[in] fd File descriptor of TCP socket
- * @param[in] res Information about server 
+ * Create TCP socket
+ * @param server Server data
+ * @param fd File descriptor of TCP socket
+ * @param res Information about server 
  * @return 1 for success or 0 for errors
 */
 int createSocketTCP(serverData *server, int* fd, struct addrinfo* res){
@@ -148,7 +148,7 @@ int createSocketTCP(serverData *server, int* fd, struct addrinfo* res){
         return FALSE;
     }
 
-    // IS 5 ENOUGH ?
+    // TODO IS 5 ENOUGH ?
     if(listen(*fd, 5) == -1){
         logError("Couldn't prepare socket to accept connections.");
         return FALSE;
@@ -188,20 +188,21 @@ void handleRequests(userData* user, serverData* server){
         // TCP Request
         if(FD_ISSET(fdTcp,&rfds)){
 
+            char* ptr;
+            int nRead,toRead;
+
+            char command[5];
+            memset(command, 0, 5);
+
             addrlen=sizeof(addr);
             if((fdNew=accept(fdTcp,(struct sockaddr*)&addr,&addrlen))==-1){
                 logError("Couldn't accept connection.");
                 break;
             }
 
-            char* ptr;
-            int nRead = -1;
-            int toRead = 4;
-            char command[5];
-
-            memset(command, 0, 5);
-
+            
             ptr = command;
+            nRead = -1; toRead = 4;
             while (nRead != 0){
                 nRead = read(fdNew, ptr, toRead);
                 if(nRead == -1){
@@ -311,4 +312,4 @@ int main(int argc, char *argv[]){
     handleRequests(&user, &server);
 
     return 1;
-};
+}

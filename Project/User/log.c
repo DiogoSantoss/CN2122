@@ -36,6 +36,7 @@ void logREG(char* message){
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("register: A fatal error has ocurred.");
+
     } else{
         logError("register: Unexpected message from server.");
     }
@@ -54,6 +55,7 @@ void logUNR(char* message){
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("unregister: A fatal error has ocurred.");
+
     } else{
         logError("unregister: Unexpected message from server.");
     }
@@ -72,6 +74,7 @@ void logLOG(char* message){
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("login: A fatal error has ocurred.");
+
     } else{
         logError("login: Unexpected message from server.");
     }
@@ -90,6 +93,7 @@ void logOUT(char* message){
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("logout: A fatal error has ocurred.");
+
     } else{
         logError("logout: Unexpected message from server.");
     }
@@ -105,10 +109,10 @@ void logSU(char* message){
 void logGLS(char* message){
 
     char functionName[10];
-    char prefix[MAXSIZE], nGroups[3], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
+    char command[MAXSIZE], nGroups[3], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
     char GID[3], GName[25], MID[5];
 
-    sscanf(message, "%s %s %[^\n]s", prefix, nGroups, suffix);
+    sscanf(message, "%s %s %[^\n]s", command, nGroups, extra);
     
     if(!strcmp(message, "RGL 0\n")){
         colorGreen();
@@ -119,9 +123,9 @@ void logGLS(char* message){
     }
     else{
         colorGreen();
-        strcpy(suffixCopy, suffix);
+        strcpy(extraCopy, extra);
 
-        if (!strcmp(prefix, "RGL"))
+        if (!strcmp(command, "RGL"))
             printf("groups: List of groups:\n");
         else{
             logError("groups: A fatal error has ocurred.");
@@ -129,7 +133,7 @@ void logGLS(char* message){
         }
         // Verifies if groups given by server are valid
         for (int i = 0; i < atoi(nGroups); i++){
-            sscanf(suffixCopy, "%s %s %s %[^\n]s", GID, GName, MID, suffixCopy);
+            sscanf(extraCopy, "%s %s %s %[^\n]s", GID, GName, MID, extraCopy);
             if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName) || !checkStringIsNumber(MID)){
                 logError("groups: Unexpected message from server.");
                 return;
@@ -138,7 +142,7 @@ void logGLS(char* message){
         // Prints groups 
         for (int i = 0; i < atoi(nGroups); i++){
             i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
-            sscanf(suffix, "%s %s %s %[^\n]s", GID, GName, MID, suffix);
+            sscanf(extra, "%s %s %s %[^\n]s", GID, GName, MID, extra);
             printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", GID, GName, MID);
         }
     }
@@ -183,6 +187,7 @@ void logGSR(char* message){
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("subscribe: A fatal error has ocurred.");
+
     } else{
         logError("subscribe: Unexpected message from server.");
     }
@@ -209,6 +214,7 @@ void logGUR(char* message){
 
     } else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("unsubscribe: A fatal error has ocurred.");
+        
     } else{
         logError("subscribe: Unexpected message from server.");
     }
@@ -218,10 +224,10 @@ void logGUR(char* message){
 void logGLM(char* message){
 
     char functionName[10];
-    char prefix[MAXSIZE], nGroups[3], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
+    char command[MAXSIZE], nGroups[3], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
     char GID[3], GName[25], MID[5];
 
-    sscanf(message, "%s %s %[^\n]s", prefix, nGroups, suffix);
+    sscanf(message, "%s %s %[^\n]s", command, nGroups, extra);
     
     if(!strcmp(message, "RGM 0\n")){
         colorGreen();
@@ -232,16 +238,16 @@ void logGLM(char* message){
     }
     else{
         colorGreen();
-        strcpy(suffixCopy, suffix);
+        strcpy(extraCopy, extra);
 
-        if(!strcmp(prefix, "RGM"))
+        if(!strcmp(command, "RGM"))
             printf("my_groups: List of groups:\n");
         else{
             logError("my_groups: A fatal error has ocurred.");
             return;
         }
         for (int i = 0; i < atoi(nGroups); i++){
-            sscanf(suffixCopy, "%s %s %s %[^\n]s", GID, GName, MID, suffixCopy);
+            sscanf(extraCopy, "%s %s %s %[^\n]s", GID, GName, MID, extraCopy);
             if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName) || !checkStringIsNumber(MID)){
                 logError("my_groups: Unexpected message from server.");
                 return;
@@ -250,7 +256,7 @@ void logGLM(char* message){
         // Prints groups 
         for (int i = 0; i < atoi(nGroups); i++){
             i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
-            sscanf(suffix, "%s %s %s %[^\n]s", GID, GName, MID, suffix);
+            sscanf(extra, "%s %s %s %[^\n]s", GID, GName, MID, extra);
             printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", GID, GName, MID);
         }
     }
@@ -271,13 +277,13 @@ void logSG(char* message){
 
 void logULS(char* message){
 
-    char prefix[MAXSIZE], status[3], GName[25], suffix[EXTRAMAXSIZE], suffixCopy[EXTRAMAXSIZE];
+    char command[MAXSIZE], status[3], GName[25], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
     char userIDTemp[6];
     int length;
     
-    memset(suffix, 0, EXTRAMAXSIZE);
-    memset(suffixCopy, 0, EXTRAMAXSIZE);
-    sscanf(message, "%s %s %s %[^\n]s", prefix, status, GName, suffix);
+    memset(extra, 0, EXTRAMAXSIZE);
+    memset(extraCopy, 0, EXTRAMAXSIZE);
+    sscanf(message, "%s %s %s %[^\n]s", command, status, GName, extra);
 
     if(!strcmp(message, "RUL NOK\n")){
         colorYellow();
@@ -286,14 +292,14 @@ void logULS(char* message){
     else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("ulist: A fatal error has ocurred.");
     }
-    else if(!strcmp(prefix,"RUL") && !strcmp(status,"OK")){
+    else if(!strcmp(command,"RUL") && !strcmp(status,"OK")){
         colorGreen();
-        strcpy(suffixCopy, suffix);
+        strcpy(extraCopy, extra);
 
-        length = (strlen(suffix) + 1) / 6;
+        length = (strlen(extra) + 1) / 6;
         // Verifies if users given by server are valid
         for (int i = 0; i < length; i++){
-            sscanf(suffixCopy, "%s %[^\n]s", userIDTemp, suffixCopy);
+            sscanf(extraCopy, "%s %[^\n]s", userIDTemp, extraCopy);
             if(!checkStringIsNumber(userIDTemp) || strlen(userIDTemp) != 5){
                 logError("ulist: Unexpected message from server.");
                 return;
@@ -303,7 +309,7 @@ void logULS(char* message){
         printf("List of UIDs subscribed to %s\n", GName);
         for (int i = 0; i < length; i++){
             i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
-            sscanf(suffix, "%s %[^\n]s", userIDTemp, suffix);
+            sscanf(extra, "%s %[^\n]s", userIDTemp, extra);
             printf("%s\n", userIDTemp);
         }   
     }
@@ -315,8 +321,8 @@ void logULS(char* message){
 
 void logPST(char* message){
 
-    char prefix[4], status[8], extra[MAXSIZE];
-    sscanf(message, "%s %s %s\n", prefix, status, extra);
+    char command[4], status[8], extra[MAXSIZE];
+    sscanf(message, "%s %s %s\n", command, status, extra);
 
     if(!strcmp(message, "RPT NOK\n")){
         colorYellow();

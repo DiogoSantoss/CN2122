@@ -13,9 +13,9 @@ struct userData {
 } typedef userData;
 
 struct Group {
-    char groupNumber[3];
-    char groupName[25];
-    char groupLastMsg[5];
+    char number[3];
+    char name[25];
+    char lastMsg[5];
 } typedef Group;
 
 #endif

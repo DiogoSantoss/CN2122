@@ -19,11 +19,10 @@
  * Create initial USERS and GROUPS directories.
 */
 void createDirectories(){
-    
-    char users[6];
-    char groups[7]; 
 
     DIR* dir;
+    char users[6];
+    char groups[7]; 
 
     strcpy(users, "USERS");
     strcpy(groups, "GROUPS");
@@ -104,8 +103,8 @@ int DelUserDir(char *UID){
 */
 int UserExists(char* UID){
 
-    char path[31];
     DIR* dir;
+    char path[31];
 
     sprintf(path, "USERS/%s", UID);
 
@@ -332,11 +331,11 @@ int maxGroupNumber(){
 */
 int GroupLastMessage(char *GID){
 
-    int messageNumber ,max = 0;
-    struct dirent *dir;
-    char path[14];
     DIR* d;
-
+    struct dirent *dir;
+    int messageNumber ,max = 0;
+    char path[14];
+    
     sprintf(path,"GROUPS/%s/MSG",GID);
 
     if(d = opendir(path)){
@@ -371,7 +370,7 @@ int compName(const void* name1, const void* name2){
     Group* group1 = (Group*) name1;
     Group* group2 = (Group*) name2;
 
-    return (atoi(group1->groupNumber)-atoi(group2->groupNumber));
+    return (atoi(group1->number)-atoi(group2->number));
 }
 
 /**
@@ -393,33 +392,32 @@ int ListGroupsDir(Group* list){
     DIR *d;
     FILE *fp;
     struct dirent *dir;
+    int lastMessage, numberGroups, i;
     char GIDname[30];
-    int lastMessage;
-    int i=0;
-    int numberGroups = 0;
-
+    
     if(d = opendir("GROUPS")){
+        i = 0; numberGroups = 0;
         while((dir = readdir(d)) != NULL){
             if(dir->d_name[0] == '.')
                 continue;
             if(strlen(dir->d_name)>2)
                 continue;
 
-            strcpy(list[i].groupNumber, dir->d_name);
-            sprintf(GIDname, "GROUPS/%s/%s_name.txt", list[i].groupNumber, list[i].groupNumber);
+            strcpy(list[i].number, dir->d_name);
+            sprintf(GIDname, "GROUPS/%s/%s_name.txt", list[i].number, list[i].number);
             
             fp = fopen(GIDname, "r");
             if(fp){
-                fscanf(fp,"%24s", list[i].groupName);
+                fscanf(fp,"%24s", list[i].name);
                 fclose(fp);
             }
             lastMessage = GroupLastMessage(dir->d_name);
             if(lastMessage != -1)
-                sprintf(list[i].groupLastMsg, "%04d", lastMessage);
+                sprintf(list[i].lastMsg, "%04d", lastMessage);
             else
                 return(-1);
 
-            ++i;
+            i++;
             if(i == MAXGROUPS)
                 break;
         }
@@ -478,10 +476,8 @@ int GroupExists(char* GID){
     struct dirent *dir;
 
     d = opendir("GROUPS");
-    if (d)
-    {
-        while ((dir = readdir(d)))
-        {
+    if (d){
+        while ((dir = readdir(d))){
             if(strcmp(GID, dir->d_name) == 0)
             return TRUE;
         }
@@ -607,10 +603,10 @@ int UnsubscribeUser(char* UID, char* GID){
 */
 int checkUserSubscribedToGroup(char* UID, char* GID){
 
+    DIR* dir;
     FILE *fptr;
     char path[31];
-    DIR* dir;
-
+    
     sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
 
     if(!(fptr = fopen(path, "r"))){

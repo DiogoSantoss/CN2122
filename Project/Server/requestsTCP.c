@@ -28,12 +28,12 @@
  * @return 1 for success or 0 for errors
 */
 int sendTCP(int fd, char* message, int messageLen){
-    int nLeft = messageLen;
-    int nWritten;
+
     char* ptr;
+    int nLeft, nWritten;
 
     ptr = message;
-
+    nLeft = messageLen;
     while (nLeft > 0){
         nWritten = write(fd, ptr, nLeft);
         if(nWritten <= 0){
@@ -56,24 +56,25 @@ int sendTCP(int fd, char* message, int messageLen){
 */
 int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     
-    char* ptr = buffer;
-    int sum = 0;
-    int nRead = 0;
-
-    while (messageSize > sum){
+    char* ptr;
+    int nReceived, nRead;
+    
+    ptr = buffer;
+    nReceived = 0;
+    while (messageSize > 0){
         nRead = read(fd, ptr, messageSize);
         if (nRead == -1){
             logError("Couldn't receive message via TCP socket.");
             return -1;
         }
-        if (nRead == 0){
+        else if (nRead == 0){
             break;
         }
         ptr += nRead;
-        sum += nRead;
+        nReceived += nRead;
         messageSize -= nRead;
     }
-    return sum;
+    return nReceived;
 }
 
 /** 
@@ -134,38 +135,11 @@ int readWord(int fd, char* buffer, int maxRead){
     return skipSpace(fd);
 }
 
-/**
- * Reads a word of max size (that ends with a \\n) maxRead from fd
- * @param fd File descriptor
- * @param buffer array to read word to
- * @param maxRead number of bytes to read
- * @return 1 for success or 0 for errors
-*/
-int readEndWord(int fd, char* buffer, int maxRead){
-
-    char readChar[1];
-    memset(buffer, 0, maxRead + 1);
-
-    for (int i = 0; i < maxRead; i++){
-        // Reads one char
-        if(receiveNSizeTCP(fd, readChar, 1) == -1) return FALSE;
-        // If space is found in buffer boundaries, return TRUE
-        if (readChar[0] == '\n') return TRUE;
-        // Save char to buffer
-        buffer[i] = readChar[0];
-    }
-    // Read max size, next should be space if not, error
-    return checkEndLine(fd);
-}
-
 void requestErrorTCP(userData user, serverData server, int fd){
 
     char buffer[5];
-
     strcpy(buffer,"ERR\n");
     sendTCP(fd,buffer,strlen(buffer));
-
-    return;
 }
 
 /**
@@ -176,14 +150,23 @@ void requestErrorTCP(userData user, serverData server, int fd){
 */
 void processULS(userData user, serverData server, int fd){
 
-    int read;
-    char buffer[40];
-    char GroupID[3];
-    int numberUsersSub;
-    char* message = calloc(9, sizeof(char));
+    DIR *d;
+    FILE *fp;
+    
+    struct dirent *dir;
 
-    memset(GroupID, 0, 3);
-    read = receiveNSizeTCP(fd, GroupID, 2);
+    int read, numberUsersSub;
+
+
+    char buffer[40];
+    char groupID[3];
+    char path[10];
+    char groupName[25];
+    memset(groupID,0,3);
+    memset(buffer,0,40);
+    memset(groupName, 0, 25);
+
+    read = receiveNSizeTCP(fd, groupID, 2);
     
     if (read != 2){
         strcpy(buffer,"ERR\n");
@@ -195,27 +178,21 @@ void processULS(userData user, serverData server, int fd){
         sendTCP(fd,buffer,strlen(buffer));
         return;
     }
-    else if (!checkStringIsNumber(GroupID) || !GroupExists(GroupID)){
+    else if (!checkStringIsNumber(groupID) || !GroupExists(groupID)){
         strcpy(buffer,"RUL NOK\n");
         sendTCP(fd,buffer,strlen(buffer));
         return;
     }
 
     // Iterate over GROUPS/GID directory and send subscribed user id
-    DIR *d;
-    FILE *fp;
-    char path[10];
-    char GroupName[25];
-    struct dirent *dir;
 
-    memset(GroupName, 0, 25);
-    getGroupName(GroupID,GroupName);
-    sprintf(path, "GROUPS/%s", GroupID);
+    getGroupName(groupID,groupName);
+    sprintf(path, "GROUPS/%s", groupID);
 
     d = opendir(path);
     if (d){
 
-        sprintf(buffer,"RUL OK %s ",GroupName);
+        sprintf(buffer,"RUL OK %s ",groupName);
         sendTCP(fd,buffer,strlen(buffer));
 
         while ((dir = readdir(d))){   
@@ -232,6 +209,8 @@ void processULS(userData user, serverData server, int fd){
         }
 
         strcpy(buffer,"\n");
+        logULS(groupID);
+
         sendTCP(fd,buffer,strlen(buffer));
     }
     else{
@@ -249,40 +228,38 @@ void processULS(userData user, serverData server, int fd){
 */
 void processPST(userData user, serverData server, int fd){
 
-    char UserID[6];
-    char GroupID[3];
-    char Tsize[4];
-    char Fsize[11];
-    char Text[241];
+    FILE *fptr;
+    int messageID, sent, fileSize, actuallyRead;
+
+    char userID[6], groupID[3];
+    char Tsize[4], Fsize[11];
+    char text[241];
     char fileName[25];
 
     char response[10];
 
     char buffer[512];
     char singleChar[1];
-    FILE *fptr;
     char filePath[44];
 
-    int messageID, sent, fileSize, actuallyRead;
-
-    memset(Text,0,241);
+    memset(text,0,241);
     memset(fileName,0,25);
 
     // Reads User ID
-    if(!readWord(fd,UserID,5) || strlen(UserID) != 5 || !checkStringIsNumber(UserID)){
+    if(!readWord(fd,userID,5) || strlen(userID) != 5 || !checkStringIsNumber(userID)){
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     // Reads Group ID
-    if(!readWord(fd,GroupID,2) || strlen(GroupID) != 2 || !checkStringIsNumber(GroupID)){
+    if(!readWord(fd,groupID,2) || strlen(groupID) != 2 || !checkStringIsNumber(groupID)){
         strcpy(response,"ERR\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
-    if(!UserExists(UserID) || !CheckUserLogin(UserID) || !GroupExists(GroupID)){
+    if(!UserExists(userID) || !CheckUserLogin(userID) || !GroupExists(groupID)){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -296,14 +273,14 @@ void processPST(userData user, serverData server, int fd){
     }
 
     // Read text
-    if(!receiveNSizeTCP(fd,Text,atoi(Tsize))){
+    if(!receiveNSizeTCP(fd,text,atoi(Tsize))){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     // Create Message dir, author file and text file
-    messageID = CreateMessageDir(UserID,GroupID,Text);
+    messageID = CreateMessageDir(userID,groupID,text);
     if(messageID == -1){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
@@ -343,7 +320,7 @@ void processPST(userData user, serverData server, int fd){
     }
     
     // Create file
-    sprintf(filePath,"GROUPS/%s/MSG/%04d/%s",GroupID,messageID,fileName);
+    sprintf(filePath,"GROUPS/%s/MSG/%04d/%s",groupID,messageID,fileName);
     if(!(fptr = fopen(filePath, "w"))){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
@@ -381,8 +358,9 @@ void processPST(userData user, serverData server, int fd){
 
     } else {
         sprintf(response,"RPT %04d\n",messageID);
+        logPST(userID,groupID);
+
         sendTCP(fd,response,strlen(response));
-        return;
     }
 }
 
@@ -395,19 +373,21 @@ void processPST(userData user, serverData server, int fd){
 void processRTV(userData user, serverData server, int fd){
 
     FILE *fptr;
+    int textSize, fileSize;
+    int lastMessageID, messagesToRTV, firstMessageToRTV, lastMessageToRTV;
 
-    char userID[6];
-    char groupID[3];
+    char userID[6], groupID[3];
     char messageID[5];
+
     char response[10];
+
     char path[51];
     char fileName[25];
     char authorID[6];
     char text[241];
     char buffer[512];
 
-    int textSize, fileSize;
-    int lastMessageID, messagesToRTV, firstMessageToRTV, lastMessageToRTV;
+    
 
     memset(messageID, 0, 5);
 
@@ -560,5 +540,7 @@ void processRTV(userData user, serverData server, int fd){
 
     }
     strcpy(buffer,"\n");
+    logRTV(userID,groupID);
+    
     sendTCP(fd,buffer,strlen(buffer));
 }
