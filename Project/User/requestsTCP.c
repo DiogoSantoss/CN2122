@@ -265,7 +265,11 @@ void processPost(userData* user, serverData* server, char* input){
     memset(filename,0,MAXSIZE);
     sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
 
-    if(!strcmp(user->ID,"")){
+    if(input[strlen(command) + 1] != '\"' || input[strlen(command) + 1 + strlen(text) + 1] != '\"'){
+        logError("Wrong text format.");
+        return;
+    }
+    else if(!strcmp(user->ID,"")){
         logError("No user logged in.");
         return;
     }
@@ -283,7 +287,7 @@ void processPost(userData* user, serverData* server, char* input){
             return;
         }
         if(!(fp = fopen(filename, "rb"))){
-            logError("File doesn't exist");
+            logError("File doesn't exist.");
             return;
         }
     }
