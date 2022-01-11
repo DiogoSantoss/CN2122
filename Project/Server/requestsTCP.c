@@ -470,7 +470,7 @@ void processRTV(userData user, serverData server, int fd){
         messagesToRTV = lastMessageID - firstMessageToRTV + 1;
 
     // Send status and N
-    sprintf(response,"RRT OK %d\n",messagesToRTV);
+    sprintf(response,"RRT OK %d",messagesToRTV);
     sendTCP(fd,response,strlen(response));
     
     lastMessageToRTV = firstMessageToRTV + messagesToRTV - 1;

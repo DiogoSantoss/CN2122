@@ -514,7 +514,7 @@ int checkGroupName(char* GID, char* GName){
         return FALSE;
     }
 
-    if(fread(groupName, sizeof(char), 24, fptr) < 24){
+    if(fread(groupName, sizeof(char), 24, fptr) == 0){
         fclose(fptr);
         return FALSE;
     }
@@ -546,7 +546,7 @@ int getGroupName(char* GID, char* GName){
         return FALSE;
     }
 
-    if(fread(GName, sizeof(char), 24, fptr) < 24){
+    if(fread(GName, sizeof(char), 24, fptr) == 0){
         fclose(fptr);
         return FALSE;
     }
