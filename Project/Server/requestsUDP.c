@@ -235,6 +235,7 @@ void processGLS(userData user, serverData server, char* request){
 
     char command[4], extra[MAXSIZEUDP];
     char response[EXTRAMAXSIZE]; // TODO BEST APPROACH ? SHOULDNT DO SPRINTF TO THE SAME
+    char groupLine[34]; // 1 + 2 + 1 + 24 + 1 + 4
     memset(response,0,EXTRAMAXSIZE);
     memset(extra, 0, MAXSIZEUDP);
 
@@ -265,9 +266,10 @@ void processGLS(userData user, serverData server, char* request){
 
     sprintf(response, "RGL %d", numberGroups);
     for(int i = 0; i < numberGroups; i++){
-        sprintf(response, "%s %s %s %s", response, groupsList[i].number, groupsList[i].name, groupsList[i].lastMsg);
+        sprintf(groupLine, " %s %s %s", groupsList[i].number, groupsList[i].name, groupsList[i].lastMsg);
+        strcat(response, groupLine);
     }
-    sprintf(response, "%s\n", response);
+    strcat(response, "\n");
 
     logGLS(server.verbose);
 
@@ -454,6 +456,7 @@ void processGLM(userData user, serverData server, char* request){
     
     char command[4], userID[6], extra[MAXSIZEUDP];
     char response[EXTRAMAXSIZE];
+    char groupLine[34];
     memset(response,0,EXTRAMAXSIZE);
     memset(extra, 0, MAXSIZEUDP);
 
@@ -496,11 +499,11 @@ void processGLM(userData user, serverData server, char* request){
     sprintf(response, "RGM %d", subscribedGroups);
     for(int i = 0; i < numberGroups; i++){
         if(checkUserSubscribedToGroup(userID, groupsList[i].number)){
-            sprintf(response, "%s %s %s %s", response, groupsList[i].number, groupsList[i].name, groupsList[i].lastMsg);
+            sprintf(groupLine, " %s %s %s", groupsList[i].number, groupsList[i].name, groupsList[i].lastMsg);
+            strcat(response, groupLine);
         }
     }
-    sprintf(response, "%s\n",response);
-
+    strcat(response, "\n");
     logULS(server.verbose, userID);
     
     sendUDP(user, response);

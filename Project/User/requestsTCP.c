@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "log.h"
 #include "common.h"
@@ -178,6 +182,72 @@ int readWord(int fd, char* buffer, int maxRead){
     }
     // Read max size, next should be space if not, error
     return skipSpace(fd);
+}
+
+/**
+ * @brief Checks the existence of the downloads folder, if there isn't any, creates one
+ * @return 1 for success or 0 for errors
+ */
+int dowloadsFolder(){
+
+    DIR* dir;
+    char downloads[10];
+
+    strcpy(downloads, "Downloads");
+    if(dir = opendir("Downloads")){
+        closedir(dir);
+        return TRUE;
+    }
+    else if(ENOENT == errno){
+        if(mkdir(downloads, 0700) == -1){
+            return FALSE;
+        }
+        return TRUE;
+    }
+    else{
+        return FALSE;
+    }
+}
+
+/**
+ * @brief Fills newName with a slightly diferent name if there are files with the same name as this one
+ * @param originalName the original file's name
+ * @param newName the new name that will be attributed
+ * @return 1 for success or 0 if there are too many files with the same name
+ */
+int attributeFileName(char* originalName, char* newName){
+
+    // TODO - path is big, but probably has to be like this so gcc doesnt complaint
+    char path[79];
+    char identifier[5];
+    char name[25];
+    char extension[25];
+    memset(name, 0, 25);
+    memset(extension, 0, 25);
+
+    int i = 0;
+
+    while (originalName[i] != '.') i++;
+
+    strncpy(name, originalName, i);
+    strcpy(extension, originalName + i);
+    
+    sprintf(path, "Downloads/%s", originalName);
+
+    if (access(path, F_OK) != 0){
+        strcpy(newName, originalName);
+        return TRUE;
+    }
+    else{
+        for (int i = 1; i < 10; i++){
+            sprintf(path, "Downloads/%s (%d)%s", name, i, extension);
+            if (access(path, F_OK) != 0){
+                sprintf(newName, "%s (%d)%s", name, i, extension);
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
 }
 
 /**
@@ -393,6 +463,12 @@ void processRetrieve(userData* user, serverData* server, char* input){
     message = parseRetrieve(user, input);
     if(message == NULL) return;
 
+    // Creates / checks download folder
+    if (!dowloadsFolder()){
+        logError("Error with the downloads folder");
+        return;
+    }
+
     // Send message to server
     if(!connectTCP(server,&(user->fd),user->res)) return;
     if(!sendTCP(user->fd,message,strlen(message))) return;
@@ -476,6 +552,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             //Read FileName
             char fileName[FILENAMESIZE + 1];
+            char newFileName[FILENAMESIZE + 1];
             
             if(!readWord(user->fd, fileName, FILENAMESIZE)){
                 logError("File name is too big");
@@ -492,8 +569,17 @@ void processRetrieve(userData* user, serverData* server, char* input){
             // Open file
             char fileBuffer[FILEBUFFERSIZE];
 
+            if(!attributeFileName(fileName, newFileName)){
+                // TODO, a bit cursed perhaps
+                logError("Error attributing file name. Please clear your downloads folder.");
+                return;
+            }
+
             FILE *downptr;
-            downptr = fopen(fileName, "wb");
+            char path[40];
+            printf("NEW: %s\n", newFileName);
+            sprintf(path, "Downloads/%s", newFileName);
+            downptr = fopen(path, "wb");
 
             if(downptr == NULL){
                 logError("Could not open file");
