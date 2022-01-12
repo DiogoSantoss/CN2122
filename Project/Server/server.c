@@ -58,7 +58,7 @@ void parseArguments(serverData *server, int argc, char *argv[]){
         { 
             case 'p':
                 if(!checkStringIsNumber(optarg)){
-                    logError("Port value should be a positive integer.");
+                    logError(TRUE, "Port value should be a positive integer.");
                     exit(1);
                 }
                 strcpy(server->port,optarg);
@@ -69,11 +69,11 @@ void parseArguments(serverData *server, int argc, char *argv[]){
                 vCounter++;
                 break;
             default: 
-                logError("Wrong arguments.");
+                logError(TRUE, "Wrong arguments.");
                 exit(1);
         }
         if(pCounter > 1 || vCounter > 1){ 
-            logError("Repeated command-line arguments.");
+            logError(TRUE, "Repeated command-line arguments.");
             exit(1);
         }
     }
@@ -92,7 +92,7 @@ int createSocketUDP(serverData *server, int* fd, struct addrinfo* res){
 
     *fd = socket(AF_INET, SOCK_DGRAM, 0);
     if(*fd==-1){
-        logError("Couldn't create UDP socket.");
+        logError(TRUE, "Couldn't create UDP socket.");
         return FALSE;
     }
 
@@ -103,12 +103,12 @@ int createSocketUDP(serverData *server, int* fd, struct addrinfo* res){
 
     errcode=getaddrinfo(NULL,server->port,&hints,&res);
     if(errcode!=0){
-        logError("Couldn't get address info.");
+        logError(TRUE, "Couldn't get address info.");
         return FALSE;
     }
 
     if(bind(*fd,res->ai_addr,res->ai_addrlen) == -1){
-        logError("Couldn't bind UDP socket to server address.");
+        logError(TRUE, "Couldn't bind UDP socket to server address.");
         return FALSE;
     }
 
@@ -128,7 +128,7 @@ int createSocketTCP(serverData *server, int* fd, struct addrinfo* res){
 
     *fd = socket(AF_INET, SOCK_STREAM, 0);
     if(*fd==-1){
-        logError("Couldn't create TCP socket.");
+        logError(TRUE, "Couldn't create TCP socket.");
         return FALSE;
     }
 
@@ -139,18 +139,18 @@ int createSocketTCP(serverData *server, int* fd, struct addrinfo* res){
 
     errcode=getaddrinfo(NULL,server->port,&hints,&res);
     if(errcode!=0){
-        logError("Couldn't get address info.");
+        logError(TRUE, "Couldn't get address info.");
         return FALSE;
     }
 
     if(bind(*fd,res->ai_addr,res->ai_addrlen) == -1){
-        logError("Couldn't bind TCP socket to server address.");
+        logError(TRUE, "Couldn't bind TCP socket to server address.");
         return FALSE;
     }
 
     // TODO IS 5 ENOUGH ?
     if(listen(*fd, 5) == -1){
-        logError("Couldn't prepare socket to accept connections.");
+        logError(TRUE, "Couldn't prepare socket to accept connections.");
         return FALSE;
     }
 
@@ -182,7 +182,7 @@ void handleRequests(userData* user, serverData* server){
         counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, (struct timeval *)NULL);
 
         if(counter == -1){
-            logError("Select error.");
+            logError(TRUE, "Select error.");
             break;
         }
         // TCP Request
@@ -196,26 +196,23 @@ void handleRequests(userData* user, serverData* server){
 
             addrlen=sizeof(addr);
             if((fdNew=accept(fdTcp,(struct sockaddr*)&addr,&addrlen))==-1){
-                logError("Couldn't accept connection.");
+                logError(TRUE, "Couldn't accept connection.");
                 break;
             }
 
-            
             ptr = command;
             nRead = -1; toRead = 4;
             while (nRead != 0){
                 nRead = read(fdNew, ptr, toRead);
                 if(nRead == -1){
-                    logError("Couldn't receive message via TCP socket.");
+                    logError(TRUE, "Couldn't receive message via TCP socket.");
                     break;
                 }
                 ptr += nRead;
                 toRead -= nRead;
             }
-
-            if(server->verbose){
-                logTCP(inet_ntoa(user->addr->sin_addr),addr.sin_port);
-            }
+            // Initial log of IP and PORT
+            logTCP(server->verbose,inet_ntoa(user->addr->sin_addr),addr.sin_port);
 
             if(!strcmp(command,"ULS ")){
                 processULS(*user, *server, fdNew);
@@ -228,7 +225,7 @@ void handleRequests(userData* user, serverData* server){
             } else{
                 requestErrorTCP(*user, *server, fdNew);
             }
-
+            colorReset();
             close(fdNew);
         }
         // UDP Request
@@ -243,7 +240,7 @@ void handleRequests(userData* user, serverData* server){
 
             n = recvfrom(fdUdp, request, MAXSIZEUDP, 0, (struct sockaddr*)&addr, &addrlen);
             if(n==-1){
-                logError("Couldn't receive message via UDP socket");
+                logError(TRUE, "Couldn't receive message via UDP socket");
                 break;
             } 
 
@@ -252,18 +249,15 @@ void handleRequests(userData* user, serverData* server){
             user->addrlen = addrlen;
 
             if(request[strlen(request)-1] != '\n'){
-                logError("Client message too big or doesn't end with \\n.");
+                logError(server->verbose, "Client message too big or doesn't end with \\n.");
                 requestErrorUDP(*user, *server);
                 continue;
             }
-
             sscanf(request,"%s %s",command,extra);
 
-            if(server->verbose){
-                logUDP(inet_ntoa(user->addr->sin_addr), user->addr->sin_port);
-                
-            }
-
+            // Initial log of IP and PORT
+            logUDP(server->verbose,inet_ntoa(user->addr->sin_addr), user->addr->sin_port);
+            
             if(!strcmp(command,"REG")){
                 processREG(*user, *server, request);
 
@@ -291,6 +285,8 @@ void handleRequests(userData* user, serverData* server){
             } else{
                 requestErrorUDP(*user, *server);
             }
+
+            colorReset();
         }
     }
 

@@ -26,7 +26,7 @@
 void sendUDP(userData user, char* response){
 
     if(sendto(user.fd, response, strlen(response), 0, (struct sockaddr*)user.addr, user.addrlen) == -1){
-        logError("Couldn't send response via UDP socket");
+        logError(TRUE, "Couldn't send response via UDP socket");
     }
 }
 
@@ -62,24 +62,25 @@ void processREG(userData user, serverData server, char* request){
     ){
         // Wrong size parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to register user because wrong format.");
         sendUDP(user,response);
         return;
     }
     else if (UserExists(userID)){
         // User already exists
         strcpy(response, "RRG DUP\n");
+        logError(server.verbose, "Failed to register user because already exists.");
         sendUDP(user,response);
         return;
     }
     // Create user directory and password file
     if (CreateUserDir(userID) && CreatePassFile(userID, password)){
         strcpy(response, "RRG OK\n");
-        logREG(userID);
+        logREG(server.verbose, userID);
     } else{
-        // TODO log
         strcpy(response, "RRG NOK\n");
+        logError(server.verbose, "Failed to register user failed to create files.");
     }
-
     sendUDP(user, response);
 }
 
@@ -104,12 +105,14 @@ void processURN(userData user, serverData server, char* request){
     ){
         // Wrong format parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to unregister user because wrong format.");
         sendUDP(user,response);
         return;
     }
     else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
         strcpy(response, "RUN NOK\n");
+        logError(server.verbose, "Failed to unregister user because unknown user or wrong password.");
         sendUDP(user,response);
         return;
     }
@@ -118,13 +121,13 @@ void processURN(userData user, serverData server, char* request){
 
     if (!DelUserFromGroups(userID))                     strcpy(response, "RUN NOK\n");
     if (!DelPassFile(userID))                           strcpy(response, "RUN NOK\n");
-    if(CheckUserLogin(userID) && !DelLoginFile(userID)) strcpy(response, "RUN NOK\n");
+    if (CheckUserLogin(userID) && !DelLoginFile(userID))strcpy(response, "RUN NOK\n");
     if (!DelUserDir(userID))                            strcpy(response, "RUN NOK\n");
 
     if(strcmp(response,"RUN OK\n")){
-        logUNR(userID);
+        logUNR(server.verbose, userID);
     }else{
-        // TODO log
+        logError(server.verbose, "Failed to unregister user because failed to delete files/directory");
     }
 
     sendUDP(user, response);
@@ -152,21 +155,24 @@ void processLOG(userData user, serverData server, char* request){
     ){
         // Wrong format parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to login user because wrong format.");
         sendUDP(user,response);
         return;
     }
     else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
         strcpy(response, "RLO NOK\n");
+        logError(server.verbose, "Failed to unregister user because user doesnt exist or wrong password.");
         sendUDP(user,response);
         return;
     }
 
     if(createLoginFile(userID)){
         strcpy(response, "RLO OK\n"); 
-        logLOG(userID);   
+        logLOG(server.verbose, userID);   
     }else{
         strcpy(response, "RLO NOK\n");
+        logError(server.verbose, "Failed to unregister user because failed to create login file.");
     } 
   
     sendUDP(user, response);
@@ -193,21 +199,24 @@ void processOUT(userData user, serverData server, char* request){
     ){
         // Wrong format parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to logout user because wrong format.");
         sendUDP(user,response);
         return;
     }
     else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
         strcpy(response, "ROU NOK\n");
+        logError(server.verbose, "Failed to login user because user doesnt exist or wrong password.");
         sendUDP(user,response);
         return;
     }
 
     if (DelLoginFile(userID)){
         strcpy(response, "ROU OK\n");
-        logOUT(userID);
+        logOUT(server.verbose, userID);
     } else{
         strcpy(response, "ROU NOK\n");
+        logError(server.verbose, "Failed to login user because failed to delete login file.");
     }
     
     sendUDP(user, response);
@@ -234,6 +243,7 @@ void processGLS(userData user, serverData server, char* request){
     if (strlen(extra) != 0){
         // Wrong size parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to get groups because wrong format.");
         sendUDP(user,response);
         return;
     }
@@ -242,11 +252,13 @@ void processGLS(userData user, serverData server, char* request){
     numberGroups = ListGroupsDir(groupsList);
     if(numberGroups == -1){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to get groups because of server error.");
         sendUDP(user,response);
         return;
     }
     else if(numberGroups == 0){
         strcpy(response, "RGL 0\n");
+        logGLS(server.verbose);
         sendUDP(user,response);
         return;
     }
@@ -257,7 +269,7 @@ void processGLS(userData user, serverData server, char* request){
     }
     sprintf(response, "%s\n", response);
 
-    logGLS();
+    logGLS(server.verbose);
 
     sendUDP(user, response);
 }
@@ -290,12 +302,13 @@ void processGSR(userData user, serverData server, char* request){
     ){
         // Wrong size parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to subscribe because wrong format.");
         sendUDP(user, response);
         return;
     }
     if (!UserExists(userID) || !CheckUserLogin(userID)){
         // Invalid UID
-        strcpy(response, "RGS E_USR\n");
+        strcpy(response, "RGS E_USR\n"); // TODO LOG SOMETHING GOOD/BAD ?
         sendUDP(user, response);
         return;
     }
@@ -332,7 +345,7 @@ void processGSR(userData user, serverData server, char* request){
         }
         // Created and subscribed to new group
         sprintf(response, "RGS NEW %s\n", newGroupID);
-        logGSR(userID,newGroupID);
+        logGSR(server.verbose, userID,newGroupID);
 
         sendUDP(user, response);
     }  
@@ -358,7 +371,7 @@ void processGSR(userData user, serverData server, char* request){
         }
         // Subscribed user 
         strcpy(response, "RGS OK\n");
-        logGSR(userID,groupID);
+        logGSR(server.verbose, userID,groupID);
 
         sendUDP(user, response);
     }
@@ -406,7 +419,7 @@ void processGUR(userData user, serverData server, char* request){
         
         if(UnsubscribeUser(userID, groupID)){
             strcpy(response, "RGU OK\n");
-            logGUR(userID,groupID);
+            logGUR(server.verbose, userID,groupID);
 
             sendUDP(user, response);
             return;
@@ -421,7 +434,7 @@ void processGUR(userData user, serverData server, char* request){
     // But it returns success nonetheless
     else {
         strcpy(response, "RGU OK\n");
-        logGUR(userID,groupID);
+        logGUR(server.verbose, userID,groupID);
 
         sendUDP(user, response);
         return;
@@ -468,7 +481,7 @@ void processGLM(userData user, serverData server, char* request){
     }
     else if(numberGroups == 0){
         strcpy(response, "RGM 0\n");
-        logULS(userID);
+        logULS(server.verbose, userID);
         sendUDP(user, response);
         return;
     }
@@ -488,7 +501,7 @@ void processGLM(userData user, serverData server, char* request){
     }
     sprintf(response, "%s\n",response);
 
-    logULS(userID);
+    logULS(server.verbose, userID);
     
     sendUDP(user, response);
     return; 

@@ -15,6 +15,8 @@
 
 #define MAXGROUPS 99
 
+// BIG TODO SHOULD WE ALWAYS SEND THIS ERRORS?
+
 /**
  * Create initial USERS and GROUPS directories.
 */
@@ -33,12 +35,12 @@ void createDirectories(){
     }
     else if(ENOENT == errno){
         if(mkdir(users, 0700) == -1){
-            logError("Couldn't create USERS directory.");
+            logError(TRUE, "Couldn't create USERS directory.");
             exit(1);
         }
     }
     else{
-        logError("Directory USERS failed to open.");
+        logError(TRUE, "Directory USERS failed to open.");
         exit(1);
     }
 
@@ -48,12 +50,12 @@ void createDirectories(){
     }
     else if(ENOENT == errno){
         if(mkdir(groups, 0700) == -1){
-            logError("Couldn't create GROUPS directory.");
+            logError(TRUE, "Couldn't create GROUPS directory.");
             exit(1);
         }
     }
     else{
-        logError("Directory USERS failed to open.");
+        logError(TRUE, "Directory USERS failed to open.");
         exit(1);
     }
 }
@@ -69,7 +71,7 @@ int CreateUserDir(char *UID){
 
     sprintf(user_dirname,"USERS/%s",UID);
     if(mkdir(user_dirname,0700) == -1){
-        logError("Failed to create user directory.");
+        logError(TRUE, "Failed to create user directory.");
         return FALSE;
     }
 
@@ -89,7 +91,7 @@ int DelUserDir(char *UID){
     sprintf(user_dirname,"USERS/%s",UID);
 
     if(rmdir(user_dirname) != 0){
-        logError("Failed to delete user directory.");
+        logError(TRUE, "Failed to delete user directory.");
         return FALSE;
     }
 
@@ -138,7 +140,7 @@ int CreatePassFile(char* UID, char* password){
     sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
 
     if(!(fptr = fopen(path, "w"))){
-        logError("Failed to create user password file.");
+        logError(TRUE, "Failed to create user password file.");
         return FALSE;
     }
 
@@ -166,7 +168,7 @@ int DelPassFile(char *UID){
         return TRUE;
 
     } else{
-        logError("Failed to delete user password file.");
+        logError(TRUE, "Failed to delete user password file.");
         return FALSE;
     }
 
@@ -189,7 +191,7 @@ int checkUserPassword(char* UID, char* password){
     sprintf(path, "USERS/%s/%s_pass.txt", UID, UID);
 
     if(!(fptr = fopen(path, "r"))){
-        logError("Failed to open user password file.");
+        logError(TRUE, "Failed to open user password file.");
         return FALSE;
     }
     
@@ -218,7 +220,7 @@ int createLoginFile(char* UID){
     sprintf(path, "USERS/%s/%s_login.txt", UID, UID);
 
     if(!(fptr = fopen(path, "w"))){
-        logError("Failed to create user login file.");
+        logError(TRUE, "Failed to create user login file.");
         return FALSE;
     }
 
@@ -241,7 +243,7 @@ int DelLoginFile(char *UID){
         return TRUE;
 
     } else {
-        logError("Failed to delete user login file.");
+        logError(TRUE, "Failed to delete user login file.");
         return FALSE;
     }
 
@@ -279,14 +281,14 @@ int CreateGroupDir(char *GID){
     sprintf(group_dirname,"GROUPS/%s",GID);
 
     if(mkdir(group_dirname,0700) == -1){
-        logError("Failed to create group directory.");
+        logError(TRUE, "Failed to create group directory.");
         return FALSE;
     }
 
     sprintf(group_dirname,"GROUPS/%s/MSG",GID);
 
     if(mkdir(group_dirname,0700) == -1){
-        logError("Failed to create message directory.");
+        logError(TRUE, "Failed to create message directory.");
         return FALSE;
     }
 
@@ -318,7 +320,7 @@ int maxGroupNumber(){
         return groupMax;
     }
     else{   
-        logError("Failed to open groups directory.");
+        logError(TRUE, "Failed to open groups directory.");
         closedir(d);
         return -1;
     }
@@ -351,7 +353,7 @@ int GroupLastMessage(char *GID){
         return max;
     } 
     else{
-        logError("Failed to open message directory.");
+        logError(TRUE, "Failed to open message directory.");
         closedir(d);
         return -1;
     }
@@ -426,7 +428,7 @@ int ListGroupsDir(Group* list){
     }
     else{
         closedir(d);
-        logError("Failed to open groups directory.");
+        logError(TRUE, "Failed to open groups directory.");
         return -1;
     }
         
@@ -451,7 +453,7 @@ int CreateGroupFile(char* GID, char* Gname){
     sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
 
     if(!(fptr = fopen(path, "w"))){
-        logError("Failed to create group name file");
+        logError(TRUE, "Failed to create group name file");
         return FALSE;
     }
   
@@ -484,7 +486,7 @@ int GroupExists(char* GID){
         return FALSE;
     }
     else{
-        logError("Failed to open groups directory.");
+        logError(TRUE, "Failed to open groups directory.");
         return FALSE;
     }
 }
@@ -506,7 +508,7 @@ int checkGroupName(char* GID, char* GName){
     sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
 
     if(!(fptr = fopen(path, "r"))){
-        logError("Failed to open group name file.");
+        logError(TRUE, "Failed to open group name file.");
         return FALSE;
     }
 
@@ -538,7 +540,7 @@ int getGroupName(char* GID, char* GName){
     sprintf(path, "GROUPS/%s/%s_name.txt", GID, GID);
 
     if(!(fptr = fopen(path, "r"))){
-        logError("Failed to open group name file.");
+        logError(TRUE, "Failed to open group name file.");
         return FALSE;
     }
 
@@ -565,7 +567,7 @@ int SubscribeUser(char* UID, char* GID){
     sprintf(path, "GROUPS/%s/%s.txt", GID, UID);
 
     if(!(fptr = fopen(path, "w"))){
-        logError("Failed to create subscription file.");
+        logError(TRUE, "Failed to create subscription file.");
         return FALSE;
     }
 
@@ -589,7 +591,7 @@ int UnsubscribeUser(char* UID, char* GID){
         return TRUE;
 
     } else{
-        logError("Failed to remove subscription file.");
+        logError(TRUE, "Failed to remove subscription file.");
         return FALSE;
     }
 
@@ -725,7 +727,7 @@ int getMessageFilePath(char* GID, int MID, char* fileName){
         return FALSE;
     }
     else{
-        logError("Failed to open message directory.");
+        logError(TRUE, "Failed to open message directory.");
         closedir(d);
         return FALSE;
     }  

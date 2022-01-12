@@ -13,64 +13,119 @@
 #define MAXSIZE 274
 #define EXTRAMAXSIZE 3268
 
-void logError(char* message){
-    colorRed();
-    printf("%s\n", message);
-    colorReset();
+void printLine(){
+    printf("----------------------------------------------------\n");
 }
 
-void logTCP(char* IP, int port){
-    printf("Received request to TCP socket from:\n");
-    printf("IP: %s\n",IP);
-    printf("Port: %d\n",port);
+void logError(int verbose, char* message){
+    if(verbose){
+        colorRed();
+        printf("%s\n", message);
+        printLine();
+        colorReset();
+    }
 }
 
-void logUDP(char* IP, int port){
-    printf("Received request to UDP socket from:\n");
-    printf("IP: %s\n",IP);
-    printf("Port: %d\n",port);
+void logTCP(int verbose, char* IP, int port){
+    if(verbose){
+        printf("Received request to TCP socket from:\n");
+        printf("IP: %s\n",IP);
+        printf("Port: %d\n",port);
+    }
 }
 
-void logREG(char* UID){
-    printf("Registered user %s\n",UID);
+void logUDP(int verbose, char* IP, int port){
+    if(verbose){
+        printf("Received request to UDP socket from:\n");
+        printf("IP: %s\n",IP);
+        printf("Port: %d\n",port);
+    }
 }
 
-void logUNR(char* UID){
-    printf("Unregistered user %s\n",UID);
+void logREG(int verbose, char* UID){
+    if(verbose){
+        colorGreen();
+        printf("Registered user %s\n",UID);  
+        printLine();
+    }
 }
 
-void logLOG(char* UID){
-    printf("User %s logged in\n",UID);
+void logUNR(int verbose, char* UID){
+    if(verbose){
+        colorGreen();
+        printf("Unregistered user %s\n",UID);
+        printLine();
+    }
 }
 
-void logOUT(char* UID){
-    printf("User %s logged out\n",UID);
+void logLOG(int verbose, char* UID){
+    if(verbose){
+        colorGreen();
+        printf("User %s logged in\n",UID);
+        printLine();
+    }
 }
 
-void logGLS(){
-    printf("Listed all existing groups\n"); // TODO NEED TO LIST ALL GROUPS ?
+void logOUT(int verbose, char* UID){
+    if(verbose){
+        colorGreen();
+        printf("User %s logged out\n",UID);
+        printLine();
+    }
 }
 
-void logGSR(char* UID, char* GID){
-    printf("User %s subscribed to group %s\n", UID, GID);
+void logGLS(int verbose){
+    if(verbose){
+        colorGreen();
+        printf("Listed all existing groups\n"); // TODO NEED TO LIST ALL GROUPS ?
+        printLine();
+    }
 }
 
-void logGUR(char* UID, char* GID){
-    printf("User %s unsubscribed from group %s\n", UID, GID);
+void logGSR(int verbose, char* UID, char* GID){
+    if(verbose){
+        colorGreen();
+        printf("User %s subscribed to group %s\n", UID, GID);
+        printLine();
+    }
 }
 
-void logGLM(char* UID){
-    printf("Listed groups that user %s is subscribed to\n", UID);
+void logGUR(int verbose, char* UID, char* GID){
+    if(verbose){
+        colorGreen();
+        printf("User %s unsubscribed from group %s\n", UID, GID);
+        printLine();
+    }
 }
 
-void logULS(char* GID){
-    printf("Listed all users subscribed to group %s\n", GID);
+void logGLM(int verbose, char* UID){
+    if(verbose){
+        colorGreen();
+        printf("Listed groups that user %s is subscribed to\n", UID);
+        printLine();
+    }
 }
 
-void logPST(char* UID, char* GID){
-    printf("User %s successfully posted to group %s\n", UID, GID); // TODO NEED SHOW MESSAGE ?
+void logULS(int verbose, char* GID){
+    if(verbose){
+        colorGreen();
+        printf("Listed all users subscribed to group %s\n", GID);
+        printLine();
+    }
 }
 
-void logRTV(char* UID, char* GID, int numberOfMessages){
-    printf("User %s has retrieved %d message(s) from group %s\n", UID, numberOfMessages, GID); // TODO NEED SHOW MESSAGES ?
+void logPST(int verbose, char* UID, char* GID){
+    if(verbose){
+        colorGreen();
+        printf("User %s successfully posted to group %s\n", UID, GID); // TODO NEED SHOW MESSAGE ?
+        printLine();
+    }
+}
+
+void logRTV(int verbose, char* UID, char* GID, int numberOfMessages){
+    if(verbose){
+        colorGreen();
+        printf("User %s has retrieved %d message(s) from group %s\n", UID, numberOfMessages, GID); // TODO NEED SHOW MESSAGES ?
+        printLine();
+    }
 }

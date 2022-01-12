@@ -37,7 +37,7 @@ int sendTCP(int fd, char* message, int messageLen){
     while (nLeft > 0){
         nWritten = write(fd, ptr, nLeft);
         if(nWritten <= 0){
-            logError("Couldn't send message via TCP socket");
+            logError(TRUE, "Couldn't send message via TCP socket");
             return FALSE;
         }
         nLeft -= nWritten;
@@ -64,7 +64,7 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     while (messageSize > 0){
         nRead = read(fd, ptr, messageSize);
         if (nRead == -1){
-            logError("Couldn't receive message via TCP socket.");
+            logError(TRUE, "Couldn't receive message via TCP socket."); // TODO what should we always show ?
             return -1;
         }
         else if (nRead == 0){
@@ -209,7 +209,7 @@ void processULS(userData user, serverData server, int fd){
         }
 
         strcpy(buffer,"\n");
-        logULS(groupID);
+        logULS(server.verbose, groupID);
 
         sendTCP(fd,buffer,strlen(buffer));
     }
@@ -296,6 +296,8 @@ void processPST(userData user, serverData server, int fd){
     // Checks if needs to read file
     if(singleChar[0] == '\n'){
         sprintf(response,"RPT %04d\n",messageID);
+        logPST(server.verbose, userID,groupID);
+
         sendTCP(fd,response,strlen(response));
         return;
 
@@ -358,7 +360,7 @@ void processPST(userData user, serverData server, int fd){
 
     } else {
         sprintf(response,"RPT %04d\n",messageID);
-        logPST(userID,groupID);
+        logPST(server.verbose, userID,groupID);
 
         sendTCP(fd,response,strlen(response));
     }
@@ -466,7 +468,7 @@ void processRTV(userData user, serverData server, int fd){
         // Read author of message
         sprintf(path,"GROUPS/%s/MSG/%04d/A U T H O R.txt",groupID,currentMessageID);
         if(!(fptr = fopen(path, "r"))){
-            logError("Failed to open author file.");
+            logError(server.verbose, "Failed to open author file.");
             return;
         }
         if(fread(authorID, sizeof(char), 5, fptr) < 5){
@@ -478,7 +480,7 @@ void processRTV(userData user, serverData server, int fd){
         // Open text file
         sprintf(path,"GROUPS/%s/MSG/%04d/T E X T.txt",groupID,currentMessageID);
         if(!(fptr = fopen(path, "r"))){
-            logError("Failed to open text file.");
+            logError(server.verbose, "Failed to open text file.");
             return;
         }
 
@@ -506,7 +508,7 @@ void processRTV(userData user, serverData server, int fd){
 
         sprintf(path,"GROUPS/%s/MSG/%04d/%s",groupID,currentMessageID,fileName);
         if(!(fptr = fopen(path, "r"))){
-            logError("Failed to open message file.");
+            logError(server.verbose, "Failed to open message file.");
             return;
         }
 
@@ -540,7 +542,7 @@ void processRTV(userData user, serverData server, int fd){
 
     }
     strcpy(buffer,"\n");
-    logRTV(userID,groupID);
+    logRTV(server.verbose, userID,groupID,messagesToRTV);
     
     sendTCP(fd,buffer,strlen(buffer));
 }
