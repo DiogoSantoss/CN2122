@@ -240,9 +240,9 @@ int attributeFileName(char* originalName, char* newName){
     }
     else{
         for (int i = 1; i < 10; i++){
-            sprintf(path, "Downloads/%s (%d)%s", name, i, extension);
+            sprintf(path, "Downloads/%s(%d)%s", name, i, extension);
             if (access(path, F_OK) != 0){
-                sprintf(newName, "%s (%d)%s", name, i, extension);
+                sprintf(newName, "%s(%d)%s", name, i, extension);
                 return TRUE;
             }
         }
@@ -575,9 +575,11 @@ void processRetrieve(userData* user, serverData* server, char* input){
                 return;
             }
 
+            if (strcmp(fileName, newFileName))
+                printf("File renamed to: %s\n", newFileName);
+
             FILE *downptr;
             char path[40];
-            printf("NEW: %s\n", newFileName);
             sprintf(path, "Downloads/%s", newFileName);
             downptr = fopen(path, "wb");
 
