@@ -312,16 +312,17 @@ char* parseSubscribe(userData* user, char* input){
 
     sscanf(input,"%s %s %s %s\n", command, groupID, groupName, extra);
 
+    
     if(strlen(input) != (strlen(command)+strlen(groupID)+strlen(groupName)+3)){
         logError("Wrong size parameters.");
         return NULL;
     }
-
-    if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(groupID) > 2) || (strlen(groupName) > 25)){
+    else if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(groupID) > 2) || (strlen(groupName) > 25)){
         logError("Wrong size parameters.");
         return NULL;
 
-    } else if(!checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName)){
+    } 
+    else if(!checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName)){
         logError("Forbidden character in parameters.");
         return NULL;
     }
@@ -357,13 +358,16 @@ char* parseUnsubscribe(userData* user, char* input){
 
     sscanf(input,"%s %s %s\n", command, groupID, extra);
 
-    // TODO SAME
-
-    if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(groupID) > 2)){
+    if(strlen(input) != (strlen(command)+strlen(groupID)+2)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+    else if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(groupID) > 2)){
         logError("Wrong size parameters.");
         return NULL;
 
-    } else if(!checkStringIsNumber(groupID)){
+    } 
+    else if(!checkStringIsNumber(groupID)){
         logError("Forbidden character in parameters.");
         return NULL;
     }
@@ -434,16 +438,20 @@ void processSelect(userData* user, char* input){
 
     sscanf(input,"%s %s %s\n", command, groupID, extra);
 
-    // TODO SAME AS BEFORE
-
-    if((strlen(extra) != 0) || ((strlen(command) != 6) && (strlen(command) != 3)) || (strlen(groupID) > 2)){
+    if(strlen(input) != (strlen(command)+strlen(groupID)+2)){
+        logError("Wrong size parameters.");
+        return;
+    }
+    else if((strlen(extra) != 0) || ((strlen(command) != 6) && (strlen(command) != 3)) || (strlen(groupID) > 2)){
         logError("Wrong size parameters.");
         return;
 
-    } else if(!checkStringIsNumber(groupID)){
+    } 
+    else if(!checkStringIsNumber(groupID)){
         logError("Forbidden character in parameters.");
         return;
-    } else if(!strcmp(groupID, "0") || !strcmp(groupID, "00")){
+    } 
+    else if(!strcmp(groupID, "0") || !strcmp(groupID, "00")){
         logError("Group 0 doesn't exist");
         return;
     }

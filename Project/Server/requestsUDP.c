@@ -354,13 +354,18 @@ void processGSR(userData user, serverData server, char* request){
 
     sscanf(request, "%s %s %s %s %s", command, userID, groupID, groupName, extra);
 
-    // TODO SAME AS USER CHECK EXTRA SPACES
+    if(strlen(request) != (strlen(command)+strlen(userID)+strlen(groupID)+strlen(groupName)+4)){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to subscribe because wrong format.");
+        sendUDP(user, response);
+        return;
+    }
 
     if(strlen(groupID) == 1){
         sprintf(groupID, "%02d", atoi(groupID));
     }
-
-    if (
+    else if (
         strlen(extra) != 0 || strlen(userID) != 5 || strlen(groupID) != 2 || strlen(groupName) > 24 || 
         !checkStringIsNumber(userID) ||  !checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName)
     ){
