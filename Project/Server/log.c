@@ -11,7 +11,7 @@
 
 //Constants
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3268 // 99*
+#define EXTRAMAXSIZE 3268
 
 void printLine(){
     printf("----------------------------------------------------\n");
@@ -118,9 +118,9 @@ void logPST(int verbose, char* UID, char* GID, int textSize, int fileSize, char*
     if(verbose){
         colorGreen();
         if(fileName == NULL)
-            printf("User %s successfully posted to group %s a message with %d bytes\n", UID, GID, textSize);
+            printf("User %s successfully posted to group %s a message with a text sixe of %d\n", UID, GID, textSize);
         else
-            printf("User %s successfully posted to group %s a message with %d bytes and a file named %s with %d bytes\n", UID, GID, fileName, fileSize);
+            printf("User %s successfully posted to group %s a message with %d bytes and a file named %s with %d bytes\n", UID, GID, textSize, fileName, fileSize);
         printLine();
     }
 }
@@ -128,16 +128,16 @@ void logPST(int verbose, char* UID, char* GID, int textSize, int fileSize, char*
 void logRTV(int verbose, char* UID, char* GID, int numberOfMessages){
     if(verbose){
         colorGreen();
-        printf("User %s has retrieved %d message(s) from group %s\n", UID, numberOfMessages, GID); // TODO NEED SHOW MESSAGES ?
+        printf("User %s has retrieved %d message(s) from group %s\n", UID, numberOfMessages, GID);
     }
 }
 
-void logRTVMessage(int verbose, char* MID, int textSize, int fileSize, char* fileName){
+void logRTVMessage(int verbose, int MID, int textSize, int fileSize, char* fileName){
     if(verbose){
         colorGreen();
         if(fileName == NULL)
-            printf("Retrieved message %s with a text size of %d", MID, textSize);
+            printf("Retrieved message %d with a text size of %d\n", MID, textSize);
         else
-            printf("Retrieved message %s with a text size of %d and a file named %s with %d bytes", MID, textSize, fileName, fileSize);
+            printf("Retrieved message %d with a text size of %d and a file named %s with %d bytes\n", MID, textSize, fileName, fileSize);
     }
 }

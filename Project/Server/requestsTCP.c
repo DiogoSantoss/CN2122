@@ -15,7 +15,7 @@
 #define TRUE  1
 #define FALSE 0
 
-#define MAXSIZEUDP 39 //GSR is the biggest command 
+#define MAXSIZEUDP 39
 #define EXTRAMAXSIZE 3169
 
 #define MAXGROUPS 99
@@ -311,7 +311,7 @@ void processPST(userData user, serverData server, int fd){
     // Checks if needs to read file
     if(singleChar[0] == '\n'){
         sprintf(response,"RPT %04d\n",messageID);
-        logPST(server.verbose, userID, groupID, textSize, 0, NULL);
+        logPST(server.verbose, userID, groupID, atoi(Tsize), 0, NULL);
         sendTCP(fd,response,strlen(response));
         return;
 
@@ -377,7 +377,7 @@ void processPST(userData user, serverData server, int fd){
 
     } else {
         sprintf(response,"RPT %04d\n",messageID);
-        logPST(server.verbose, userID, groupID, textSize, fileSize, fileName);
+        logPST(server.verbose, userID, groupID, atoi(Tsize), fileSize, fileName);
         sendTCP(fd,response,strlen(response));
     }
 }
@@ -526,6 +526,7 @@ void processRTV(userData user, serverData server, int fd){
         // Verify if there is a file in the message
         if(!getMessageFilePath(groupID,currentMessageID,fileName)){
             // There is no file in this message
+            logRTVMessage(server.verbose, currentMessageID, textSize, 0, NULL);
             continue;
         }
 
@@ -561,11 +562,13 @@ void processRTV(userData user, serverData server, int fd){
             sendTCP(fd,buffer,actuallyRead);
             read += actuallyRead;
         }
+
+        logRTVMessage(server.verbose, currentMessageID, textSize, fileSize, fileName);
+
         fclose(fptr);
 
     }
     strcpy(buffer,"\n");
-    //logRTV(server.verbose, userID,groupID,messagesToRTV);
     
     sendTCP(fd,buffer,strlen(buffer));
 }

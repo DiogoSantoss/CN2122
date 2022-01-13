@@ -17,6 +17,6 @@ void logGLM(int verbose, char* UID);
 void logULS(int verbose, char* GID);
 void logPST(int verbose, char* UID, char* GID, int textSize, int fileSize, char* fileName);
 void logRTV(int verbose, char* UID, char* GID, int numberOfMessages);
-void logRTVMessage(int verbose, char* MID, int textSize, int fileSize, char* fileName);
+void logRTVMessage(int verbose, int MID, int textSize, int fileSize, char* fileName);
 
 #endif

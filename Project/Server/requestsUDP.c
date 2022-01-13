@@ -374,17 +374,19 @@ void processGSR(userData user, serverData server, char* request){
     }
     if (!UserExists(userID) || !CheckUserLogin(userID)){
         // Invalid UID
-        strcpy(response, "RGS E_USR\n"); // TODO LOG SOMETHING GOOD/BAD ?
+        strcpy(response, "RGS E_USR\n");
+        logError(server.verbose, "Failed to subscribe because UID is invalid.");
         sendUDP(user, response);
         return;
     }
-    // User want to create and subscribe to new group
+    // User wants to create and subscribe to new group
     else if (strcmp(groupID, "00") == 0){
 
         maxGroupID = maxGroupNumber();
         if(maxGroupID >= MAXGROUPS){
             // Max number of groups, can't create more
             strcpy(response, "RGS E_FULL\n");
+            logError(server.verbose, "Failed to subscribe because max number of groups has been reached.");
             sendUDP(user, response);
             return;
         }
@@ -393,12 +395,14 @@ void processGSR(userData user, serverData server, char* request){
 
         if(!CreateGroupDir(newGroupID)){
             strcpy(response,"ERR\n");
+            logError(server.verbose, "Failed to subscribe user because failed to create group directory.");
             sendUDP(user, response);
             return;
         }
 
         if(!CreateGroupFile(newGroupID,groupName)){
             strcpy(response,"ERR\n");
+            logError(server.verbose, "Failed to subscribe user because failed to create group file.");
             sendUDP(user, response);
             return;
         }
@@ -406,12 +410,13 @@ void processGSR(userData user, serverData server, char* request){
         if(!SubscribeUser(userID, newGroupID)){
             // Failed to subscribe user to newly created group
             strcpy(response, "RGS NOK\n");
+            logError(server.verbose, "Failed to subscribe user because of server error.");
             sendUDP(user, response);
             return;
         }
         // Created and subscribed to new group
         sprintf(response, "RGS NEW %s\n", newGroupID);
-        logGSR(server.verbose, userID,newGroupID);
+        logGSR(server.verbose, userID, newGroupID);
 
         sendUDP(user, response);
     }  
@@ -420,18 +425,21 @@ void processGSR(userData user, serverData server, char* request){
         if(!GroupExists(groupID)){
             // Invalid GID
             strcpy(response, "RGS E_GRP\n");
+            logError(server.verbose, "Failed to subscribe because group doesnt exist.");
             sendUDP(user, response);
             return;
         }
         if(!checkGroupName(groupID, groupName)){
             // Invalid Gname
             strcpy(response, "RGS E_GNAME\n");
+            logError(server.verbose, "Failed to subscribe because group doesnt exist.");
             sendUDP(user, response);
             return;
         }
         if(!SubscribeUser(userID, groupID)){
             // Failed to subscribe user
             strcpy(response, "RGS NOK\n");
+            logError(server.verbose, "Failed to subscribe user because of server error.");
             sendUDP(user, response);
             return;
         }
@@ -472,18 +480,21 @@ void processGUR(userData user, serverData server, char* request){
     ){
         // Wrong size parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to unsubscribe user because wrong format.");
         sendUDP(user, response);
         return;
     }
     else if (!UserExists(userID) || !CheckUserLogin(userID)){
         // Invalid UID
         strcpy(response, "RGU E_USR\n");
+        logError(server.verbose, "Failed to unsubscribe user because UID is invalid.");
         sendUDP(user, response);
         return;
     }
     else if(!GroupExists(groupID)){
         // Invalid GID
         strcpy(response, "RGU E_GRP\n");
+        logError(server.verbose, "Failed to unsubscribe user because GID is invalid.");
         sendUDP(user, response);
         return;
     }
@@ -493,13 +504,14 @@ void processGUR(userData user, serverData server, char* request){
         
         if(UnsubscribeUser(userID, groupID)){
             strcpy(response, "RGU OK\n");
-            logGUR(server.verbose, userID,groupID);
+            logGUR(server.verbose, userID, groupID);
 
             sendUDP(user, response);
             return;
         }
         else{
             strcpy(response, "RGU NOK\n");
+            logError(server.verbose, "Failed to unsubscribe user because of server error.");
             sendUDP(user, response);
             return;
         }
@@ -508,7 +520,7 @@ void processGUR(userData user, serverData server, char* request){
     // But it returns success nonetheless
     else {
         strcpy(response, "RGU OK\n");
-        logGUR(server.verbose, userID,groupID);
+        logGUR(server.verbose, userID, groupID);
 
         sendUDP(user, response);
         return;
@@ -535,7 +547,7 @@ void processGLM(userData user, serverData server, char* request){
     if(strlen(request) != MAXSIZEGLM){
         // Wrong size parameters
         strcpy(response, "ERR\n");
-        logError(server.verbose, "Failed to list groups user is subscribed because wrong format.");
+        logError(server.verbose, "Failed to list groups user is subscribed to because wrong format.");
         sendUDP(user,response);
         return;
     }
@@ -545,12 +557,14 @@ void processGLM(userData user, serverData server, char* request){
     if (strlen(extra) != 0 || strlen(userID) != 5 || !checkStringIsNumber(userID)){
         // Wrong size parameters
         strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to list groups user is subscribed to because wrong format.");
         sendUDP(user, response);
         return;
     }
     else if (!UserExists(userID) || !CheckUserLogin(userID)){
         // Invalid UID
         strcpy(response, "RGM E_USR\n");
+        logError(server.verbose, "Failed to list groups user is subscribed to because UID is invalid.");
         sendUDP(user, response);
         return;
     }
@@ -559,6 +573,7 @@ void processGLM(userData user, serverData server, char* request){
     numberGroups = ListGroupsDir(groupsList);
     if(numberGroups == -1){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to list groups user is subscribed to because of server error.");
         sendUDP(user, response);
         return;
     }
