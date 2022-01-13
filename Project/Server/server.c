@@ -31,7 +31,7 @@
 void initializeData(userData *user, serverData *server){
 
     server->verbose = FALSE;
-    strcpy(server->port,"58011");
+    strcpy(server->port,"58027");
 }
 
 /**

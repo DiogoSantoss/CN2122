@@ -64,7 +64,7 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     while (messageSize > 0){
         nRead = read(fd, ptr, messageSize);
         if (nRead == -1){
-            logError(TRUE, "Couldn't receive message via TCP socket."); // TODO what should we always show ?
+            logError(TRUE, "Couldn't receive message via TCP socket.");
             return -1;
         }
         else if (nRead == 0){
@@ -139,6 +139,7 @@ void requestErrorTCP(userData user, serverData server, int fd){
 
     char buffer[5];
     strcpy(buffer,"ERR\n");
+    logError(server.verbose, "Wrong command.");
     sendTCP(fd,buffer,strlen(buffer));
 }
 
@@ -170,16 +171,25 @@ void processULS(userData user, serverData server, int fd){
     
     if (read != 2){
         strcpy(buffer,"ERR\n");
+        logError(server.verbose, "Wrong format.");
         sendTCP(fd,buffer,strlen(buffer));
         return;
     }
     else if(!checkEndLine(fd)){
         strcpy(buffer,"ERR\n");
+        logError(server.verbose, "Wrong format.");
         sendTCP(fd,buffer,strlen(buffer));
         return;
     }
-    else if (!checkStringIsNumber(groupID) || !GroupExists(groupID)){
+    else if (!checkStringIsNumber(groupID)){
+        strcpy(buffer,"ERR\n");
+        logError(server.verbose, "Wrong format.");
+        sendTCP(fd,buffer,strlen(buffer));
+        return;
+    }
+    else if(!GroupExists(groupID)){
         strcpy(buffer,"RUL NOK\n");
+        logError(server.verbose, "Group doesn't exist.");
         sendTCP(fd,buffer,strlen(buffer));
         return;
     }
@@ -215,6 +225,7 @@ void processULS(userData user, serverData server, int fd){
     }
     else{
         strcpy(buffer,"ERR\n");
+        logError(server.verbose, "Failed to open GROUPS directory.");
         sendTCP(fd,buffer,strlen(buffer));
     }
     closedir(d);
@@ -248,6 +259,7 @@ void processPST(userData user, serverData server, int fd){
     // Reads User ID
     if(!readWord(fd,userID,5) || strlen(userID) != 5 || !checkStringIsNumber(userID)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -255,12 +267,14 @@ void processPST(userData user, serverData server, int fd){
     // Reads Group ID
     if(!readWord(fd,groupID,2) || strlen(groupID) != 2 || !checkStringIsNumber(groupID)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     if(!UserExists(userID) || !CheckUserLogin(userID) || !GroupExists(groupID)){
         strcpy(response,"RPT NOK\n");
+        logError(server.verbose, "Failed to post because user/group doesnt exists or not logged in.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -268,6 +282,7 @@ void processPST(userData user, serverData server, int fd){
     // Read text size
     if(!readWord(fd,Tsize,3) || strlen(Tsize) > 3 || !checkStringIsNumber(Tsize) || atoi(Tsize) > 240){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -297,12 +312,12 @@ void processPST(userData user, serverData server, int fd){
     if(singleChar[0] == '\n'){
         sprintf(response,"RPT %04d\n",messageID);
         logPST(server.verbose, userID,groupID);
-
         sendTCP(fd,response,strlen(response));
         return;
 
     }else if(singleChar[0] != ' '){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -317,6 +332,7 @@ void processPST(userData user, serverData server, int fd){
     // Read file size
     if(!readWord(fd,Fsize,10) || !checkStringIsNumber(Fsize)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -355,13 +371,13 @@ void processPST(userData user, serverData server, int fd){
 
     if(!checkEndLine(fd)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
 
     } else {
         sprintf(response,"RPT %04d\n",messageID);
         logPST(server.verbose, userID,groupID);
-
         sendTCP(fd,response,strlen(response));
     }
 }
@@ -396,6 +412,7 @@ void processRTV(userData user, serverData server, int fd){
     // Reads User ID
     if(!readWord(fd,userID,5) || strlen(userID) != 5 || !checkStringIsNumber(userID)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -403,12 +420,14 @@ void processRTV(userData user, serverData server, int fd){
     // Reads Group ID
     if(!readWord(fd,groupID,2) || strlen(groupID) != 2 || !checkStringIsNumber(groupID)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     if(!UserExists(userID) || !CheckUserLogin(userID) || !GroupExists(groupID)){
         strcpy(response,"RRT NOK\n");
+        logError(server.verbose, "Failed to post because user/group doesnt exists or not logged in.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -416,12 +435,14 @@ void processRTV(userData user, serverData server, int fd){
     // Reads Message ID
     if(receiveNSizeTCP(fd,messageID,4) != 4 || strlen(messageID) != 4 || !checkStringIsNumber(messageID)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
 
     if(!checkEndLine(fd)){
         strcpy(response,"ERR\n");
+        logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
         return;
     }
@@ -442,6 +463,7 @@ void processRTV(userData user, serverData server, int fd){
     }
     else if(lastMessageID == 0 || lastMessageID < firstMessageToRTV){
         strcpy(response,"RRT EOF\n");
+        logRTV(server.verbose, userID, groupID, 0);
         sendTCP(fd,response,strlen(response));
         return;
     }   

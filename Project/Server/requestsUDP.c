@@ -13,9 +13,19 @@
 #define TRUE  1
 #define FALSE 0
 
-#define MAXSIZEUDP 39       //GSR is the biggest command 
 #define EXTRAMAXSIZE 3169   // TODO better name?
 
+// Max size for each command
+#define MAXSIZEREG 19
+#define MAXSIZEURN 19
+#define MAXSIZELOG 19
+#define MAXSIZEOUT 19
+#define MAXSIZEGLS 4
+#define MAXSIZEGSR 38
+#define MAXSIZEGUR 38
+#define MAXSIZEGLM 10
+
+// Max number of groups in server
 #define MAXGROUPS 99
 
 /**
@@ -38,6 +48,7 @@ void sendUDP(userData user, char* response){
 void requestErrorUDP(userData user, serverData server){
     char response[5];
     strcpy(response, "ERR\n");
+    logError(server.verbose, "Wrong command.");
     sendUDP(user,response);
 }   
 
@@ -49,12 +60,22 @@ void requestErrorUDP(userData user, serverData server){
 */
 void processREG(userData user, serverData server, char* request){
 
-    char command[4], userID[6], password[9], extra[MAXSIZEUDP];
+    char command[MAXSIZEREG+1], userID[MAXSIZEREG+1], password[MAXSIZEREG+1], extra[MAXSIZEREG+1];
     char response[9];
-    memset(response,0,9);
-    memset(extra, 0, MAXSIZEUDP);
+    memset(response, 0, 9);
+    memset(extra, 0, MAXSIZEREG+1);
+
+    if(strlen(request) != MAXSIZEREG){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to register user because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s %s %s", command, userID, password, extra);
+
+    printf("%s\n",userID);
 
     if (
         strlen(extra) != 0 || strlen(userID) != 5 || strlen(password) != 8 ||
@@ -92,10 +113,18 @@ void processREG(userData user, serverData server, char* request){
 */
 void processURN(userData user, serverData server, char* request){
 
-    char command[4], userID[6], password[9], extra[MAXSIZEUDP];
+    char command[MAXSIZEURN+1], userID[MAXSIZEURN+1], password[MAXSIZEURN+1], extra[MAXSIZEURN+1];
     char response[9];
     memset(response,0,9);
-    memset(extra, 0, MAXSIZEUDP);
+    memset(extra, 0, MAXSIZEURN+1);
+
+    if(strlen(request) != MAXSIZEURN){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to unregister user because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
@@ -119,12 +148,12 @@ void processURN(userData user, serverData server, char* request){
 
     strcpy(response, "RUN OK\n");
 
-    if (!DelUserFromGroups(userID))                     strcpy(response, "RUN NOK\n");
-    if (!DelPassFile(userID))                           strcpy(response, "RUN NOK\n");
-    if (CheckUserLogin(userID) && !DelLoginFile(userID))strcpy(response, "RUN NOK\n");
-    if (!DelUserDir(userID))                            strcpy(response, "RUN NOK\n");
+    if (!DelUserFromGroups(userID)) strcpy(response, "RUN NOK\n");
+    if (!DelPassFile(userID)) strcpy(response, "RUN NOK\n");
+    if (CheckUserLogin(userID) && !DelLoginFile(userID)) strcpy(response, "RUN NOK\n");
+    if (!DelUserDir(userID)) strcpy(response, "RUN NOK\n");
 
-    if(strcmp(response,"RUN OK\n")){
+    if(!strcmp(response,"RUN OK\n")){
         logUNR(server.verbose, userID);
     }else{
         logError(server.verbose, "Failed to unregister user because failed to delete files/directory");
@@ -142,10 +171,18 @@ void processURN(userData user, serverData server, char* request){
 void processLOG(userData user, serverData server, char* request){
 
 
-    char command[4], userID[6], password[9], extra[MAXSIZEUDP];
+    char command[MAXSIZELOG+1], userID[MAXSIZELOG+1], password[MAXSIZELOG+1], extra[MAXSIZELOG+1];
     char response[9];
-    memset(response,0,9);
-    memset(extra, 0, MAXSIZEUDP);
+    memset(response, 0, 9);
+    memset(extra, 0, MAXSIZELOG+1+1);
+
+    if(strlen(request) != MAXSIZELOG){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to login user because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
@@ -162,7 +199,7 @@ void processLOG(userData user, serverData server, char* request){
     else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
         strcpy(response, "RLO NOK\n");
-        logError(server.verbose, "Failed to unregister user because user doesnt exist or wrong password.");
+        logError(server.verbose, "Failed to login user because user doesnt exist or wrong password.");
         sendUDP(user,response);
         return;
     }
@@ -172,7 +209,7 @@ void processLOG(userData user, serverData server, char* request){
         logLOG(server.verbose, userID);   
     }else{
         strcpy(response, "RLO NOK\n");
-        logError(server.verbose, "Failed to unregister user because failed to create login file.");
+        logError(server.verbose, "Failed to login user because failed to create login file.");
     } 
   
     sendUDP(user, response);
@@ -186,10 +223,18 @@ void processLOG(userData user, serverData server, char* request){
 */
 void processOUT(userData user, serverData server, char* request){
 
-    char command[4], userID[6], password[9],  extra[MAXSIZEUDP];
+    char command[MAXSIZEOUT+1], userID[MAXSIZEOUT+1], password[MAXSIZEOUT+1],  extra[MAXSIZEOUT+1];
     char response[9];
     memset(response,0,9);
-    memset(extra, 0, MAXSIZEUDP);
+    memset(extra, 0, MAXSIZEOUT+1);
+
+    if(strlen(request) != MAXSIZELOG){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to logout user because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
@@ -206,7 +251,7 @@ void processOUT(userData user, serverData server, char* request){
     else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
         strcpy(response, "ROU NOK\n");
-        logError(server.verbose, "Failed to login user because user doesnt exist or wrong password.");
+        logError(server.verbose, "Failed to logout user because user doesnt exist or wrong password.");
         sendUDP(user,response);
         return;
     }
@@ -216,7 +261,7 @@ void processOUT(userData user, serverData server, char* request){
         logOUT(server.verbose, userID);
     } else{
         strcpy(response, "ROU NOK\n");
-        logError(server.verbose, "Failed to login user because failed to delete login file.");
+        logError(server.verbose, "Failed to logout user because failed to delete login file.");
     }
     
     sendUDP(user, response);
@@ -233,11 +278,20 @@ void processGLS(userData user, serverData server, char* request){
     int numberGroups;
     Group groupsList[MAXGROUPS];
 
-    char command[4], extra[MAXSIZEUDP];
-    char response[EXTRAMAXSIZE]; // TODO BEST APPROACH ? SHOULDNT DO SPRINTF TO THE SAME
-    char groupLine[34]; // 1 + 2 + 1 + 24 + 1 + 4
-    memset(response,0,EXTRAMAXSIZE);
-    memset(extra, 0, MAXSIZEUDP);
+    char command[MAXSIZEGLS+1], extra[MAXSIZEGLS+1];
+    char response[EXTRAMAXSIZE]; // TODO is it really that big
+    char groupLine[34]; 
+
+    memset(response, 0, EXTRAMAXSIZE);
+    memset(extra, 0, MAXSIZEGLS+1);
+
+    if(strlen(request) != MAXSIZEGLS){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to get groups user because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s", command, extra);
 
@@ -286,13 +340,23 @@ void processGSR(userData user, serverData server, char* request){
 
     int maxGroupID;
 
-    char command[4], userID[6], groupID[3], groupName[25], extra[MAXSIZEUDP];
+    char command[MAXSIZEGSR+1], userID[MAXSIZEGSR+1], groupID[MAXSIZEGSR+1], groupName[MAXSIZEGSR+1], extra[MAXSIZEGSR+1];
     char newGroupID[3];
     char response[13];
     memset(response,0,13);
-    memset(extra, 0, MAXSIZEUDP);
+    memset(extra, 0, MAXSIZEGSR+1);
+
+    if(strlen(request) > MAXSIZEGSR){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to subscribe user because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s %s %s %s", command, userID, groupID, groupName, extra);
+
+    // TODO SAME AS USER CHECK EXTRA SPACES
 
     if(strlen(groupID) == 1){
         sprintf(groupID, "%02d", atoi(groupID));
@@ -387,10 +451,18 @@ void processGSR(userData user, serverData server, char* request){
 */
 void processGUR(userData user, serverData server, char* request){
 
-    char command[4], userID[6], groupID[3], extra[MAXSIZEUDP];
+    char command[MAXSIZEGUR+1], userID[MAXSIZEGUR+1], groupID[MAXSIZEGUR+1], extra[MAXSIZEGUR+1];
     char response[13];
     memset(response,0,13);
-    memset(extra, 0, MAXSIZEUDP);
+    memset(extra, 0, MAXSIZEGUR+1);
+
+    if(strlen(request) != MAXSIZEGUR){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to unsubscribe user because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s %s %s", command, userID, groupID, extra);
     
@@ -454,11 +526,19 @@ void processGLM(userData user, serverData server, char* request){
     Group groupsList[MAXGROUPS];
     int numberGroups, subscribedGroups;
     
-    char command[4], userID[6], extra[MAXSIZEUDP];
-    char response[EXTRAMAXSIZE];
+    char command[MAXSIZEGLM+1], userID[MAXSIZEGLM+1], extra[MAXSIZEGLM+1];
+    char response[EXTRAMAXSIZE];  // TODO
     char groupLine[34];
     memset(response,0,EXTRAMAXSIZE);
-    memset(extra, 0, MAXSIZEUDP);
+    memset(extra, 0, MAXSIZEGLM+1);
+
+    if(strlen(request) != MAXSIZEGLM){
+        // Wrong size parameters
+        strcpy(response, "ERR\n");
+        logError(server.verbose, "Failed to list groups user is subscribed because wrong format.");
+        sendUDP(user,response);
+        return;
+    }
 
     sscanf(request, "%s %s %s", command, userID, extra);
 

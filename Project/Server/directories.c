@@ -15,8 +15,6 @@
 
 #define MAXGROUPS 99
 
-// BIG TODO SHOULD WE ALWAYS SEND THIS ERRORS?
-
 /**
  * Create initial USERS and GROUPS directories.
 */

@@ -1,7 +1,7 @@
 groups
 login 10005 pword005
 select 05
-post "The siege of Dapur occured as part of Pharaoh Ramesses II's campaign to supress Galilee and conquer Syria in 1269 BC. He described his campaign on the wall of his mortuary temple, the Ramesseum in Thebes, Egypt" Siege_of_Dapur.jpg
+post "The siege of Dapur occured as part of Pharaoh Ramesses II's campaign to supress Galilee and conquer Syria in 1269 BC. He described his campaign on the wall of his mortuary temple, the Ramesseum in Thebes, Egypt." Siege_of_Dapur.jpg
 post "The Battle of Marathon took place in 490BC during the first Persion invasion of Greece. It was fought between the citizens of Athens, aided by Plataea, and a Persian force commanded by Datis and Artaphernes." Marathon.jpg
 post "The Battle of Plataea was the final land battle during the second Persion invasion of Greece. It took place in 479BC near the city of Plataea in Boeotia, and was fought between an alliance of the Greek city-states and the Persian Empire." Spartans_at_Plataea.jpg
 post "The Battle of Actium was a naval battle fought between a maritime fleet led by Octavian and the combined fleets of both Mark Anthony and Cleopatra VII Philopator. The battle took place on 2 September 31BC in the Ionian Sea." Actium.jpg

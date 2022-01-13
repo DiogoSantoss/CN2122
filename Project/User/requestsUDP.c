@@ -16,6 +16,30 @@
 #define MAXSIZE 274
 #define EXTRAMAXSIZE 3169
 
+// Max size for each command
+#define LONGINPUTREG 19
+#define LONGINPUTUNR 26
+#define LONGINPUTLOG 21
+#define LONGINPUTOUT 7
+#define LONGINPUTGLS 7
+#define LONGINPUTGSR 38
+#define LONGINPUTGUR 15
+#define LONGINPUTGLM 10
+
+#define SHORTINPUTUNR 19
+#define SHORTINPUTGLS 3
+#define SHORTINPUTGSR 29
+#define SHORTINPUTGUR 5
+#define SHORTINPUTGLM 4
+
+//LOCAL 
+#define LONGINPUTSID 8
+#define LONGINPUTSEL 10
+
+#define SHORTINPUTSID 3
+#define SHORTINPUTSEL 7
+
+
 /**
  * Parse register command.
  * @param user User data
@@ -25,22 +49,27 @@
 char* parseRegister(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
-    memset(extra,0,sizeof extra);
+    char command[LONGINPUTREG+1],userID[LONGINPUTREG+1],password[LONGINPUTREG+1],extra[LONGINPUTREG+1];
+    memset(extra, 0, LONGINPUTREG+1);
     
-    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
+    if((strlen(input) != LONGINPUTREG)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
 
-    if((strlen(extra) != 0) || (strlen(input) != 19) || (strlen(UID) != 5) || (strlen(pass) != 8)){
+    sscanf(input,"%s %s %s %s\n",command,userID,password,extra);
+
+    if((strlen(extra) != 0) || (strlen(userID) != 5) || (strlen(password) != 8)){
         logError("Wrong size parameters.");
         return NULL;
 
-    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
+    } else if(!checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)){
         logError("Forbidden character in parameters.");
         return NULL;
     }
 
-    message = malloc(sizeof(char)*18);
-    sprintf(message,"REG %s %s\n",UID,pass);
+    message = malloc(sizeof(char)*19);
+    sprintf(message,"REG %s %s\n",userID,password);
 
     return message;
 }
@@ -54,22 +83,28 @@ char* parseRegister(userData* user, char* input){
 char* parseUnregister(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
+    char command[LONGINPUTUNR+1],userID[LONGINPUTUNR+1],password[LONGINPUTUNR+1],extra[LONGINPUTUNR+1];
 
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
+    memset(extra, 0, LONGINPUTUNR+1);
 
-    if((strlen(extra) != 0) || ((strlen(input) != 19) && (strlen(input) != 26)) || (strlen(UID) != 5) || (strlen(pass) != 8)){
+    if(strlen(input) != LONGINPUTUNR && strlen(input) != SHORTINPUTUNR){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+
+    sscanf(input,"%s %s %s %s\n",command,userID,password,extra);
+
+    if((strlen(extra) != 0) || (strlen(userID) != 5) || (strlen(password) != 8)){
         logError("Wrong size parameters.");
         return NULL;
 
-    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
+    } else if(!checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)){
         logError("Forbidden character in parameters.");
         return NULL;
     }
 
-    message = malloc(sizeof(char)*18);
-    sprintf(message,"UNR %s %s\n",UID,pass);
+    message = malloc(sizeof(char)*19);
+    sprintf(message,"UNR %s %s\n",userID,password);
 
     return message;
 } 
@@ -82,11 +117,11 @@ char* parseUnregister(userData* user, char* input){
 */
 void helperUnregister(userData* user, char* input, char* response){
 
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE];
+    char command[MAXSIZE],userID[MAXSIZE],password[MAXSIZE];
 
-    sscanf(input,"%s %s %s\n",command,UID,pass);
+    sscanf(input,"%s %s %s\n",command,userID,password);
 
-    if(!strcmp(user->ID,UID) && !strcmp(response,"RUN OK\n")){
+    if(!strcmp(user->ID,userID) && !strcmp(response,"RUN OK\n")){
         strcpy(user->ID,"");
         strcpy(user->password,"");
     }
@@ -101,16 +136,22 @@ void helperUnregister(userData* user, char* input, char* response){
 char* parseLogin(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE],extra[MAXSIZE];
+    char command[LONGINPUTLOG+1], userID[LONGINPUTLOG+1], password[LONGINPUTLOG+1], extra[LONGINPUTLOG+1];
 
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s %s\n",command,UID,pass,extra);
+    memset(extra, 0, LONGINPUTLOG+1);
+    
+    if((strlen(input) != LONGINPUTLOG)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
 
-    if((strlen(extra) != 0) || (strlen(input) != 21) || (strlen(UID) != 5) || (strlen(pass) != 8)){
+    sscanf(input,"%s %s %s %s\n",command,userID,password,extra);
+
+    if((strlen(extra) != 0) || (strlen(userID) != 5) || (strlen(password) != 8)){
         logError("Wrong size parameters.");
         return NULL;
 
-    } else if(!checkStringIsNumber(UID) || !checkStringIsAlphaNum(pass)){
+    } else if(!checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)){
         logError("Forbidden character in parameters.");
         return NULL;
     }
@@ -120,8 +161,8 @@ char* parseLogin(userData* user, char* input){
         return NULL;
     }
 
-    message = malloc(sizeof(char)*18);
-    sprintf(message,"LOG %s %s\n",UID,pass);
+    message = malloc(sizeof(char)*19);
+    sprintf(message,"LOG %s %s\n",userID,password);
     
     return message;
 }
@@ -134,13 +175,13 @@ char* parseLogin(userData* user, char* input){
 */
 void helperLogin(userData* user, char* input, char* response){
 
-    char command[MAXSIZE],UID[MAXSIZE],pass[MAXSIZE];
+    char command[MAXSIZE],userID[MAXSIZE],password[MAXSIZE];
 
-    sscanf(input,"%s %s %s\n",command,UID,pass);
+    sscanf(input,"%s %s %s\n",command,userID,password);
 
     if(!strcmp(response,"RLO OK\n")){
-        strcpy(user->ID,UID);
-        strcpy(user->password,pass);
+        strcpy(user->ID,userID);
+        strcpy(user->password,password);
     }
 }
 
@@ -153,12 +194,18 @@ void helperLogin(userData* user, char* input, char* response){
 char* parseLogout(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
+    char command[LONGINPUTOUT+1],extra[LONGINPUTOUT+1];
 
-    memset(extra,0,sizeof extra);
+    memset(extra, 0, LONGINPUTOUT+1);
+
+    if((strlen(input) != LONGINPUTOUT)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+    
     sscanf(input,"%s %s\n",command,extra);
 
-    if((strlen(extra) != 0) || (strlen(input) != 7)){
+    if((strlen(extra) != 0)){
         logError("Wrong size parameters.");
         return NULL;
     }
@@ -168,14 +215,14 @@ char* parseLogout(userData* user, char* input){
         return NULL;
     }
 
-    message = malloc(sizeof(char)*18);
+    message = malloc(sizeof(char)*19);
     sprintf(message,"OUT %s %s\n",user->ID,user->password);
 
     return message;
 }
 
 /**
- * Resets UID and password if server gives good response.
+ * Resets userID and password if server gives good response.
  * @param user User data
  * @param input Client input
  * @param response Server response
@@ -188,16 +235,21 @@ void helperLogout(userData* user, char* input, char* response){
 }
 
 /**
- * Process showUID command.
+ * Process showuserID command.
  * @param user User data
  * @param input User input to be parsed
 */
 void processShowUID(userData* user, char* input){
 
-    char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
+    char command[LONGINPUTSID+1], extra[LONGINPUTSID+1];
 
-    memset(extra,0,sizeof extra);
+    memset(extra, 0, LONGINPUTSID+1);
+
+    if(strlen(input) != LONGINPUTSID && strlen(input) != SHORTINPUTSID){
+        logError("Wrong size parameters.");
+        return;
+    }
+
     sscanf(input,"%s %s\n",command,extra);
 
     if(strlen(extra) != 0){
@@ -221,9 +273,15 @@ void processShowUID(userData* user, char* input){
 */
 char* parseGroups(userData* user, char* input){
     char* message;
-    char command[MAXSIZE], extra[MAXSIZE];
+    char command[LONGINPUTGLS+1], extra[LONGINPUTGLS+1];
 
-    memset(extra,0,sizeof extra);
+    memset(extra, 0, LONGINPUTGLS+1);
+
+    if(strlen(input) != LONGINPUTGLS && strlen(input) != SHORTINPUTGLS){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+    
     sscanf(input,"%s %s\n",command,extra);
 
     if((strlen(extra) != 0) || ((strlen(command) != 2) && (strlen(command) != 6))){
@@ -246,16 +304,24 @@ char* parseGroups(userData* user, char* input){
 char* parseSubscribe(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE], GID[MAXSIZE], GName[MAXSIZE], extra[MAXSIZE];
+    char command[LONGINPUTGSR+1], groupID[LONGINPUTGSR+1], groupName[LONGINPUTGSR+1], extra[LONGINPUTGSR+1];
 
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s %s\n", command, GID, GName, extra);
+    memset(extra, 0, LONGINPUTGSR+1);
+    
+    if(strlen(input) > LONGINPUTGSR){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
 
-    if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(GID) > 2) || (strlen(GName) > 25)){
+    sscanf(input,"%s %s %s %s\n", command, groupID, groupName, extra);
+
+    // TODO CHECK IF SUM EQUAL TO SUPPOST (CHECK NO EXTRA SPACES)
+
+    if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(groupID) > 2) || (strlen(groupName) > 25)){
         logError("Wrong size parameters.");
         return NULL;
 
-    } else if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName)){
+    } else if(!checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName)){
         logError("Forbidden character in parameters.");
         return NULL;
     }
@@ -265,8 +331,8 @@ char* parseSubscribe(userData* user, char* input){
         return NULL;
     }
 
-    message = malloc(sizeof(char)*37);
-    sprintf(message,"GSR %s %02d %s\n", user->ID, atoi(GID), GName);
+    message = malloc(sizeof(char)*38);
+    sprintf(message,"GSR %s %02d %s\n", user->ID, atoi(groupID), groupName);
 
     return message;
 }
@@ -280,16 +346,24 @@ char* parseSubscribe(userData* user, char* input){
 char* parseUnsubscribe(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
+    char command[LONGINPUTGUR+1], groupID[LONGINPUTGUR+1], extra[LONGINPUTGUR+1];
 
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s\n", command, GID, extra);
+    memset(extra, 0, LONGINPUTGUR+1);
 
-    if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(GID) > 2)){
+    if(strlen(input) > LONGINPUTGUR){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+
+    sscanf(input,"%s %s %s\n", command, groupID, extra);
+
+    // TODO SAME
+
+    if((strlen(extra) != 0) || ((strlen(command) != 11) && (strlen(command) != 1)) || (strlen(groupID) > 2)){
         logError("Wrong size parameters.");
         return NULL;
 
-    } else if(!checkStringIsNumber(GID)){
+    } else if(!checkStringIsNumber(groupID)){
         logError("Forbidden character in parameters.");
         return NULL;
     }
@@ -299,8 +373,8 @@ char* parseUnsubscribe(userData* user, char* input){
         return NULL;
     }
 
-    message = malloc(sizeof(char)*37);
-    sprintf(message,"GUR %s %02d\n", user->ID, atoi(GID));
+    message = malloc(sizeof(char)*38);
+    sprintf(message,"GUR %s %02d\n", user->ID, atoi(groupID));
 
     return message;
 }
@@ -314,9 +388,15 @@ char* parseUnsubscribe(userData* user, char* input){
 char* parseMyGroups(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
+    char command[LONGINPUTGLM+1], extra[LONGINPUTGLM+1];
 
-    memset(extra,0,sizeof extra);
+    memset(extra, 0, LONGINPUTGLM+1);
+
+    if((strlen(input) != LONGINPUTGLM) && (strlen(input) != SHORTINPUTGLM)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
+
     sscanf(input,"%s %s\n",command,extra);
 
     if((strlen(extra) != 0) || ((strlen(input) != 4) && (strlen(input) != 10))){
@@ -343,19 +423,27 @@ char* parseMyGroups(userData* user, char* input){
 void processSelect(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE], GID[MAXSIZE], extra[MAXSIZE];
+    char command[LONGINPUTSEL+1], groupID[LONGINPUTSEL+1], extra[LONGINPUTSEL+1];
 
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s\n", command, GID, extra);
+    memset(extra, 0, LONGINPUTSEL+1);
 
-    if((strlen(extra) != 0) || ((strlen(command) != 6) && (strlen(command) != 3)) || (strlen(GID) > 2)){
+    if((strlen(input) > LONGINPUTSEL)){
+        logError("Wrong size parameters.");
+        return;
+    }
+
+    sscanf(input,"%s %s %s\n", command, groupID, extra);
+
+    // TODO SAME AS BEFORE
+
+    if((strlen(extra) != 0) || ((strlen(command) != 6) && (strlen(command) != 3)) || (strlen(groupID) > 2)){
         logError("Wrong size parameters.");
         return;
 
-    } else if(!checkStringIsNumber(GID)){
+    } else if(!checkStringIsNumber(groupID)){
         logError("Forbidden character in parameters.");
         return;
-    } else if(!strcmp(GID, "0") || !strcmp(GID, "00")){
+    } else if(!strcmp(groupID, "0") || !strcmp(groupID, "00")){
         logError("Group 0 doesn't exist");
         return;
     }
@@ -365,21 +453,27 @@ void processSelect(userData* user, char* input){
         return;
     }
 
-    sprintf(user->groupID,"%02d",atoi(GID));
+    sprintf(user->groupID,"%02d",atoi(groupID));
     logSAG(user->groupID);
 }
 
 /**
- * Parse showGID command.
+ * Parse showgroupID command.
  * @param user User data
  * @param input User input to be parsed
 */
 void processShowGID(userData* user, char* input){
 
     char* message;
-    char command[MAXSIZE],extra[MAXSIZE];
+    char command[LONGINPUTSID+1], extra[LONGINPUTSID+1];
 
-    memset(extra,0,sizeof extra);
+    memset(extra, 0, LONGINPUTSID+1);
+
+    if((strlen(input) != LONGINPUTSID) && (strlen(input) != SHORTINPUTSID)){
+        logError("Wrong size parameters.");
+        return;
+    }
+
     sscanf(input,"%s %s\n",command,extra);
 
     if(strlen(extra) != 0){
@@ -513,7 +607,6 @@ char* receiveMessageUDP(int fd){
  * @param parser Function to parse the command
  * @param logger Function to log the messages related to the command
  * @param helper "Optional" function when processRequest needs to do additional tasks
- * 
 */
 void processRequestUDP(
     userData *user, 
@@ -530,21 +623,33 @@ void processRequestUDP(
     message = (*parser)(user,input);
     if(message == NULL) return;
 
-    if(!connectUDP(server, &(user->fd), &(user->res))) return;
+    if(!connectUDP(server, &(user->fd), &(user->res))){
+        free(message);
+        return;
+    }
 
-    if(!sendMessageUDP(user->fd, user->res, message, strlen(message))) return;
+    if(!sendMessageUDP(user->fd, user->res, message, strlen(message))){
+        free(message);
+        return;
+    } 
     response = receiveMessageUDP(user->fd);
 
     attempts = 1;
     // Resend message in case of failure/lost packages
     while(response == NULL && attempts < 3){
         logError("Trying to resend...");
-        if(!sendMessageUDP(user->fd, user->res, message, strlen(message))) return;
+        if(!sendMessageUDP(user->fd, user->res, message, strlen(message))){
+            free(message);
+            free(response);
+            return;
+        } 
         response = receiveMessageUDP(user->fd);
         attempts++;
     }
     if(response == NULL && attempts == 3){
         logError("Stopped trying to send after 3 attemps.");
+        free(message);
+        free(response);
         return;
     }
 

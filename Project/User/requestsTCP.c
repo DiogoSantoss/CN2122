@@ -27,9 +27,9 @@
 #define FILESIZEMAXDIGITS 10
 
 /**
- * @brief Connect via TCP socket to server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] res Information about server 
+ * Connect via TCP socket to server.
+ * @param fd File descriptor of UDP socket
+ * @param res Information about server 
  * @return 1 for success or 0 for errors
 */
 int connectTCP(serverData *server, int* fd, struct addrinfo* res){
@@ -62,10 +62,10 @@ int connectTCP(serverData *server, int* fd, struct addrinfo* res){
 }
 
 /**
- * @brief Send message via TCP socket to server.
- * @param[in] fd File descriptor of TCP socket
- * @param[in] message Message to be sent
- * @param[in] messageLen Message length
+ * Send message via TCP socket to server.
+ * @param fd File descriptor of TCP socket
+ * @param message Message to be sent
+ * @param messageLen Message length
  * @return 1 for success or 0 for errors
 */
 int sendTCP(int fd, char* message, int messageLen){
@@ -89,8 +89,8 @@ int sendTCP(int fd, char* message, int messageLen){
 }
 
 /**
- * @brief Receive the whole message via TCP socket from server.
- * @param[in] fd File descriptor of TCP socket
+ * Receive the whole message via TCP socket from server.
+ * @param fd File descriptor of TCP socket
  * @return message from server (needs to be freed) or NULl for errors
 */
 char* receiveWholeTCP(int fd){
@@ -114,10 +114,10 @@ char* receiveWholeTCP(int fd){
 }
 
 /**
- * @brief Receive message with length messageSize via TCP socket from server.
- * @param[in] fd File descriptor of UDP socket
- * @param[in] buffer Buffer to be filled with message from the server
- * @param[in] messageSize Size of the desired message
+ * Receive message with length messageSize via TCP socket from server.
+ * @param fd File descriptor of UDP socket
+ * @param buffer Buffer to be filled with message from the server
+ * @param messageSize Size of the desired message
  * @return number of bytes read or -1 for errors
 */
 int receiveNSizeTCP(int fd, char* buffer, int messageSize){
@@ -143,8 +143,8 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
 }
 
 /**
- * @brief Skips a space when reading a file/socket
- * @param[in] fd File descriptor
+ * Skips a space when reading a file/socket
+ * @param fd File descriptor
  * @return 1 for success or 0 for errors
 */
 int skipSpace(int fd){
@@ -161,10 +161,10 @@ int skipSpace(int fd){
 }
 
 /**
- * @brief Reads a word of max size maxRead from fd and checks for a space after
- * @param[in] fd File descriptor
- * @param[in] buffer array to read word to
- * @param[in] maxRead number of bytes to read
+ * Reads a word of max size maxRead from fd and checks for a space after
+ * @param fd File descriptor
+ * @param buffer array to read word to
+ * @param maxRead number of bytes to read
  * @return 1 for success or 0 for errors
 */
 int readWord(int fd, char* buffer, int maxRead){
@@ -185,7 +185,7 @@ int readWord(int fd, char* buffer, int maxRead){
 }
 
 /**
- * @brief Checks the existence of the downloads folder, if there isn't any, creates one
+ * Checks the existence of the downloads folder, if there isn't any, creates one
  * @return 1 for success or 0 for errors
  */
 int dowloadsFolder(){
@@ -210,7 +210,7 @@ int dowloadsFolder(){
 }
 
 /**
- * @brief Fills newName with a slightly diferent name if there are files with the same name as this one
+ * Fills newName with a slightly diferent name if there are files with the same name as this one
  * @param originalName the original file's name
  * @param newName the new name that will be attributed
  * @return 1 for success or 0 if there are too many files with the same name
@@ -251,9 +251,9 @@ int attributeFileName(char* originalName, char* newName){
 }
 
 /**
- * @brief Parse ulist command
- * @param[in] user User data
- * @param[in] input User input to be parsed
+ * Parse ulist command
+ * @param user User data
+ * @param input User input to be parsed
  * @return message to send to server (needs to be freed) or NULL for errors
 */
 char* parseUlist(userData* user, char* input){
@@ -286,10 +286,10 @@ char* parseUlist(userData* user, char* input){
 }
 
 /**
- * @brief Process ulist command
- * @param[in] user User data
- * @param[in] server Server data
- * @param[in] input User input to be parsed
+ * Process ulist command
+ * @param user User data
+ * @param server Server data
+ * @param input User input to be parsed
 */
 void processUlist(userData *user, serverData *server, char* input){
 
@@ -314,10 +314,10 @@ void processUlist(userData *user, serverData *server, char* input){
 }
 
 /**
- * @brief Process post command
- * @param[in] user User data
- * @param[in] server Server data
- * @param[in] input User input to be parsed
+ * Process post command
+ * @param user User data
+ * @param server Server data
+ * @param input User input to be parsed
 */
 void processPost(userData* user, serverData* server, char* input){
 
@@ -325,17 +325,18 @@ void processPost(userData* user, serverData* server, char* input){
 
     FILE* fp;
     long int fsize;
-    char command[MAXSIZE], text[MAXSIZE], filename[MAXSIZE], extra[MAXSIZE];
+    char command[MAXSIZE], text[MAXSIZE], fileName[MAXSIZE], extra[MAXSIZE];
 
     //Is this too much allocated memory?
     char message[MAXSIZE * 3];
 
     memset(extra,0,MAXSIZE);
     memset(text,0,MAXSIZE);
-    memset(filename,0,MAXSIZE);
-    sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, filename, extra);
+    memset(fileName,0,MAXSIZE);
+    sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, fileName, extra);
 
     if(input[strlen(command) + 1] != '\"' || input[strlen(command) + 1 + strlen(text) + 1] != '\"'){
+        // Checks if text is inside quotation marks
         logError("Wrong text format.");
         return;
     }
@@ -347,16 +348,16 @@ void processPost(userData* user, serverData* server, char* input){
         logError("No group is selected.");
         return;
     }
-    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || (strlen(filename) > FILENAMESIZE)){
+    else if((strlen(extra) != 0) || strlen(text) == 0 || (strlen(command) != 4) || (strlen(text) > TEXTSIZE) || (strlen(fileName) > FILENAMESIZE)){
         logError("Wrong size parameters.");
         return;
     }
-    else if(strlen(filename)){
-        if(filename[strlen(filename)-4] != '.'){
+    else if(strlen(fileName)){
+        if(fileName[strlen(fileName)-4] != '.'){
             logError("Wrong file format.");
             return;
         }
-        if(!(fp = fopen(filename, "rb"))){
+        if(!(fp = fopen(fileName, "rb"))){
             logError("File doesn't exist.");
             return;
         }
@@ -364,7 +365,7 @@ void processPost(userData* user, serverData* server, char* input){
 
     if(!connectTCP(server, &(user->fd), user->res)) return;
 
-    if(strlen(filename)){
+    if(strlen(fileName)){
 
         // Get file size
         fseek(fp,0L,SEEK_END);
@@ -373,7 +374,7 @@ void processPost(userData* user, serverData* server, char* input){
 
         sprintf(
             message,"PST %s %02d %ld %s %s %ld ",
-            user->ID,atoi(user->groupID),strlen(text),text,filename,fsize
+            user->ID,atoi(user->groupID),strlen(text),text,fileName,fsize
         );
 
         // Send PST UID GID textSize text Fname Fsize
@@ -418,9 +419,9 @@ void processPost(userData* user, serverData* server, char* input){
 }
 
 /**
- * @brief Parse retrieve command
- * @param[in] user User data
- * @param[in] input User input to be parsed
+ * Parse retrieve command
+ * @param user User data
+ * @param input User input to be parsed
  * @return message from server (needs to be freed) or NULl for errors
 */
 char* parseRetrieve(userData* user, char* input){
@@ -450,10 +451,10 @@ char* parseRetrieve(userData* user, char* input){
 }
 
 /**
- * @brief Process retrieve command
- * @param[in] user User data
- * @param[in] server Server data
- * @param[in] input User input to be parsed
+ * Process retrieve command
+ * @param user User data
+ * @param server Server data
+ * @param input User input to be parsed
 */
 void processRetrieve(userData* user, serverData* server, char* input){
 
