@@ -571,7 +571,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
             char fileBuffer[FILEBUFFERSIZE];
 
             if(!attributeFileName(fileName, newFileName)){
-                // TODO, a bit cursed perhaps
                 logError("Error attributing file name. Please clear your downloads folder.");
                 return;
             }

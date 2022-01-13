@@ -313,7 +313,7 @@ void processGLS(userData user, serverData server, char* request){
     }
     else if(numberGroups == 0){
         strcpy(response, "RGL 0\n");
-        logGLS(server.verbose);
+        logGLS(server.verbose, 0);
         sendUDP(user,response);
         return;
     }
@@ -325,7 +325,7 @@ void processGLS(userData user, serverData server, char* request){
     }
     strcat(response, "\n");
 
-    logGLS(server.verbose);
+    logGLS(server.verbose, numberGroups);
 
     sendUDP(user, response);
 }

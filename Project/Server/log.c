@@ -11,7 +11,7 @@
 
 //Constants
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3268
+#define EXTRAMAXSIZE 3268 // 99*
 
 void printLine(){
     printf("----------------------------------------------------\n");
@@ -74,10 +74,10 @@ void logOUT(int verbose, char* UID){
     }
 }
 
-void logGLS(int verbose){
+void logGLS(int verbose, int nGroups){
     if(verbose){
         colorGreen();
-        printf("Listed all existing groups\n"); // TODO NEED TO LIST ALL GROUPS ?
+        printf("Listed %d group(s)\n", nGroups);
         printLine();
     }
 }
@@ -114,10 +114,13 @@ void logULS(int verbose, char* GID){
     }
 }
 
-void logPST(int verbose, char* UID, char* GID){
+void logPST(int verbose, char* UID, char* GID, int textSize, int fileSize, char* fileName){
     if(verbose){
         colorGreen();
-        printf("User %s successfully posted to group %s\n", UID, GID); // TODO NEED SHOW MESSAGE ?
+        if(fileName == NULL)
+            printf("User %s successfully posted to group %s a message with %d bytes\n", UID, GID, textSize);
+        else
+            printf("User %s successfully posted to group %s a message with %d bytes and a file named %s with %d bytes\n", UID, GID, fileName, fileSize);
         printLine();
     }
 }
@@ -126,6 +129,15 @@ void logRTV(int verbose, char* UID, char* GID, int numberOfMessages){
     if(verbose){
         colorGreen();
         printf("User %s has retrieved %d message(s) from group %s\n", UID, numberOfMessages, GID); // TODO NEED SHOW MESSAGES ?
-        printLine();
+    }
+}
+
+void logRTVMessage(int verbose, char* MID, int textSize, int fileSize, char* fileName){
+    if(verbose){
+        colorGreen();
+        if(fileName == NULL)
+            printf("Retrieved message %s with a text size of %d", MID, textSize);
+        else
+            printf("Retrieved message %s with a text size of %d and a file named %s with %d bytes", MID, textSize, fileName, fileSize);
     }
 }

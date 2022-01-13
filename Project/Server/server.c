@@ -148,8 +148,7 @@ int createSocketTCP(serverData *server, int* fd, struct addrinfo* res){
         return FALSE;
     }
 
-    // TODO IS 5 ENOUGH ?
-    if(listen(*fd, 5) == -1){
+    if(listen(*fd, 10) == -1){
         logError(TRUE, "Couldn't prepare socket to accept connections.");
         return FALSE;
     }

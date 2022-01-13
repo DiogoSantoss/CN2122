@@ -10,12 +10,13 @@ void logREG(int verbose, char* UID);
 void logUNR(int verbose, char* UID);
 void logLOG(int verbose, char* UID);
 void logOUT(int verbose, char* UID);
-void logGLS(int verbose);
+void logGLS(int verbose, int nGroups);
 void logGSR(int verbose, char* UID, char* GID);
 void logGUR(int verbose, char* UID, char* GID);
 void logGLM(int verbose, char* UID);
 void logULS(int verbose, char* GID);
-void logPST(int verbose, char* UID, char* GID);
+void logPST(int verbose, char* UID, char* GID, int textSize, int fileSize, char* fileName);
 void logRTV(int verbose, char* UID, char* GID, int numberOfMessages);
+void logRTVMessage(int verbose, char* MID, int textSize, int fileSize, char* fileName);
 
 #endif
