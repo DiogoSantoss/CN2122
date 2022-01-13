@@ -14,7 +14,7 @@
 
 // Constants
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3169
+#define EXTRAMAXSIZE 3169 // TODO better name?
 
 // Max size for each command
 #define LONGINPUTREG 19
@@ -25,20 +25,17 @@
 #define LONGINPUTGSR 38
 #define LONGINPUTGUR 15
 #define LONGINPUTGLM 10
+#define LONGINPUTSID 8
+#define LONGINPUTSEL 10
 
+// Alternative max sixe
 #define SHORTINPUTUNR 19
 #define SHORTINPUTGLS 3
 #define SHORTINPUTGSR 29
 #define SHORTINPUTGUR 5
 #define SHORTINPUTGLM 4
-
-//LOCAL 
-#define LONGINPUTSID 8
-#define LONGINPUTSEL 10
-
 #define SHORTINPUTSID 3
 #define SHORTINPUTSEL 7
-
 
 /**
  * Parse register command.
@@ -315,7 +312,10 @@ char* parseSubscribe(userData* user, char* input){
 
     sscanf(input,"%s %s %s %s\n", command, groupID, groupName, extra);
 
-    // TODO CHECK IF SUM EQUAL TO SUPPOST (CHECK NO EXTRA SPACES)
+    if(strlen(input) != (strlen(command)+strlen(groupID)+strlen(groupName)+3)){
+        logError("Wrong size parameters.");
+        return NULL;
+    }
 
     if((strlen(extra) != 0) || ((strlen(command) != 9) && (strlen(command) != 1)) || (strlen(groupID) > 2) || (strlen(groupName) > 25)){
         logError("Wrong size parameters.");

@@ -1,8 +1,6 @@
 #ifndef LOG_DOT_H
 #define LOG_DOT_H
 
-#include "colors.h"
-
 void logError(int verbose, char* message);
 void logTCP(int verbose, char* IP, int port);
 void logUDP(int verbose, char* IP, int port);

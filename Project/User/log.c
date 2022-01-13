@@ -11,8 +11,7 @@
 
 //Constants
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3268
-
+#define EXTRAMAXSIZE 3268  // TODO
 
 void logError(char* message){
     colorRed();
@@ -255,7 +254,7 @@ void logGLM(char* message){
         }
         // Prints groups 
         for (int i = 0; i < atoi(nGroups); i++){
-            i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
+            i % 2 == 0 ? colorCyan() : colorBlue();
             sscanf(extra, "%s %s %s %[^\n]s", GID, GName, MID, extra);
             printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", GID, GName, MID);
         }

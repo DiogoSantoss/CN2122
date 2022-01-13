@@ -75,8 +75,6 @@ void processREG(userData user, serverData server, char* request){
 
     sscanf(request, "%s %s %s %s", command, userID, password, extra);
 
-    printf("%s\n",userID);
-
     if (
         strlen(extra) != 0 || strlen(userID) != 5 || strlen(password) != 8 ||
         !checkStringIsNumber(userID) || !checkStringIsAlphaNum(password)
@@ -199,7 +197,7 @@ void processLOG(userData user, serverData server, char* request){
     else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
         strcpy(response, "RLO NOK\n");
-        logError(server.verbose, "Failed to login user because user doesnt exist or wrong password.");
+        logError(server.verbose, "Failed to login user because user doesn't exist or wrong password.");
         sendUDP(user,response);
         return;
     }
@@ -251,7 +249,7 @@ void processOUT(userData user, serverData server, char* request){
     else if (!UserExists(userID) || !checkUserPassword(userID,password)){
         // User doesn't exists or wrong password
         strcpy(response, "ROU NOK\n");
-        logError(server.verbose, "Failed to logout user because user doesnt exist or wrong password.");
+        logError(server.verbose, "Failed to logout user because user doesn't exist or wrong password.");
         sendUDP(user,response);
         return;
     }
@@ -425,14 +423,14 @@ void processGSR(userData user, serverData server, char* request){
         if(!GroupExists(groupID)){
             // Invalid GID
             strcpy(response, "RGS E_GRP\n");
-            logError(server.verbose, "Failed to subscribe because group doesnt exist.");
+            logError(server.verbose, "Failed to subscribe because group doesn't exist.");
             sendUDP(user, response);
             return;
         }
         if(!checkGroupName(groupID, groupName)){
             // Invalid Gname
             strcpy(response, "RGS E_GNAME\n");
-            logError(server.verbose, "Failed to subscribe because group doesnt exist.");
+            logError(server.verbose, "Failed to subscribe because group doesn't exist.");
             sendUDP(user, response);
             return;
         }

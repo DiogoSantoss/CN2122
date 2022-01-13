@@ -152,7 +152,6 @@ void handleRequests(userData *user, serverData *server){
             close(user->fd);
             user->res = NULL;
         }
-        colorReset();
     }
 }
 

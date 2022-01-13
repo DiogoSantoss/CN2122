@@ -9,8 +9,9 @@
 #include <sys/types.h>
 
 #include "log.h"
-#include "common.h"
 #include "structs.h"
+#include "common.h"
+#include "colors.h"
 
 
 // Booleans
@@ -19,10 +20,10 @@
 
 // Constants
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3268
+#define EXTRAMAXSIZE 3268 // TODO
+
 #define TEXTSIZE 240
 #define FILENAMESIZE 24
-#define MAXBYTES 8000
 #define FILEBUFFERSIZE 512
 #define FILESIZEMAXDIGITS 10
 
@@ -123,10 +124,11 @@ char* receiveWholeTCP(int fd){
 int receiveNSizeTCP(int fd, char* buffer, int messageSize){
     
     char* ptr = buffer;
-    int sum = 0;
-    int nRead = 0;
+    int nRead,nReceived;
 
-    while (messageSize  != 0){
+    ptr = buffer;
+    nReceived = 0;
+    while (messageSize > 0){
         nRead = read(fd, ptr, messageSize);
         if (nRead == -1){
             logError("Couldn't receive message via TCP socket.");
@@ -136,10 +138,10 @@ int receiveNSizeTCP(int fd, char* buffer, int messageSize){
             break;
         }
         ptr += nRead;
-        sum += nRead;
+        nReceived += nRead;
         messageSize -= nRead;
     }
-    return sum;
+    return nReceived;
 }
 
 /**
@@ -188,7 +190,7 @@ int readWord(int fd, char* buffer, int maxRead){
  * Checks the existence of the downloads folder, if there isn't any, creates one
  * @return 1 for success or 0 for errors
  */
-int dowloadsFolder(){
+int downloadsFolder(){
 
     DIR* dir;
     char downloads[10];
@@ -210,14 +212,13 @@ int dowloadsFolder(){
 }
 
 /**
- * Fills newName with a slightly diferent name if there are files with the same name as this one
+ * Fills newName with a slightly different name if there are files with the same name as this one
  * @param originalName the original file's name
  * @param newName the new name that will be attributed
  * @return 1 for success or 0 if there are too many files with the same name
  */
 int attributeFileName(char* originalName, char* newName){
 
-    // TODO - path is big, but probably has to be like this so gcc doesnt complaint
     char path[79];
     char identifier[5];
     char name[25];
@@ -465,7 +466,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
     if(message == NULL) return;
 
     // Creates / checks download folder
-    if (!dowloadsFolder()){
+    if (!downloadsFolder()){
         logError("Error with the downloads folder");
         return;
     }

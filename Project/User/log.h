@@ -1,8 +1,7 @@
 #ifndef LOG_DOT_H
 #define LOG_DOT_H
 
-#include "colors.h"
-
+void logError(char* message);
 void logREG(char* message);
 void logUNR(char* message);
 void logLOG(char* message);
@@ -17,7 +16,5 @@ void logSG(char* message);
 void logULS(char* message);
 void logPST(char* message);
 int logRTV(char* message);
-
-void logError(char* message);
 
 #endif

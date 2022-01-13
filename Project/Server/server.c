@@ -224,7 +224,6 @@ void handleRequests(userData* user, serverData* server){
             } else{
                 requestErrorTCP(*user, *server, fdNew);
             }
-            colorReset();
             close(fdNew);
         }
         // UDP Request
@@ -284,8 +283,6 @@ void handleRequests(userData* user, serverData* server){
             } else{
                 requestErrorUDP(*user, *server);
             }
-
-            colorReset();
         }
     }
 
