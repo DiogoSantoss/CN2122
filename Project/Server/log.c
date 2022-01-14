@@ -134,9 +134,9 @@ void logRTVMessage(int verbose, int MID, int textSize, int fileSize, char* fileN
     if(verbose){
         colorGreen();
         if(fileName == NULL)
-            printf("Retrieved message %d with a text size of %d\n", MID, textSize);
+            printf("Retrieved message %04d with a text size of %d\n", MID, textSize);
         else
-            printf("Retrieved message %d with a text size of %d and a file named %s with %d bytes\n", MID, textSize, fileName, fileSize);
+            printf("Retrieved message %04d with a text size of %d and a file named %s with %d bytes\n", MID, textSize, fileName, fileSize);
         colorReset();
     }
 }
