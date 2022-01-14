@@ -231,6 +231,7 @@ void helperLogout(userData* user, char* input, char* response){
     if(!strcmp(response,"ROU OK\n")){
         strcpy(user->ID,"");
         strcpy(user->password,"");
+        strcpy(user->groupID,"");
     }
 }
 
