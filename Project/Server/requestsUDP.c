@@ -12,8 +12,10 @@
 // Booleans
 #define TRUE  1
 #define FALSE 0
-
-#define EXTRAMAXSIZE 3169   // TODO better name?
+// Max size server can respond
+// Corresponds to a groups response with all groups and max size names
+// RGL N[ GID GName MID]* -> 3+1+2+99*(1+2+1+24+1+4)+1 = 3274
+#define MAXRESPONSESIZE 3274   // antes 3169
 
 // Max size for each command
 #define MAXSIZEREG 19
@@ -48,7 +50,6 @@ void sendUDP(userData user, char* response){
 void requestErrorUDP(userData user, serverData server){
     char response[5];
     strcpy(response, "ERR\n");
-    logError(server.verbose, "Wrong command.");
     sendUDP(user,response);
 }   
 
@@ -277,10 +278,10 @@ void processGLS(userData user, serverData server, char* request){
     Group groupsList[MAXGROUPS];
 
     char command[MAXSIZEGLS+1], extra[MAXSIZEGLS+1];
-    char response[EXTRAMAXSIZE]; // TODO is it really that big
+    char response[MAXRESPONSESIZE];
     char groupLine[34]; 
 
-    memset(response, 0, EXTRAMAXSIZE);
+    memset(response, 0, MAXRESPONSESIZE);
     memset(extra, 0, MAXSIZEGLS+1);
 
     if(strlen(request) != MAXSIZEGLS){
@@ -542,9 +543,9 @@ void processGLM(userData user, serverData server, char* request){
     int numberGroups, subscribedGroups;
     
     char command[MAXSIZEGLM+1], userID[MAXSIZEGLM+1], extra[MAXSIZEGLM+1];
-    char response[EXTRAMAXSIZE];  // TODO
+    char response[MAXRESPONSESIZE];
     char groupLine[34];
-    memset(response,0,EXTRAMAXSIZE);
+    memset(response,0,MAXRESPONSESIZE);
     memset(extra, 0, MAXSIZEGLM+1);
 
     if(strlen(request) != MAXSIZEGLM){

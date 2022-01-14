@@ -5,13 +5,6 @@
 #include "colors.h"
 #include "common.h"
 
-//Boolean
-#define TRUE 1
-#define FALSE 0
-
-//Constants
-#define MAXSIZE 274
-
 void logError(int verbose, char* message){
     if(verbose){
         colorRed();

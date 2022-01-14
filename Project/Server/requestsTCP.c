@@ -15,10 +15,12 @@
 #define TRUE  1
 #define FALSE 0
 
-#define MAXSIZEUDP 39
-#define EXTRAMAXSIZE 3169
-
 #define MAXGROUPS 99
+
+#define TEXTSIZE 240
+#define FILENAMESIZE 24
+#define FILEBUFFERSIZE 512
+#define FILESIZEMAXDIGITS 10
 
 /**
  * Send message via TCP socket to user.
@@ -136,10 +138,8 @@ int readWord(int fd, char* buffer, int maxRead){
 }
 
 void requestErrorTCP(userData user, serverData server, int fd){
-
     char buffer[5];
     strcpy(buffer,"ERR\n");
-    logError(server.verbose, "Wrong command.");
     sendTCP(fd,buffer,strlen(buffer));
 }
 
@@ -153,16 +153,15 @@ void processULS(userData user, serverData server, int fd){
 
     DIR *d;
     FILE *fp;
-    
     struct dirent *dir;
 
     int read, numberUsersSub;
-
 
     char buffer[40];
     char groupID[3];
     char path[10];
     char groupName[25];
+
     memset(groupID,0,3);
     memset(buffer,0,40);
     memset(groupName, 0, 25);
@@ -243,13 +242,13 @@ void processPST(userData user, serverData server, int fd){
     int messageID, sent, fileSize, actuallyRead;
 
     char userID[6], groupID[3];
-    char Tsize[4], Fsize[11];
-    char text[241];
-    char fileName[25];
+    char textSizeDigits[4], fileSizeDigits[FILESIZEMAXDIGITS+1];
+    char text[TEXTSIZE+1];
+    char fileName[FILENAMESIZE+1];
 
     char response[10];
 
-    char buffer[512];
+    char buffer[FILEBUFFERSIZE];
     char singleChar[1];
     char filePath[44];
 
@@ -280,7 +279,7 @@ void processPST(userData user, serverData server, int fd){
     }
 
     // Read text size
-    if(!readWord(fd,Tsize,3) || strlen(Tsize) > 3 || !checkStringIsNumber(Tsize) || atoi(Tsize) > 240){
+    if(!readWord(fd,textSizeDigits,3) || strlen(textSizeDigits) > 3 || !checkStringIsNumber(textSizeDigits) || atoi(textSizeDigits) > 240){
         strcpy(response,"ERR\n");
         logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
@@ -288,7 +287,7 @@ void processPST(userData user, serverData server, int fd){
     }
 
     // Read text
-    if(!receiveNSizeTCP(fd,text,atoi(Tsize))){
+    if(!receiveNSizeTCP(fd,text,atoi(textSizeDigits))){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;
@@ -311,7 +310,7 @@ void processPST(userData user, serverData server, int fd){
     // Checks if needs to read file
     if(singleChar[0] == '\n'){
         sprintf(response,"RPT %04d\n",messageID);
-        logPST(server.verbose, userID, groupID, atoi(Tsize), 0, NULL);
+        logPST(server.verbose, userID, groupID, atoi(textSizeDigits), 0, NULL);
         sendTCP(fd,response,strlen(response));
         return;
 
@@ -330,7 +329,7 @@ void processPST(userData user, serverData server, int fd){
     }
 
     // Read file size
-    if(!readWord(fd,Fsize,10) || !checkStringIsNumber(Fsize)){
+    if(!readWord(fd,fileSizeDigits,10) || !checkStringIsNumber(fileSizeDigits)){
         strcpy(response,"ERR\n");
         logError(server.verbose, "Failed to post because of wrong format.");
         sendTCP(fd,response,strlen(response));
@@ -347,7 +346,7 @@ void processPST(userData user, serverData server, int fd){
 
     sent = 0;
     actuallyRead = 0;
-    fileSize = atoi(Fsize);
+    fileSize = atoi(fileSizeDigits);
 
     while(sent < fileSize){
 
@@ -377,7 +376,7 @@ void processPST(userData user, serverData server, int fd){
 
     } else {
         sprintf(response,"RPT %04d\n",messageID);
-        logPST(server.verbose, userID, groupID, atoi(Tsize), fileSize, fileName);
+        logPST(server.verbose, userID, groupID, atoi(textSizeDigits), fileSize, fileName);
         sendTCP(fd,response,strlen(response));
     }
 }

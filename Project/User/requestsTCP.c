@@ -20,10 +20,6 @@
 
 // Max size user can input
 #define MAXINPUTSIZE 274
-// Max size server can respond
-// Corresponds to a ulist response with all groups
-// RUL status [GName [UID ]*] -> 3+1+2+1+99*(24+1+5+1)+1 = 3077
-#define MAXRESPONSESIZE 3077
 
 #define TEXTSIZE 240
 #define FILENAMESIZE 24
@@ -93,31 +89,6 @@ int sendTCP(int fd, char* message, int messageLen){
 }
 
 /**
- * Receive the whole message via TCP socket from server.
- * @param fd File descriptor of TCP socket
- * @return message from server (needs to be freed) or NULl for errors
-*/
-char* receiveWholeTCP(int fd){
-    int nRead = 1; // This can't be initialized as 0
-    char* message = calloc(MAXRESPONSESIZE,sizeof(char));
-    char* ptr;
-
-    ptr = message;
-
-    while (nRead != 0){
-        nRead = read(fd, ptr, MAXRESPONSESIZE);
-        if(nRead == -1){
-            logError("Couldn't receive message via TCP socket.");
-            free(message);
-            return NULL;
-        }
-        ptr += nRead;
-    }
-     
-    return message;
-}
-
-/**
  * Receive message with length messageSize via TCP socket from server.
  * @param fd File descriptor of UDP socket
  * @param buffer Buffer to be filled with message from the server
@@ -159,7 +130,7 @@ int skipSpace(int fd){
     if(receiveNSizeTCP(fd, space, 1) == -1) return FALSE;
     
     if(space[0] != ' '){
-        logError("Bad formatting");
+        logError("Bad formatting from server response.");
         return FALSE;
     }
     return TRUE;
@@ -263,9 +234,14 @@ int attributeFileName(char* originalName, char* newName){
 void processUlist(userData *user, serverData *server, char* input){
 
     int msgSize;
-    char *response;
     char message[8];
     char command[MAXINPUTSIZE], extra[MAXINPUTSIZE];
+
+    char header[8];
+    char groupName[25];
+    int n,i = 0;
+    char userID[6];
+    char singleChar[1];
 
     memset(extra,0,sizeof extra);
     sscanf(input,"%s %s\n",command, extra);
@@ -287,14 +263,48 @@ void processUlist(userData *user, serverData *server, char* input){
 
     if(!connectTCP(server, &(user->fd), user->res)) return;
     if(!sendTCP(user->fd, message, strlen(message))) return;
-    response = receiveWholeTCP(user->fd);
-    if(response == NULL){
-        return; 
-    } 
 
-    logULS(response);
+    // Read header (RUL status)
+    if(!receiveNSizeTCP(user->fd,header,7)) return;
 
-    free(response);
+    // In case of bad response from server, logs and returns
+    if(!logULS(header)) return;
+
+    // Read group name
+    if(!readWord(user->fd,groupName,24)) return;
+
+    colorGreen();
+    printf("List of UIDs from group %s:\n",groupName);
+    i = 0;
+    while(i < 9999){
+
+        i % 2 == 0 ? colorCyan() : colorBlue(); i++;
+
+        // Read user ID
+        n = receiveNSizeTCP(user->fd,userID,5);
+        if(n != 5){
+            logError("");
+            return;
+        }
+        printf("%s\n",userID);
+
+        // Check if there is more to read
+        n = receiveNSizeTCP(user->fd,singleChar,1);
+        if(singleChar[0] == '\n'){
+            break;
+        }
+        else if(singleChar[0] == ' '){
+            continue;
+        }
+        else{
+            logError("ulist: Server response bad formated.");
+            return;
+        }
+    }
+    if(i == 9999){
+        logError("ulist: Too many users from server response.");
+    }
+    colorReset();
 }
 
 /**
@@ -309,9 +319,10 @@ void processPost(userData* user, serverData* server, char* input){
 
     FILE* fp;
     long int fsize;
-    char* response; // // will get calloc'd inside readwholetcp and should be free'd
     char command[MAXINPUTSIZE], text[MAXINPUTSIZE], fileName[MAXINPUTSIZE], extra[MAXINPUTSIZE];
     char buffer[FILEBUFFERSIZE]; 
+
+    char response[10];
 
     memset(extra, 0, MAXINPUTSIZE);
     memset(text, 0, MAXINPUTSIZE);
@@ -398,23 +409,9 @@ void processPost(userData* user, serverData* server, char* input){
     }
 
     // Receive response from server
-    response = receiveWholeTCP(user->fd);
-    if(response == NULL)
-        return;
-    
+    if(!receiveNSizeTCP(user->fd,response,9)) return;
+
     logPST(response);
-    free(response);
-}
-
-/**
- * Parse retrieve command
- * @param user User data
- * @param input User input to be parsed
- * @return message from server (needs to be freed) or NULl for errors
-*/
-char* parseRetrieve(userData* user, char* input){
-    
-
 }
 
 /**
@@ -477,7 +474,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
     memset(header, 0, 10);
     memset(numOfMessagesString, 0, 9);
 
-    // Reads header
+    // Reads header (RRT status N)
     if(receiveNSizeTCP(user->fd, header, 9) == -1) return;
     // Verifies if server response is valid and log it
     if(!logRTV(header)) return;

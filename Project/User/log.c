@@ -9,10 +9,8 @@
 #define TRUE 1
 #define FALSE 0
 
-// Max size user can inputv
-#define MAXSIZE 274
-//TODO this depends if it is udp or tcp
-#define EXTRAMAXSIZE 3268
+// Max size read from server response
+#define MAXRESPONSESIZE 3274
 
 void logError(char* message){
     colorRed();
@@ -109,9 +107,8 @@ void logSU(char* message){
 void logGLS(char* message){
 
     // TODO should we allocate more space for each?
-    char functionName[10];
-    char command[MAXSIZE], nGroups[3], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
-    char GID[3], GName[25], MID[5];
+    char command[MAXRESPONSESIZE], nGroups[MAXRESPONSESIZE], extra[MAXRESPONSESIZE], extraCopy[MAXRESPONSESIZE];
+    char groupID[MAXRESPONSESIZE], groupName[MAXRESPONSESIZE], messageID[MAXRESPONSESIZE];
 
     sscanf(message, "%s %s %[^\n]s", command, nGroups, extra);
     
@@ -132,10 +129,18 @@ void logGLS(char* message){
             logError("groups: A fatal error has ocurred.");
             return;
         }
+
+        if(!checkStringIsNumber(nGroups)){
+            logError("groups: Server response bad formatting.");
+            return;
+        }
         // Verifies if groups given by server are valid
         for (int i = 0; i < atoi(nGroups); i++){
-            sscanf(extraCopy, "%s %s %s %[^\n]s", GID, GName, MID, extraCopy);
-            if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName) || !checkStringIsNumber(MID)){
+            sscanf(extraCopy, "%s %s %s %[^\n]s", groupID, groupName, messageID, extraCopy);
+            if(
+                strlen(groupID) != 2 || strlen(groupName) != 24 || strlen(messageID) != 4 ||
+                !checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName) || !checkStringIsNumber(messageID)
+            ){
                 logError("groups: Unexpected message from server.");
                 return;
             }
@@ -143,8 +148,8 @@ void logGLS(char* message){
         // Prints groups 
         for (int i = 0; i < atoi(nGroups); i++){
             i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
-            sscanf(extra, "%s %s %s %[^\n]s", GID, GName, MID, extra);
-            printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", GID, GName, MID);
+            sscanf(extra, "%s %s %s %[^\n]s", groupID, groupName, messageID, extra);
+            printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", groupID, groupName, messageID);
         }
     }
     colorReset();
@@ -153,11 +158,11 @@ void logGLS(char* message){
 void logGSR(char* message){
 
     // TODO should we allocate more space for each?
-    char rgs[4], status[8], GID[3], extra[MAXSIZE];
-    char string[MAXSIZE + 9];
-    sscanf(message, "%s %s %s %s", rgs, status, GID, extra);
+    char command[MAXRESPONSESIZE], status[MAXRESPONSESIZE], groupID[MAXRESPONSESIZE], extra[MAXRESPONSESIZE];
+    char string[MAXRESPONSESIZE + 9];
+    sscanf(message, "%s %s %s %s", command, status, groupID, extra);
 
-    sprintf(string, "RGS NEW %s\n", GID);
+    sprintf(string, "RGS NEW %s\n", groupID);
 
     if(!strcmp(message,"RGS OK\n")){
         colorGreen();
@@ -169,7 +174,7 @@ void logGSR(char* message){
 
     } else if (!strcmp(message,string)){
         colorGreen();
-        printf("subscribe: New group %s was created and subscribed.\n", GID);
+        printf("subscribe: New group %s was created and subscribed.\n", groupID);
 
     } else if (!strcmp(message, "RGS E_USR\n")){
         colorYellow();
@@ -177,7 +182,7 @@ void logGSR(char* message){
 
     } else if (!strcmp(message, "RGS E_GRP\n")){
         colorYellow();
-        printf("subscribe: Invalid GID.\n");
+        printf("subscribe: Invalid groupID.\n");
 
     } else if (!strcmp(message, "RGS E_GNAME\n")){
         colorYellow();
@@ -226,9 +231,8 @@ void logGUR(char* message){
 void logGLM(char* message){
 
     // TODO should we allocate more space for each?
-    char functionName[10];
-    char command[MAXSIZE], nGroups[3], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
-    char GID[3], GName[25], MID[5];
+    char command[MAXRESPONSESIZE], nGroups[MAXRESPONSESIZE], extra[MAXRESPONSESIZE], extraCopy[MAXRESPONSESIZE];
+    char groupID[MAXRESPONSESIZE], groupName[MAXRESPONSESIZE], messageID[MAXRESPONSESIZE];
 
     sscanf(message, "%s %s %[^\n]s", command, nGroups, extra);
     
@@ -249,9 +253,18 @@ void logGLM(char* message){
             logError("my_groups: A fatal error has ocurred.");
             return;
         }
+
+        if(!checkStringIsNumber(nGroups)){
+            logError("groups: Server response bad formatting.");
+            return;
+        }
+        // Verifies if groups given by server are valid
         for (int i = 0; i < atoi(nGroups); i++){
-            sscanf(extraCopy, "%s %s %s %[^\n]s", GID, GName, MID, extraCopy);
-            if(!checkStringIsNumber(GID) || !checkStringIsGroupName(GName) || !checkStringIsNumber(MID)){
+            sscanf(extraCopy, "%s %s %s %[^\n]s", groupID, groupName, messageID, extraCopy);
+            if(
+                strlen(groupID) != 2 || strlen(groupName) != 24 || strlen(messageID) != 4 ||
+                !checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName) || !checkStringIsNumber(messageID)
+            ){
                 logError("my_groups: Unexpected message from server.");
                 return;
             }
@@ -259,8 +272,8 @@ void logGLM(char* message){
         // Prints groups 
         for (int i = 0; i < atoi(nGroups); i++){
             i % 2 == 0 ? colorCyan() : colorBlue();
-            sscanf(extra, "%s %s %s %[^\n]s", GID, GName, MID, extra);
-            printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", GID, GName, MID);
+            sscanf(extra, "%s %s %s %[^\n]s", groupID, groupName, messageID, extra);
+            printf("Group ID: %s\tGroup Name: %-30.30sLast Message ID: %s\n", groupID, groupName, messageID);
         }
     }
     colorReset();
@@ -274,59 +287,39 @@ void logSAG(char* message){
 
 void logSG(char* message){
     colorGreen();
-    printf("Current GID: %s\n", message);
+    printf("Current groupID: %s\n", message);
     colorReset();
 }
 
-void logULS(char* message){
+int logULS(char* message){
 
-    // TODO should we allocate more space for each?
-    char command[MAXSIZE], status[3], GName[25], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
-    char userIDTemp[6];
-    int length;
+    int success = FALSE;
     
-    memset(extra, 0, EXTRAMAXSIZE);
-    memset(extraCopy, 0, EXTRAMAXSIZE);
-    sscanf(message, "%s %s %s %[^\n]s", command, status, GName, extra);
+    char command[7], status[7], extra[7]; 
+    sscanf(message, "%s %s %s\n", command, status, extra);
 
-    if(!strcmp(message, "RUL NOK\n")){
+    if(!strcmp(message, "RUL NOK")){
         colorYellow();
         printf("ulist: This group does not exist.\n");
     }
     else if(!strcmp(message, "ERR\n") || !strcmp(message, "ERROR\n")){
         logError("ulist: A fatal error has ocurred.");
     }
-    else if(!strcmp(command,"RUL") && !strcmp(status,"OK")){
-        colorGreen();
-        strcpy(extraCopy, extra);
-
-        length = (strlen(extra) + 1) / 6;
-        // Verifies if users given by server are valid
-        for (int i = 0; i < length; i++){
-            sscanf(extraCopy, "%s %[^\n]s", userIDTemp, extraCopy);
-            if(!checkStringIsNumber(userIDTemp) || strlen(userIDTemp) != 5){
-                logError("ulist: Unexpected message from server.");
-                return;
-            }
-        }  
-        // Prints groups 
-        printf("List of UIDs subscribed to %s\n", GName);
-        for (int i = 0; i < length; i++){
-            i % 2 == 0 ? colorCyan() : colorBlue(); // coloring
-            sscanf(extra, "%s %[^\n]s", userIDTemp, extra);
-            printf("%s\n", userIDTemp);
-        }   
+    else if(!strcmp(message, "RUL OK ")){
+        success = TRUE;
     }
     else{
-        logError("ulist: Failed to list the users.");
+        logError("ulist: Failed to list the users.");  
     }
     colorReset();
+    return success;
 }
 
 void logPST(char* message){
 
-    // TODO should we allocate more space for each?
-    char command[4], status[8], extra[MAXSIZE];
+    // 7 size of the message read from the server in the main function
+    char command[9], status[9], extra[9]; 
+
     sscanf(message, "%s %s %s\n", command, status, extra);
 
     if(!strcmp(message, "RPT NOK\n")){
@@ -348,11 +341,11 @@ void logPST(char* message){
 
 int logRTV(char* message){
 
-    // TODO should we allocate more space for each?
     int success = FALSE;
-    char rrt[10], status[10], numberOfMessages[10], extra[MAXSIZE];
+    // 7 size of the message read from the server in the main function
+    char command[9], status[9], numberOfMessages[9], extra[9];
 
-    sscanf(message, "%s %s %s %s\n", rrt, status, numberOfMessages, extra);
+    sscanf(message, "%s %s %s %s\n", command, status, numberOfMessages, extra);
 
     if(!strcmp(message, "RRT NOK\n")){
         colorYellow();
@@ -365,7 +358,7 @@ int logRTV(char* message){
         colorGreen();
         printf("retrieve: 0 messages retrieved.\n");
     }
-    else if(!strcmp(rrt,"RRT") && !strcmp(status,"OK") && checkStringIsNumber(numberOfMessages)){
+    else if(!strcmp(command,"RRT") && !strcmp(status,"OK") && checkStringIsNumber(numberOfMessages)){
         colorGreen();
         printf("%s message(s) retrieved:\n", numberOfMessages);
         success = TRUE;

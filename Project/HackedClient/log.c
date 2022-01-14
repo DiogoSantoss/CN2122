@@ -102,7 +102,6 @@ void logSU(char* message){
     colorReset();
 }
 
-// TODO - this needs to be split
 void logGLS(char* message){
 
     char functionName[10];
@@ -130,7 +129,7 @@ void logGLS(char* message){
         else if(!strcmp(prefix, "RGM"))
             printf("my_groups: List of groups:\n");
         else{
-            //TODO - Fix this, need to know if was called by my_groups or groups
+           
             logError("server: A fatal error has ocurred.");
             return;
         }

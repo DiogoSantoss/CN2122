@@ -18,8 +18,10 @@
 #define TRUE  1
 #define FALSE 0
 
-#define MAXSIZEUDP 39 //GSR is the biggest command 
-#define EXTRAMAXSIZE 3169
+// Max size client can send
+// Corresponds to a subscribe
+// GSR UID GID GName -> 3+1+5+1+2+1+24+1 = 38
+#define MAXSIZEUDP 38 
 
 #define max(A,B) ((A)>=(B)?(A):(B))
 
@@ -222,6 +224,7 @@ void handleRequests(userData* user, serverData* server){
             } else if(!strcmp(command,"RTV ")){
                 processRTV(*user, *server, fdNew);
             } else{
+                logError(server->verbose,"Wrong command.");
                 requestErrorTCP(*user, *server, fdNew);
             }
             close(fdNew);
@@ -230,10 +233,10 @@ void handleRequests(userData* user, serverData* server){
         if(FD_ISSET(fdUdp,&rfds)){
 
             ssize_t n;
-            char request[MAXSIZEUDP],command[MAXSIZEUDP],extra[MAXSIZEUDP];
+            char request[MAXSIZEUDP+1],command[MAXSIZEUDP+1],extra[MAXSIZEUDP+1];
             char* response;
 
-            memset(request, 0, MAXSIZEUDP);
+            memset(request, 0, MAXSIZEUDP+1);
             addrlen=sizeof(addr);
 
             n = recvfrom(fdUdp, request, MAXSIZEUDP, 0, (struct sockaddr*)&addr, &addrlen);
@@ -281,6 +284,7 @@ void handleRequests(userData* user, serverData* server){
                 processGLM(*user, *server, request);
 
             } else{
+                logError(server->verbose,"Wrong command.");
                 requestErrorUDP(*user, *server);
             }
         }
