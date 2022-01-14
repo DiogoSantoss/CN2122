@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -28,7 +29,7 @@ int checkStringIsNumber(char* value){
 */
 int checkStringIsAlphaNum(char* value){
     int IsAlphaNumeric = TRUE;
-    for(int i = 0; i<strlen(value)-1; i++){
+    for(int i = 0; i<strlen(value); i++){
         if(!isdigit(value[i]) && !isalpha(value[i])){
             IsAlphaNumeric = FALSE;
             break;
@@ -44,7 +45,7 @@ int checkStringIsAlphaNum(char* value){
 */
 int checkStringIsGroupName(char* value){
     int IsGroupName = TRUE;
-    for(int i = 0; i<strlen(value)-1; i++){
+    for(int i = 0; i<strlen(value); i++){
         if(!isdigit(value[i]) && !isalpha(value[i]) && value[i] != '-' && value[i] != '_'){
             IsGroupName = FALSE;
             break;

@@ -626,19 +626,17 @@ void processRequestUDP(
     int msgSize, attempts, n;
     char *message; // will get calloc'd inside each parser and should be free'd
     char response[MAXRESPONSESIZE];
+    memset(response, 0, MAXRESPONSESIZE);
 
     message = (*parser)(user,input);
     if(message == NULL) return;
 
-    if(!connectUDP(server, &(user->fd), &(user->res))){
-
+    if(!connectUDP(server, &(user->fd), &(user->res)))
         return;
-    }
 
-    if(!sendMessageUDP(user->fd, user->res, message, strlen(message))){
-    
+    if(!sendMessageUDP(user->fd, user->res, message, strlen(message)))
         return;
-    } 
+
     n = receiveMessageUDP(user->fd, response);
 
     attempts = 1;
@@ -647,7 +645,6 @@ void processRequestUDP(
         logError("Trying to resend...");
         if(!sendMessageUDP(user->fd, user->res, message, strlen(message))){
             free(message);
-
             return;
         } 
         n = receiveMessageUDP(user->fd, response);
@@ -656,7 +653,6 @@ void processRequestUDP(
     if(response == NULL && attempts == 3){
         logError("Stopped trying to send after 3 attemps.");
         free(message);
-
         return;
     }
 

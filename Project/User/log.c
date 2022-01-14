@@ -138,7 +138,7 @@ void logGLS(char* message){
         for (int i = 0; i < atoi(nGroups); i++){
             sscanf(extraCopy, "%s %s %s %[^\n]s", groupID, groupName, messageID, extraCopy);
             if(
-                strlen(groupID) != 2 || strlen(groupName) != 24 || strlen(messageID) != 4 ||
+                strlen(groupID) != 2 || strlen(groupName) > 24 || strlen(messageID) != 4 ||
                 !checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName) || !checkStringIsNumber(messageID)
             ){
                 logError("groups: Unexpected message from server.");
@@ -262,7 +262,7 @@ void logGLM(char* message){
         for (int i = 0; i < atoi(nGroups); i++){
             sscanf(extraCopy, "%s %s %s %[^\n]s", groupID, groupName, messageID, extraCopy);
             if(
-                strlen(groupID) != 2 || strlen(groupName) != 24 || strlen(messageID) != 4 ||
+                strlen(groupID) != 2 || strlen(groupName) > 24 || strlen(messageID) != 4 ||
                 !checkStringIsNumber(groupID) || !checkStringIsGroupName(groupName) || !checkStringIsNumber(messageID)
             ){
                 logError("my_groups: Unexpected message from server.");
@@ -287,7 +287,7 @@ void logSAG(char* message){
 
 void logSG(char* message){
     colorGreen();
-    printf("Current groupID: %s\n", message);
+    printf("Current GID: %s\n", message);
     colorReset();
 }
 

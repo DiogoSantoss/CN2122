@@ -201,19 +201,19 @@ void processULS(userData user, serverData server, int fd){
     d = opendir(path);
     if (d){
 
-        sprintf(buffer,"RUL OK %s ",groupName);
+        sprintf(buffer,"RUL OK %s",groupName);
         sendTCP(fd,buffer,strlen(buffer));
 
         while ((dir = readdir(d))){   
 
             if(strlen(dir->d_name) == 9){
 
-                memset(buffer, 0, 40);
-                strncpy(buffer, dir->d_name, 5);
-                sendTCP(fd,buffer,strlen(buffer));
-                
                 strcpy(buffer, " ");
                 sendTCP(fd,buffer,strlen(buffer));
+
+                memset(buffer, 0, 40);
+                strncpy(buffer, dir->d_name, 5);
+                sendTCP(fd,buffer,strlen(buffer)); 
             }
         }
 
@@ -287,7 +287,7 @@ void processPST(userData user, serverData server, int fd){
     }
 
     // Read text
-    if(!receiveNSizeTCP(fd,text,atoi(textSizeDigits))){
+    if(receiveNSizeTCP(fd,text,atoi(textSizeDigits)) == -1){
         strcpy(response,"RPT NOK\n");
         sendTCP(fd,response,strlen(response));
         return;

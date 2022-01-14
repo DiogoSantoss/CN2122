@@ -221,6 +221,7 @@ int attributeFileName(char* originalName, char* newName){
                 return TRUE;
             }
         }
+        strcpy(newName, originalName);
         return FALSE;
     }
 }
@@ -243,7 +244,7 @@ void processUlist(userData *user, serverData *server, char* input){
     char userID[6];
     char singleChar[1];
 
-    memset(extra,0,sizeof extra);
+    memset(extra,0,MAXINPUTSIZE);
     sscanf(input,"%s %s\n",command, extra);
 
     if(!strcmp(user->ID,"")){
@@ -264,14 +265,45 @@ void processUlist(userData *user, serverData *server, char* input){
     if(!connectTCP(server, &(user->fd), user->res)) return;
     if(!sendTCP(user->fd, message, strlen(message))) return;
 
-    // Read header (RUL status)
-    if(!receiveNSizeTCP(user->fd,header,7)) return;
+    // Read header
+    memset(header, 0, 8);
+    if(receiveNSizeTCP(user->fd,header,7) == -1) return;
+
+    if (!strcmp(header, "RUL NOK")){
+        if(receiveNSizeTCP(user->fd,singleChar,1) == -1) return;
+        if(singleChar[0] == '\n')
+            if(!logULS(header)) return;
+        else{
+            logError("ulist: Failed to list the users.");
+            return;
+        }
+    } 
 
     // In case of bad response from server, logs and returns
     if(!logULS(header)) return;
 
     // Read group name
-    if(!readWord(user->fd,groupName,24)) return;
+    memset(groupName, 0, 25);
+    for (int i = 0; i < 25; i++){
+        // Reads one char
+        if(receiveNSizeTCP(user->fd, singleChar, 1) == -1) return;
+        
+        if (singleChar[0] == ' '){
+            break;
+        }
+        else if(singleChar[0] == '\n'){
+            colorGreen();
+            printf("Group %s has no users subscribed.\n", groupName);
+            return;
+        }
+        // Save char to buffer
+        groupName[i] = singleChar[0];
+    }
+
+    if(i==24 && singleChar[0] != ' '){
+        logError("ulist: Server response bad formatting.");
+        return;
+    }
 
     colorGreen();
     printf("List of UIDs from group %s:\n",groupName);
@@ -283,7 +315,7 @@ void processUlist(userData *user, serverData *server, char* input){
         // Read user ID
         n = receiveNSizeTCP(user->fd,userID,5);
         if(n != 5){
-            logError("");
+            logError("ulist: Server response bad formatting.");
             return;
         }
         printf("%s\n",userID);
@@ -297,7 +329,7 @@ void processUlist(userData *user, serverData *server, char* input){
             continue;
         }
         else{
-            logError("ulist: Server response bad formated.");
+            logError("ulist: Server response bad formatting.");
             return;
         }
     }
@@ -409,7 +441,7 @@ void processPost(userData* user, serverData* server, char* input){
     }
 
     // Receive response from server
-    if(!receiveNSizeTCP(user->fd,response,9)) return;
+    if(receiveNSizeTCP(user->fd,response,9) == -1) return;
 
     logPST(response);
 }
@@ -553,8 +585,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             // Open file
             if(!attributeFileName(fileName, newFileName)){
-                logError("Error attributing file name. Please clear your downloads folder.");
-                return;
+                printf("Too many files with the same name. Please clear your downloads folder.\n");
             }
 
             if (strcmp(fileName, newFileName))

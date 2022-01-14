@@ -24,7 +24,7 @@
 #define MAXSIZEOUT 19
 #define MAXSIZEGLS 4
 #define MAXSIZEGSR 38
-#define MAXSIZEGUR 38
+#define MAXSIZEGUR 13
 #define MAXSIZEGLM 10
 
 // Max number of groups in server
@@ -468,7 +468,7 @@ void processGUR(userData user, serverData server, char* request){
     memset(response,0,13);
     memset(extra, 0, MAXSIZEGUR+1);
 
-    if(strlen(request) != MAXSIZEGUR){
+    if(strlen(request) > MAXSIZEGUR){
         // Wrong size parameters
         strcpy(response, "ERR\n");
         logError(server.verbose, "Failed to unsubscribe user because wrong format.");
