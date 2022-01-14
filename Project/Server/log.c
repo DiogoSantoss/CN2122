@@ -107,9 +107,9 @@ void logPST(int verbose, char* UID, char* GID, int textSize, int fileSize, char*
     if(verbose){
         colorGreen();
         if(fileName == NULL)
-            printf("User %s successfully posted to group %s a message with a text sixe of %d\n", UID, GID, textSize);
+            printf("User %s posted to group %s a message with a text sixe of %d\n", UID, GID, textSize);
         else
-            printf("User %s successfully posted to group %s a message with %d bytes and a file named %s with %d bytes\n", UID, GID, textSize, fileName, fileSize);
+            printf("User %s posted to group %s a message with %d bytes and a file named %s with %d bytes\n", UID, GID, textSize, fileName, fileSize);
         
         colorReset();
     }

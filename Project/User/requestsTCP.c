@@ -625,7 +625,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             }
             fclose(downptr); 
 
-            printf("\rDownloading file... %-30s\n", "Done");
+            printf("\rDownloading file... %-35s\n", "Done");
             printf("File successfully downloaded.\n");
 
             // Skips spaces between messages and if its \n then all messages are read
