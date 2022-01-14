@@ -12,9 +12,12 @@
 #define TRUE  1
 #define FALSE 0
 
-// Constants
-#define MAXSIZE 274
-#define EXTRAMAXSIZE 3169 // TODO better name?
+// Max size user can input
+#define MAXINPUTSIZE 274
+// Max size server can respond
+// Corresponds to a groups response with all groups and max size names
+// RGL N[ GID GName MID]* -> 3+1+2+99*(1+2+1+24+1+4)+1 = 3274
+#define MAXRESPONSESIZE 3274
 
 // Max size for each command
 #define LONGINPUTREG 19
@@ -114,7 +117,7 @@ char* parseUnregister(userData* user, char* input){
 */
 void helperUnregister(userData* user, char* input, char* response){
 
-    char command[MAXSIZE],userID[MAXSIZE],password[MAXSIZE];
+    char command[MAXINPUTSIZE], userID[MAXINPUTSIZE], password[MAXINPUTSIZE];
 
     sscanf(input,"%s %s %s\n",command,userID,password);
 
@@ -172,7 +175,7 @@ char* parseLogin(userData* user, char* input){
 */
 void helperLogin(userData* user, char* input, char* response){
 
-    char command[MAXSIZE],userID[MAXSIZE],password[MAXSIZE];
+    char command[MAXINPUTSIZE],userID[MAXINPUTSIZE],password[MAXINPUTSIZE];
 
     sscanf(input,"%s %s %s\n",command,userID,password);
 
@@ -537,13 +540,14 @@ int connectUDP(serverData *server, int* fd, struct addrinfo** res){
  * @param res Information about server 
  * @param message Message to be sent
  * @param messageLen Message length
+ * @return 1 for success or 0 for errors
 */
 int sendMessageUDP(int fd, struct addrinfo* res, char* message, int messageLen){
     int n;
     socklen_t addrlen;
     struct sockaddr_in addr;
 
-    n = sendto(fd, message,messageLen,0,res->ai_addr,res->ai_addrlen);
+    n = sendto(fd, message, messageLen, 0, res->ai_addr, res->ai_addrlen);
     if(n==-1){
         logError("Couldn't send message via UDP socket");
         return FALSE;
@@ -567,42 +571,36 @@ int TimerOFF(int sd){
 }
 
 /**
- * Receive message via UDP socket from server.
+ * Receive response via UDP socket from server.
  * @param fd File descriptor of UDP socket
- * @return message Message from server
+ * @return 1 for success or 0 for errors
 */
-char* receiveMessageUDP(int fd){
+int receiveMessageUDP(int fd, char* response){
     int n;
     socklen_t addrlen;
     struct sockaddr_in addr;
 
-    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
-
     addrlen = sizeof(addr);
     if(TimerON(fd) == -1){
         logError("Error setting timeout for UDP socket.");
-        free(message);
         TimerOFF(fd);
-        return NULL;
+        return FALSE;
     }
 
-    n = recvfrom(fd,message,EXTRAMAXSIZE,0,(struct sockaddr*)&addr,&addrlen);
+    n = recvfrom(fd,response,MAXRESPONSESIZE,0,(struct sockaddr*)&addr,&addrlen);
     if(n==-1){
-        logError("Couldn't receive message via UDP socket.");
-        free(message);
+        logError("Couldn't receive response via UDP socket.");
         if(TimerOFF(fd) == -1){
             logError("Error setting timeout for UDP socket.");
-            free(message);
-            return NULL;
+            return FALSE;
         }
-        return NULL;
+        return FALSE;
     } 
     if(TimerOFF(fd) == -1){
         logError("Error setting timeout for UDP socket.");
-        free(message);
-        return NULL;
+        return FALSE;
     }
-    return message;
+    return TRUE;
 }
 
 /**
@@ -625,39 +623,40 @@ void processRequestUDP(
     void (*helper)(userData*,char*,char*)
     ){
 
-    int msgSize, attempts;
-    char *message, *response;
+    int msgSize, attempts, n;
+    char *message; // will get calloc'd inside each parser and should be free'd
+    char response[MAXRESPONSESIZE];
 
     message = (*parser)(user,input);
     if(message == NULL) return;
 
     if(!connectUDP(server, &(user->fd), &(user->res))){
-        free(message);
+
         return;
     }
 
     if(!sendMessageUDP(user->fd, user->res, message, strlen(message))){
-        free(message);
+    
         return;
     } 
-    response = receiveMessageUDP(user->fd);
+    n = receiveMessageUDP(user->fd, response);
 
     attempts = 1;
     // Resend message in case of failure/lost packages
-    while(response == NULL && attempts < 3){
+    while(n == FALSE && attempts < 3){
         logError("Trying to resend...");
         if(!sendMessageUDP(user->fd, user->res, message, strlen(message))){
             free(message);
-            free(response);
+
             return;
         } 
-        response = receiveMessageUDP(user->fd);
+        n = receiveMessageUDP(user->fd, response);
         attempts++;
     }
     if(response == NULL && attempts == 3){
         logError("Stopped trying to send after 3 attemps.");
         free(message);
-        free(response);
+
         return;
     }
 
@@ -668,5 +667,5 @@ void processRequestUDP(
     (*logger)(response);
 
     free(message);
-    free(response);
+
 }

@@ -9,9 +9,10 @@
 #define TRUE 1
 #define FALSE 0
 
-//Constants
+// Max size user can inputv
 #define MAXSIZE 274
-#define EXTRAMAXSIZE 3268  // TODO
+//TODO this depends if it is udp or tcp
+#define EXTRAMAXSIZE 3268
 
 void logError(char* message){
     colorRed();
@@ -107,6 +108,7 @@ void logSU(char* message){
 
 void logGLS(char* message){
 
+    // TODO should we allocate more space for each?
     char functionName[10];
     char command[MAXSIZE], nGroups[3], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
     char GID[3], GName[25], MID[5];
@@ -150,6 +152,7 @@ void logGLS(char* message){
 
 void logGSR(char* message){
 
+    // TODO should we allocate more space for each?
     char rgs[4], status[8], GID[3], extra[MAXSIZE];
     char string[MAXSIZE + 9];
     sscanf(message, "%s %s %s %s", rgs, status, GID, extra);
@@ -222,6 +225,7 @@ void logGUR(char* message){
 
 void logGLM(char* message){
 
+    // TODO should we allocate more space for each?
     char functionName[10];
     char command[MAXSIZE], nGroups[3], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
     char GID[3], GName[25], MID[5];
@@ -276,6 +280,7 @@ void logSG(char* message){
 
 void logULS(char* message){
 
+    // TODO should we allocate more space for each?
     char command[MAXSIZE], status[3], GName[25], extra[EXTRAMAXSIZE], extraCopy[EXTRAMAXSIZE];
     char userIDTemp[6];
     int length;
@@ -320,6 +325,7 @@ void logULS(char* message){
 
 void logPST(char* message){
 
+    // TODO should we allocate more space for each?
     char command[4], status[8], extra[MAXSIZE];
     sscanf(message, "%s %s %s\n", command, status, extra);
 
@@ -342,6 +348,7 @@ void logPST(char* message){
 
 int logRTV(char* message){
 
+    // TODO should we allocate more space for each?
     int success = FALSE;
     char rrt[10], status[10], numberOfMessages[10], extra[MAXSIZE];
 

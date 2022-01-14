@@ -11,8 +11,11 @@
 #include "requestsUDP.h"
 #include "requestsTCP.h"
 
-// Constants
-#define MAXSIZE 274
+// Max size user can input
+// Corresponds to a post with all parameters
+// post "text" Fname -> 4+1+1+240+1+1+24+1 = 273
+// 273 + 1 (\0) = 274
+#define MAXINPUTSIZE 274
 
 /**
  * Initialize data about user and server
@@ -88,14 +91,15 @@ void parseArguments(serverData *server, int argc, char *argv[]){
 */
 void handleRequests(userData *user, serverData *server){
 
-    char input[MAXSIZE],command[MAXSIZE],extra[MAXSIZE];
+    char input[MAXINPUTSIZE], command[MAXINPUTSIZE], extra[MAXINPUTSIZE];
 
     while(1){
 
-        memset(command,0,MAXSIZE);
-        memset(extra,0,MAXSIZE);
+        memset(input,0,MAXINPUTSIZE);
+        memset(command,0,MAXINPUTSIZE);
+        memset(extra,0,MAXINPUTSIZE);
 
-        fgets(input, MAXSIZE, stdin);
+        fgets(input, MAXINPUTSIZE, stdin);
         sscanf(input,"%s %s\n",command,extra);
 
         if(!strcmp(command,"reg")){
@@ -135,7 +139,7 @@ void handleRequests(userData *user, serverData *server){
             processShowGID(user, input);
 
         } else if(!strcmp(command,"ulist") || !strcmp(command,"ul")){
-            processUlist(user, server, input, parseUlist, logULS, NULL);
+            processUlist(user, server, input);
 
         } else if(!strcmp(command,"post")){
             processPost(user, server, input);
@@ -152,6 +156,7 @@ void handleRequests(userData *user, serverData *server){
             close(user->fd);
             user->res = NULL;
         }
+        colorReset();
     }
 }
 

@@ -18,9 +18,12 @@
 #define TRUE  1
 #define FALSE 0
 
-// Constants
-#define MAXSIZE 274
-#define EXTRAMAXSIZE 3268 // TODO
+// Max size user can input
+#define MAXINPUTSIZE 274
+// Max size server can respond
+// Corresponds to a ulist response with all groups
+// RUL status [GName [UID ]*] -> 3+1+2+1+99*(24+1+5+1)+1 = 3077
+#define MAXRESPONSESIZE 3077
 
 #define TEXTSIZE 240
 #define FILENAMESIZE 24
@@ -96,13 +99,13 @@ int sendTCP(int fd, char* message, int messageLen){
 */
 char* receiveWholeTCP(int fd){
     int nRead = 1; // This can't be initialized as 0
-    char* message = calloc(EXTRAMAXSIZE,sizeof(char));
+    char* message = calloc(MAXRESPONSESIZE,sizeof(char));
     char* ptr;
 
     ptr = message;
 
     while (nRead != 0){
-        nRead = read(fd, ptr, EXTRAMAXSIZE);
+        nRead = read(fd, ptr, MAXRESPONSESIZE);
         if(nRead == -1){
             logError("Couldn't receive message via TCP socket.");
             free(message);
@@ -252,41 +255,6 @@ int attributeFileName(char* originalName, char* newName){
 }
 
 /**
- * Parse ulist command
- * @param user User data
- * @param input User input to be parsed
- * @return message to send to server (needs to be freed) or NULL for errors
-*/
-char* parseUlist(userData* user, char* input){
-    
-    char* message;
-    char command[MAXSIZE], extra[MAXSIZE];
-
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s\n",command, extra);
-
-    if(!strcmp(user->ID,"")){
-        logError("No user is logged in.");
-        return NULL;
-    }
-
-    else if (!strcmp(user->groupID,"")){
-        logError("No group is selected.");
-        return NULL;
-    }
-
-    else if((strlen(extra) != 0) || (strlen(command) != 5 && strlen(command) != 2)){
-        logError("Wrong size parameters.");
-        return NULL;
-    }
-
-    message = malloc(sizeof(char)*7);
-    sprintf(message, "ULS %02d\n", atoi(user->groupID));
-
-    return message;
-}
-
-/**
  * Process ulist command
  * @param user User data
  * @param server Server data
@@ -295,22 +263,37 @@ char* parseUlist(userData* user, char* input){
 void processUlist(userData *user, serverData *server, char* input){
 
     int msgSize;
-    char *message, *response;
+    char *response;
+    char message[8];
+    char command[MAXINPUTSIZE], extra[MAXINPUTSIZE];
 
-    message = parseUlist(user,input);
-    if(message == NULL) return;
+    memset(extra,0,sizeof extra);
+    sscanf(input,"%s %s\n",command, extra);
+
+    if(!strcmp(user->ID,"")){
+        logError("No user is logged in.");
+        return;
+    }
+    else if (!strcmp(user->groupID,"")){
+        logError("No group is selected.");
+        return;
+    }
+    else if((strlen(extra) != 0) || (strlen(command) != 5 && strlen(command) != 2)){
+        logError("Wrong size parameters.");
+        return;
+    }
+
+    sprintf(message, "ULS %02d\n", atoi(user->groupID));
 
     if(!connectTCP(server, &(user->fd), user->res)) return;
     if(!sendTCP(user->fd, message, strlen(message))) return;
     response = receiveWholeTCP(user->fd);
     if(response == NULL){
-        free(message);
         return; 
     } 
 
     logULS(response);
 
-    free(message);
     free(response);
 }
 
@@ -322,18 +305,17 @@ void processUlist(userData *user, serverData *server, char* input){
 */
 void processPost(userData* user, serverData* server, char* input){
 
-    int msgSize;
+    int msgSize, sent, actuallyRead;
 
     FILE* fp;
     long int fsize;
-    char command[MAXSIZE], text[MAXSIZE], fileName[MAXSIZE], extra[MAXSIZE];
+    char* response; // // will get calloc'd inside readwholetcp and should be free'd
+    char command[MAXINPUTSIZE], text[MAXINPUTSIZE], fileName[MAXINPUTSIZE], extra[MAXINPUTSIZE];
+    char buffer[FILEBUFFERSIZE]; 
 
-    //Is this too much allocated memory?
-    char message[MAXSIZE * 3];
-
-    memset(extra,0,MAXSIZE);
-    memset(text,0,MAXSIZE);
-    memset(fileName,0,MAXSIZE);
+    memset(extra, 0, MAXINPUTSIZE);
+    memset(text, 0, MAXINPUTSIZE);
+    memset(fileName, 0, MAXINPUTSIZE);
     sscanf(input,"%s \"%[^\"]\" %s %s\n",command, text, fileName, extra);
 
     if(input[strlen(command) + 1] != '\"' || input[strlen(command) + 1 + strlen(text) + 1] != '\"'){
@@ -373,27 +355,33 @@ void processPost(userData* user, serverData* server, char* input){
         fsize = ftell(fp);
         rewind(fp);
 
-        sprintf(
-            message,"PST %s %02d %ld %s %s %ld ",
-            user->ID,atoi(user->groupID),strlen(text),text,fileName,fsize
-        );
+        sprintf(buffer,"PST %s %02d %ld %s ",user->ID,atoi(user->groupID),strlen(text),text);
 
-        // Send PST UID GID textSize text Fname Fsize
-        if(!sendTCP(user->fd,message,strlen(message))) return;
+        // Send PST UID GID textSize text
+        if(!sendTCP(user->fd,buffer,strlen(buffer))) return;
 
-        int sent = 0;
-        char buffer[FILEBUFFERSIZE];   
-        int actuallyRead = 0;
+        sprintf(buffer,"%s %ld ",fileName,fsize);
+
+        // Send Fname Fsize
+        if(!sendTCP(user->fd,buffer,strlen(buffer))) return;
+
+        sent = 0;
+        actuallyRead = 0;
 
         // Send "packages" of size FILEBUFFERSIZE at a time from given file
         while(sent < fsize){
+            // Updating message 
             printf("\rUploading file... %d out of %ld bytes", sent, fsize);
             fflush(stdout);
+
             memset(buffer, 0, FILEBUFFERSIZE);
-            // Read "package" from file
+
+            // Read to buffer from file
             actuallyRead = fread(buffer, sizeof(char), FILEBUFFERSIZE, fp);
-            // Send "package"
+
+            // Send buffer
             if(!sendTCP(user->fd,buffer,actuallyRead)) return;
+
             sent += actuallyRead;
         }
         // Message to server must end with \n
@@ -403,14 +391,13 @@ void processPost(userData* user, serverData* server, char* input){
     else{
         // Send PST UID GID textSize text
         sprintf(
-            message,"PST %s %02d %ld %s\n",
+            buffer,"PST %s %02d %ld %s\n",
             user->ID,atoi(user->groupID),strlen(text),text
         );
-        if(!sendTCP(user->fd,message,strlen(message))) return;
+        if(!sendTCP(user->fd,buffer,strlen(buffer))) return;
     }
 
     // Receive response from server
-    char* response;
     response = receiveWholeTCP(user->fd);
     if(response == NULL)
         return;
@@ -427,28 +414,7 @@ void processPost(userData* user, serverData* server, char* input){
 */
 char* parseRetrieve(userData* user, char* input){
     
-    char* message = calloc(35,sizeof(char));
-    char command[MAXSIZE], MID[MAXSIZE], extra[MAXSIZE];
 
-    memset(extra,0,sizeof extra);
-    sscanf(input,"%s %s %s\n",command,MID,extra);
-
-    if(!strcmp(user->ID,"")){
-        logError("No user logged in.");
-        return NULL;
-    }
-    else if(!strcmp(user->groupID,"")){
-        logError("No group is selected.");
-        return NULL;
-    }
-    else if((strlen(extra) != 0) || (strlen(command) != 8 && strlen(command) != 1) || strlen(MID) > 4){
-        logError("Wrong size parameters.");
-        return NULL;
-    }
-
-    sprintf(message, "RTV %s %02d %04d\n",user->ID,atoi(user->groupID),atoi(MID));
-
-    return message;
 }
 
 /**
@@ -459,11 +425,44 @@ char* parseRetrieve(userData* user, char* input){
 */
 void processRetrieve(userData* user, serverData* server, char* input){
 
-    char* message;
+    char message[35];
+    char command[MAXINPUTSIZE], MID[MAXINPUTSIZE], extra[MAXINPUTSIZE];
 
-    // Verify user input and format message
-    message = parseRetrieve(user, input);
-    if(message == NULL) return;
+    int numOfMessages;
+    char header[10], aux[9], numOfMessagesString[9], readChar[1];
+
+    char info[11];
+    char messageID[5], userID[6], textSizeDigits[4];
+    char text[TEXTSIZE + 1];
+
+    int textSize, fileSize;
+    char fileName[FILENAMESIZE + 1];
+    char newFileName[FILENAMESIZE + 1];
+    char fileSizeDigits[FILESIZEMAXDIGITS + 1];
+    char fileBuffer[FILEBUFFERSIZE];
+
+    FILE *downptr;
+    char path[40];
+    int sum, nRead;
+
+    memset(extra, 0, MAXINPUTSIZE);
+
+    sscanf(input,"%s %s %s\n",command,MID,extra);
+
+    if(!strcmp(user->ID,"")){
+        logError("No user logged in.");
+        return;
+    }
+    else if(!strcmp(user->groupID,"")){
+        logError("No group is selected.");
+        return;
+    }
+    else if((strlen(extra) != 0) || (strlen(command) != 8 && strlen(command) != 1) || strlen(MID) > 4){
+        logError("Wrong size parameters.");
+        return;
+    }
+
+    sprintf(message, "RTV %s %02d %04d\n",user->ID,atoi(user->groupID),atoi(MID));
 
     // Creates / checks download folder
     if (!downloadsFolder()){
@@ -474,11 +473,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
     // Send message to server
     if(!connectTCP(server,&(user->fd),user->res)) return;
     if(!sendTCP(user->fd,message,strlen(message))) return;
-    free(message);
-
-    int numOfMessages;
-    char header[10], aux[9], numOfMessagesString[9], readChar[1];
-
+    
     memset(header, 0, 10);
     memset(numOfMessagesString, 0, 9);
 
@@ -500,23 +495,19 @@ void processRetrieve(userData* user, serverData* server, char* input){
         read(user->fd,readChar,1);
     }
 
-    char info[11];
-    char MessID[5], UserID[6], textSizeDigits[4];
-    char text[TEXTSIZE + 1];
-
     // Reads first char of message to info
     // For loops starts reading message after the first char to info+1
     memset(info, 0, 11);
     if(receiveNSizeTCP(user->fd, info, 1) == -1) return;
 
     for (int i = 0; i < numOfMessages; i++){
-        
+
         // Colors
         i % 2 == 0 ? colorCyan() : colorBlue();
 
-        // Read MessID and UserID of text message
+        // Read messageID and userID of text message
         if(receiveNSizeTCP(user->fd, info + 1, 9) == -1) return;
-        sscanf(info, "%s %s", MessID, UserID);
+        sscanf(info, "%s %s", messageID, userID);
 
         if(!skipSpace(user->fd)) return;
         
@@ -525,7 +516,7 @@ void processRetrieve(userData* user, serverData* server, char* input){
             logError("Text size too big");
             return;
         }
-        int textSize = atoi(textSizeDigits);
+        textSize = atoi(textSizeDigits);
 
         //Read Text
         memset(text, 0, TEXTSIZE + 1);
@@ -552,25 +543,18 @@ void processRetrieve(userData* user, serverData* server, char* input){
 
             if(!skipSpace(user->fd)) return;
 
-            //Read FileName
-            char fileName[FILENAMESIZE + 1];
-            char newFileName[FILENAMESIZE + 1];
-            
+            //Read FileName            
             if(!readWord(user->fd, fileName, FILENAMESIZE)){
                 logError("File name is too big");
                 return;
             };
 
             // Read FileSize
-            char fileSizeDigits[FILESIZEMAXDIGITS + 1];
-
             readWord(user->fd, fileSizeDigits, FILESIZEMAXDIGITS);
-            int fileSize = atoi(fileSizeDigits);
+            fileSize = atoi(fileSizeDigits);
             printf("File size: %d\nFile name: %s\n", fileSize, fileName);
 
             // Open file
-            char fileBuffer[FILEBUFFERSIZE];
-
             if(!attributeFileName(fileName, newFileName)){
                 logError("Error attributing file name. Please clear your downloads folder.");
                 return;
@@ -579,8 +563,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
             if (strcmp(fileName, newFileName))
                 printf("File renamed to: %s\n", newFileName);
 
-            FILE *downptr;
-            char path[40];
             sprintf(path, "Downloads/%s", newFileName);
             downptr = fopen(path, "wb");
 
@@ -589,8 +571,8 @@ void processRetrieve(userData* user, serverData* server, char* input){
                 return;
             }
 
-            int sum = 0;
-            int nRead = 0;
+            sum = 0;
+            nRead = 0;
 
             // Reads file in "packages" of size FILEBUFFERSIZE
             for (int i = 0; sum < fileSize; i++)
@@ -627,5 +609,6 @@ void processRetrieve(userData* user, serverData* server, char* input){
             memset(info, 0, 11);
             info[0] = readChar[0];
         }
+        colorReset();
     }
 }
